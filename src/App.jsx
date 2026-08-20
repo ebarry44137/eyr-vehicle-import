@@ -226,6 +226,21 @@ function App() {
   const [quotationError, setQuotationError] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
 
+  // V22.6 · Prospectos / captación comercial
+  const [prospectSearch, setProspectSearch] = useState("");
+  const [prospects, setProspects] = useState([]);
+  const [prospectsLoading, setProspectsLoading] = useState(false);
+  const [prospectsError, setProspectsError] = useState("");
+  const [selectedProspect, setSelectedProspect] = useState(null);
+  const [prospectQueries, setProspectQueries] = useState([]);
+  const [prospectQueriesLoading, setProspectQueriesLoading] = useState(false);
+  const [prospectStatusForm, setProspectStatusForm] = useState({
+    status: "NUEVO",
+    notes: "",
+  });
+  const [prospectSaving, setProspectSaving] = useState(false);
+  const [prospectMessage, setProspectMessage] = useState("");
+
   const [selectedSatId, setSelectedSatId] = useState(null);
   const [selectedDimension, setSelectedDimension] = useState(null);
 
@@ -1227,6 +1242,117 @@ function App() {
     return data.quotation;
   }
 
+  async function loadProspects(search = prospectSearch) {
+    setProspectsLoading(true);
+    setProspectsError("");
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "admin_list_customer_leads",
+        {
+          p_search: String(search || "").trim(),
+          p_limit: 200,
+        }
+      );
+
+      if (rpcError) throw rpcError;
+
+      setProspects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("PROSPECTS LOAD ERROR:", err);
+      setProspectsError(
+        err?.message || "No fue posible cargar los prospectos."
+      );
+    } finally {
+      setProspectsLoading(false);
+    }
+  }
+
+  async function loadProspectQueries(contactKey) {
+    if (!contactKey) return;
+
+    setProspectQueriesLoading(true);
+    setProspectsError("");
+
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "admin_get_customer_queries",
+        {
+          p_contact_key: contactKey,
+        }
+      );
+
+      if (rpcError) throw rpcError;
+
+      setProspectQueries(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("PROSPECT QUERIES ERROR:", err);
+      setProspectsError(
+        err?.message || "No fue posible cargar las consultas del cliente."
+      );
+    } finally {
+      setProspectQueriesLoading(false);
+    }
+  }
+
+  function openProspectsView() {
+    setActiveView("prospects");
+    setSelectedProspect(null);
+    setProspectQueries([]);
+    setProspectMessage("");
+    loadProspects("");
+  }
+
+  function selectProspect(item) {
+    setSelectedProspect(item);
+    setProspectStatusForm({
+      status: item?.lead_status || "NUEVO",
+      notes: item?.lead_notes || "",
+    });
+    setProspectMessage("");
+    loadProspectQueries(item?.contact_key);
+  }
+
+  async function saveProspectStatus() {
+    if (!selectedProspect?.contact_key) return;
+
+    setProspectSaving(true);
+    setProspectMessage("");
+    setProspectsError("");
+
+    try {
+      const { error: rpcError } = await supabase.rpc(
+        "admin_update_lead_status",
+        {
+          p_contact_key: selectedProspect.contact_key,
+          p_status: prospectStatusForm.status,
+          p_notes: prospectStatusForm.notes || null,
+        }
+      );
+
+      if (rpcError) throw rpcError;
+
+      setProspectMessage("Seguimiento actualizado.");
+      await loadProspects(prospectSearch);
+
+      setSelectedProspect((prev) =>
+        prev
+          ? {
+              ...prev,
+              lead_status: prospectStatusForm.status,
+              lead_notes: prospectStatusForm.notes,
+            }
+          : prev
+      );
+    } catch (err) {
+      console.error("PROSPECT STATUS ERROR:", err);
+      setProspectsError(
+        err?.message || "No fue posible actualizar el prospecto."
+      );
+    } finally {
+      setProspectSaving(false);
+    }
+  }
+
   async function loadQuotations(search = quotationSearch) {
     setQuotationLoading(true);
     setQuotationError("");
@@ -1560,6 +1686,40 @@ function App() {
     const subscriptionWhatsAppUrl = buildWhatsAppUrl(
       appSettings.whatsapp_number,
       `Hola E&R Solutions, soy ${customerFirstName}. Ya utilicé mis 3 cotizaciones gratuitas y quisiera coordinar el pago para activar mi suscripción mensual al cotizador.`
+    );
+
+    const importWhatsAppUrl = buildWhatsAppUrl(
+      appSettings.whatsapp_number,
+      `Hola E&R Solutions, soy ${customerFirstName}. Ya realicé una cotización en el portal y estoy listo(a) para iniciar la importación.
+
+🚗 VEHÍCULO
+VIN: ${publicVehicle?.vin || publicVin || "—"}
+Vehículo: ${[
+        publicVehicle?.model_year,
+        publicVehicle?.make,
+        publicVehicle?.model,
+        publicVehicle?.trim,
+      ].filter(Boolean).join(" ") || "—"}
+Motor: ${publicVehicle?.engine_liters ? `${publicVehicle.engine_liters}L` : "—"} · ${publicVehicle?.cylinders || "—"} cilindros
+Combustible: ${humanFuel(publicVehicle?.fuel_type)}
+Tracción: ${humanDrive(publicVehicle?.drive_type)}
+
+🇬🇹 SAT GUATEMALA
+Línea SAT: ${publicSummary?.sat_line || publicResult?.sat?.selected_match?.line || "—"}
+Tipo SAT: ${publicTaxes?.vehicle_type || publicResult?.sat?.selected_match?.vehicle_type || "—"}
+Valor imponible: ${publicTaxes?.taxable_value_gtq ? moneyGTQ(publicTaxes.taxable_value_gtq) : "—"}
+
+🧾 TRIBUTOS ESTIMADOS
+IVA (${displayTaxRate(publicTaxes?.iva_rate, 0.12)}): ${publicTaxes?.iva_gtq ? moneyGTQ(publicTaxes.iva_gtq) : "—"}
+IPRIMA (${displayTaxRate(publicTaxes?.iprima_rate)}): ${publicTaxes?.iprima_gtq ? moneyGTQ(publicTaxes.iprima_gtq) : "—"}
+Placas: ${publicTaxes?.plates_gtq ? moneyGTQ(publicTaxes.plates_gtq) : "—"}
+Total tributos: ${publicTaxes?.total_taxes_gtq ? moneyGTQ(publicTaxes.total_taxes_gtq) : "—"}
+
+🚢 FLETE MARÍTIMO
+Categoría: ${publicFreight?.category || "—"}
+Flete: ${publicFreight?.price_usd ? moneyUSD(publicFreight.price_usd) : "—"}
+
+Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de importación.`
     );
 
     const whatsappConfigured = Boolean(normalizeWhatsAppNumber(appSettings.whatsapp_number));
@@ -1973,6 +2133,37 @@ function App() {
                       </article>
                     </div>
 
+                    {publicReady && (
+                      <div className="public-import-cta">
+                        <div className="public-import-cta-copy">
+                          <span className="public-import-kicker">✓ VEHÍCULO LISTO PARA AVANZAR</span>
+                          <h3>¿Estás listo para hacer tu importación?</h3>
+                          <p>
+                            Ya tenemos identificado el vehículo y los valores estimados.
+                            Contactanos por WhatsApp para coordinar los siguientes pasos
+                            e iniciar la gestión con E&amp;R.
+                          </p>
+                        </div>
+
+                        {whatsappConfigured ? (
+                          <a
+                            className="whatsapp-action import-whatsapp-action"
+                            href={importWhatsAppUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <span className="whatsapp-icon">💬</span>
+                            Iniciar mi importación
+                            <span>→</span>
+                          </a>
+                        ) : (
+                          <div className="whatsapp-not-configured">
+                            WhatsApp temporalmente no disponible
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {publicNeedsReview && (
                       <div className="public-review-note">
                         <div>
@@ -2181,6 +2372,14 @@ function App() {
             Cotizaciones
           </button>
 
+          <button
+            className={`nav-item ${activeView === "prospects" ? "active" : ""}`}
+            onClick={openProspectsView}
+          >
+            <span>◎</span>
+            Prospectos
+          </button>
+
           <button className="nav-item">
             <span>⚠</span>
             Revisiones
@@ -2221,7 +2420,323 @@ function App() {
       </aside>
 
       <main className="main">
-        {activeView === "settings" ? (
+        {activeView === "prospects" ? (
+          <section className="prospects-module">
+            <header className="topbar prospects-topbar">
+              <div>
+                <span className="eyebrow">CAPTACIÓN COMERCIAL</span>
+                <h1>Prospectos</h1>
+                <p>
+                  Personas que utilizaron el cotizador público y pueden convertirse
+                  en clientes de E&amp;R.
+                </p>
+              </div>
+
+              <div className="prospect-summary-badge">
+                <span>PROSPECTOS</span>
+                <strong>{prospects.length}</strong>
+              </div>
+            </header>
+
+            <section className="prospect-stats">
+              <article>
+                <span>Total prospectos</span>
+                <strong>{prospects.length}</strong>
+              </article>
+              <article>
+                <span>Nuevos</span>
+                <strong>
+                  {prospects.filter((p) => (p.lead_status || "NUEVO") === "NUEVO").length}
+                </strong>
+              </article>
+              <article>
+                <span>En seguimiento</span>
+                <strong>
+                  {prospects.filter((p) =>
+                    ["CONTACTADO", "SEGUIMIENTO"].includes(p.lead_status)
+                  ).length}
+                </strong>
+              </article>
+              <article>
+                <span>Convertidos</span>
+                <strong>
+                  {prospects.filter((p) => p.lead_status === "CONVERTIDO").length}
+                </strong>
+              </article>
+            </section>
+
+            <section className="prospect-search-card">
+              <div>
+                <span className="section-label">BUSCADOR</span>
+                <h2>Buscar cliente, correo, celular o VIN</h2>
+              </div>
+
+              <form
+                className="prospect-search-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  loadProspects(prospectSearch);
+                }}
+              >
+                <input
+                  value={prospectSearch}
+                  onChange={(e) => setProspectSearch(e.target.value)}
+                  placeholder="Ej. Ronaldo, correo, 3766..., VIN..."
+                />
+                <button type="submit" disabled={prospectsLoading}>
+                  {prospectsLoading ? "Buscando..." : "Buscar"}
+                  <span>⌕</span>
+                </button>
+              </form>
+            </section>
+
+            {prospectsError && (
+              <div className="customer-message error">{prospectsError}</div>
+            )}
+
+            <div className={`prospects-layout ${selectedProspect ? "has-detail" : ""}`}>
+              <section className="prospects-list-card">
+                <div className="prospects-list-head">
+                  <div>
+                    <span className="section-label">BASE DE PROSPECTOS</span>
+                    <h2>
+                      {prospectsLoading
+                        ? "Cargando..."
+                        : `${prospects.length} prospecto${prospects.length === 1 ? "" : "s"}`}
+                    </h2>
+                  </div>
+
+                  <button
+                    className="secondary-button"
+                    onClick={() => loadProspects(prospectSearch)}
+                    disabled={prospectsLoading}
+                  >
+                    ↻ Actualizar
+                  </button>
+                </div>
+
+                <div className="prospects-table-wrap">
+                  <table className="prospects-table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Consultas</th>
+                        <th>Último vehículo</th>
+                        <th>Actividad</th>
+                        <th>Estado</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!prospectsLoading && prospects.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="empty-cell">
+                            No hay prospectos que coincidan con la búsqueda.
+                          </td>
+                        </tr>
+                      )}
+
+                      {prospects.map((item) => (
+                        <tr key={item.contact_key}>
+                          <td>
+                            <strong>{item.full_name || "Cliente sin nombre"}</strong>
+                            <small>{item.email || "Sin correo"}</small>
+                            <small>{item.phone || "Sin celular"}</small>
+                          </td>
+                          <td>
+                            <strong>{item.used_count || 0} / 3</strong>
+                            <small>
+                              {item.query_count || 0} registradas
+                            </small>
+                          </td>
+                          <td>
+                            <strong>{item.latest_vehicle || "—"}</strong>
+                            <small>{item.latest_vin || "Sin VIN registrado"}</small>
+                          </td>
+                          <td>
+                            <strong>
+                              {item.updated_at
+                                ? new Date(item.updated_at).toLocaleDateString("es-GT")
+                                : "—"}
+                            </strong>
+                            <small>
+                              {item.updated_at
+                                ? new Date(item.updated_at).toLocaleTimeString("es-GT", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
+                            </small>
+                          </td>
+                          <td>
+                            <span className={`lead-status ${(item.lead_status || "NUEVO").toLowerCase()}`}>
+                              {item.lead_status || "NUEVO"}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className="prospect-open-button"
+                              onClick={() => selectProspect(item)}
+                            >
+                              Ver →
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              {selectedProspect && (
+                <aside className="prospect-detail-card">
+                  <div className="prospect-detail-head">
+                    <div>
+                      <span className="section-label">DETALLE DEL PROSPECTO</span>
+                      <h2>{selectedProspect.full_name || "Cliente"}</h2>
+                      <p>{selectedProspect.email || "Sin correo"}</p>
+                      <p>{selectedProspect.phone || "Sin celular"}</p>
+                    </div>
+
+                    <button
+                      className="prospect-close"
+                      onClick={() => {
+                        setSelectedProspect(null);
+                        setProspectQueries([]);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {selectedProspect.phone && (
+                    <a
+                      className="whatsapp-action prospect-whatsapp"
+                      href={buildWhatsAppUrl(
+                        selectedProspect.phone,
+                        `Hola ${selectedProspect.full_name || ""}, te contactamos de E&R Solutions. Vimos que realizaste una cotización de importación de vehículo y queremos ayudarte con los siguientes pasos.`
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className="whatsapp-icon">💬</span>
+                      Contactar por WhatsApp
+                    </a>
+                  )}
+
+                  <div className="prospect-followup">
+                    <label>
+                      <span>Estado comercial</span>
+                      <select
+                        value={prospectStatusForm.status}
+                        onChange={(e) =>
+                          setProspectStatusForm((prev) => ({
+                            ...prev,
+                            status: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="NUEVO">Nuevo</option>
+                        <option value="CONTACTADO">Contactado</option>
+                        <option value="SEGUIMIENTO">En seguimiento</option>
+                        <option value="CONVERTIDO">Convertido</option>
+                        <option value="NO_INTERESADO">No interesado</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Notas de seguimiento</span>
+                      <textarea
+                        rows="3"
+                        value={prospectStatusForm.notes}
+                        onChange={(e) =>
+                          setProspectStatusForm((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
+                        placeholder="Ej. Se llamó, interesado en traer el vehículo el próximo mes..."
+                      />
+                    </label>
+
+                    <button
+                      className="primary-button"
+                      onClick={saveProspectStatus}
+                      disabled={prospectSaving}
+                    >
+                      {prospectSaving ? "Guardando..." : "Guardar seguimiento"}
+                    </button>
+
+                    {prospectMessage && (
+                      <div className="customer-message success">{prospectMessage}</div>
+                    )}
+                  </div>
+
+                  <div className="prospect-query-history">
+                    <div className="prospect-history-title">
+                      <span className="section-label">CONSULTAS REALIZADAS</span>
+                      <strong>
+                        {prospectQueriesLoading
+                          ? "Cargando..."
+                          : `${prospectQueries.length} consulta${prospectQueries.length === 1 ? "" : "s"}`}
+                      </strong>
+                    </div>
+
+                    {!prospectQueriesLoading && prospectQueries.length === 0 && (
+                      <div className="prospect-empty-history">
+                        Este prospecto es anterior al registro detallado de consultas.
+                        Las próximas consultas sí aparecerán aquí.
+                      </div>
+                    )}
+
+                    {prospectQueries.map((q) => (
+                      <article className="prospect-query-item" key={q.id}>
+                        <div className="prospect-query-top">
+                          <div>
+                            <strong>
+                              {[q.model_year, q.make, q.model, q.vehicle_trim]
+                                .filter(Boolean)
+                                .join(" ") || "Vehículo consultado"}
+                            </strong>
+                            <small>{q.vin}</small>
+                          </div>
+                          <span className={`query-result ${String(q.calculation_status || "").toLowerCase()}`}>
+                            {q.calculation_status || "—"}
+                          </span>
+                        </div>
+
+                        <dl>
+                          <div>
+                            <dt>Línea SAT</dt>
+                            <dd>{q.sat_line || "Pendiente de revisión"}</dd>
+                          </div>
+                          <div>
+                            <dt>Valor SAT</dt>
+                            <dd>{q.sat_value_gtq ? moneyGTQ(q.sat_value_gtq) : "—"}</dd>
+                          </div>
+                          <div>
+                            <dt>Tributos</dt>
+                            <dd>{q.total_taxes_gtq ? moneyGTQ(q.total_taxes_gtq) : "—"}</dd>
+                          </div>
+                          <div>
+                            <dt>Flete</dt>
+                            <dd>{q.freight_usd ? moneyUSD(q.freight_usd) : "—"}</dd>
+                          </div>
+                        </dl>
+
+                        <small className="prospect-query-date">
+                          {q.created_at
+                            ? new Date(q.created_at).toLocaleString("es-GT")
+                            : ""}
+                        </small>
+                      </article>
+                    ))}
+                  </div>
+                </aside>
+              )}
+            </div>
+          </section>
+        ) : activeView === "settings" ? (
           <section className="settings-module">
             <header className="topbar settings-topbar">
               <div>
@@ -2357,7 +2872,7 @@ function App() {
                         <td><strong>{q.quote_code}</strong></td>
                         <td>{q.created_at ? new Date(q.created_at).toLocaleDateString("es-GT") : "—"}</td>
                         <td className="quotation-vin">{q.vin}</td>
-                        <td>{[q.model_year, q.make, q.model, q.trim].filter(Boolean).join(" ")}</td>
+                        <td>{[q.model_year, q.make, q.model, q.vehicle_trim].filter(Boolean).join(" ")}</td>
                         <td>
                           <span className={`sat-match-pill ${Number(q.sat_match_score) >= 90 ? "high" : "review"}`}>
                             {q.sat_match_score !== null && q.sat_match_score !== undefined ? `${Number(q.sat_match_score).toFixed(0)}%` : "—"}

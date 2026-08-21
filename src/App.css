@@ -5369,3 +5369,138 @@ nav {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+   V23.2 · COTIZACIÓN CON / SIN FLETE
+   ========================================================= */
+
+.quote-mode-card {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border: 1px solid #d8e3ed;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.quote-mode-card > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.quote-mode-card > div:first-child small {
+  color: #a87618;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .1em;
+}
+
+.quote-mode-card > div:first-child strong {
+  color: #08284e;
+  font-size: 15px;
+}
+
+.quote-mode-card > div:first-child span {
+  color: #7d8da1;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.quote-freight-toggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.quote-freight-toggle > div {
+  display: grid;
+  gap: 1px;
+  text-align: right;
+}
+
+.quote-freight-toggle b {
+  color: #173b63;
+  font-size: 11px;
+}
+
+.quote-freight-toggle small {
+  color: #9a7a44;
+  font-size: 8px;
+}
+
+.quote-freight-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.quote-toggle-track {
+  width: 44px;
+  height: 25px;
+  padding: 3px;
+  border-radius: 999px;
+  background: #cdd8e3;
+  display: flex;
+  align-items: center;
+  transition: .2s ease;
+}
+
+.quote-toggle-thumb {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(10, 35, 65, .22);
+  transition: .2s ease;
+}
+
+.quote-freight-toggle input:checked + .quote-toggle-track {
+  background: #d9aa3e;
+}
+
+.quote-freight-toggle input:checked + .quote-toggle-track .quote-toggle-thumb {
+  transform: translateX(19px);
+}
+
+.quote-freight-toggle.unavailable {
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+.quote-customs-only-card {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+}
+
+.quote-customs-only-card > strong {
+  color: #0b315b;
+  font-size: 17px;
+}
+
+.quote-customs-only-card p {
+  margin: 0;
+  color: #75889d;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .quote-mode-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .quote-freight-toggle {
+    justify-content: space-between;
+  }
+
+  .quote-freight-toggle > div {
+    text-align: left;
+  }
+}

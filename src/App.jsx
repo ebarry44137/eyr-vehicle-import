@@ -306,6 +306,7 @@ function App() {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [quoteGenerating, setQuoteGenerating] = useState(false);
   const [quoteForm, setQuoteForm] = useState({
+    include_freight: true,
     document_collection_gtq: "",
     port_expenses_gtq: "",
     professional_fees_gtq: "",
@@ -1277,7 +1278,12 @@ function App() {
   }
 
   function openQuoteModal() {
+    const freightReady =
+      !result?.freight_requires_review &&
+      Number(result?.freight?.price_usd || 0) > 0;
+
     setQuoteForm({
+      include_freight: freightReady,
       document_collection_gtq: "",
       port_expenses_gtq: "",
       professional_fees_gtq: "",
@@ -1857,12 +1863,15 @@ function App() {
         data?.calculation_status === "READY" ||
         data?.summary?.calculation_status === "READY";
 
-      if (!ready || data?.freight_requires_review) {
-        throw new Error("Este vehículo todavía requiere revisión antes de generar una cotización comercial.");
+      if (!ready) {
+        throw new Error("Este vehículo todavía requiere revisión SAT antes de generar una cotización comercial.");
       }
 
       setVin(query.vin);
       setQuoteForm({
+        include_freight:
+          !data?.freight_requires_review &&
+          Number(data?.freight?.price_usd || 0) > 0,
         document_collection_gtq: "",
         port_expenses_gtq: "",
         professional_fees_gtq: "",
@@ -2011,7 +2020,13 @@ function App() {
     quoteDocumentCollection +
     quotePortExpenses +
     quoteProfessionalFees;
-  const quoteFreightUsd = Number(freight?.price_usd || 0);
+  const quoteFreightAvailable =
+    !result?.freight_requires_review &&
+    Number(freight?.price_usd || 0) > 0;
+  const quoteFreightUsd =
+    quoteForm.include_freight
+      ? Number(freight?.price_usd || 0)
+      : 0;
   const quoteCraneUsd = Number(quoteForm.crane_usd || 0);
   const quoteTransportUsd = quoteFreightUsd + quoteCraneUsd;
   const quoteExchangeRate = Number(
@@ -2024,9 +2039,8 @@ function App() {
     ? quoteGuatemalaUsd + quoteTransportUsd
     : null;
   const canGenerateQuote =
-    (result?.calculation_status === "READY" || summary?.calculation_status === "READY") &&
-    !result?.freight_requires_review &&
-    Number(freight?.price_usd || 0) > 0;
+    result?.calculation_status === "READY" ||
+    summary?.calculation_status === "READY";
 
   /*
    * V13: revisión SAT compatible + resolución excepcional.
@@ -5632,6 +5646,45 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
               </div>
 
+              <div className="quote-mode-card">
+                <div>
+                  <small>TIPO DE COTIZACIÓN</small>
+                  <strong>
+                    {quoteForm.include_freight
+                      ? "Importación completa"
+                      : "Solo gestión aduanal"}
+                  </strong>
+                  <span>
+                    {quoteForm.include_freight
+                      ? "Incluye transporte marítimo dentro del total."
+                      : "El vehículo fue embarcado por otra empresa; E&R cotiza únicamente la gestión en Guatemala."}
+                  </span>
+                </div>
+
+                <label className={`quote-freight-toggle ${!quoteFreightAvailable ? "unavailable" : ""}`}>
+                  <div>
+                    <b>Incluir flete marítimo</b>
+                    {!quoteFreightAvailable && (
+                      <small>Flete no disponible para este VIN</small>
+                    )}
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(quoteForm.include_freight)}
+                    disabled={!quoteFreightAvailable}
+                    onChange={(e) =>
+                      setQuoteForm((prev) => ({
+                        ...prev,
+                        include_freight: e.target.checked,
+                      }))
+                    }
+                  />
+                  <span className="quote-toggle-track">
+                    <span className="quote-toggle-thumb"></span>
+                  </span>
+                </label>
+              </div>
+
               <div className="quote-cost-form">
                 <label>
                   <span>Recolección de documentos (Q)</span>
@@ -5671,7 +5724,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 <div><span>Tributos calculados</span><strong>{moneyGTQ(quoteBaseTaxes)}</strong></div>
                 <div><span>Costos adicionales</span><strong>{moneyGTQ(quoteDocumentCollection + quotePortExpenses + quoteProfessionalFees)}</strong></div>
                 <div className="quote-total-gtq"><span>Total costos Guatemala</span><strong>{moneyGTQ(quoteGuatemalaTotal)}</strong></div>
-                <div><span>Flete marítimo</span><strong>{moneyUSD(quoteFreightUsd)}</strong></div>
+                <div>
+                  <span>Flete marítimo</span>
+                  <strong>
+                    {quoteForm.include_freight
+                      ? moneyUSD(quoteFreightUsd)
+                      : "NO INCLUIDO"}
+                  </strong>
+                </div>
                 <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
                 {quoteGrandTotalUsd !== null && (
                   <div className="quote-total-usd"><span>Total general USD</span><strong>{moneyUSD(quoteGrandTotalUsd)}</strong></div>
@@ -5686,8 +5746,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <div><strong>E&amp;R VEHICLE IMPORT</strong><span>GLOBAL LOGISTIC</span></div>
                     </div>
                     <div className="quote-sheet-title">
-                      <h2>COTIZACIÓN DE IMPORTACIÓN</h2>
-                      <span>VEHÍCULOS · GUATEMALA</span>
+                      <h2>
+                        {quoteForm.include_freight
+                          ? "COTIZACIÓN DE IMPORTACIÓN"
+                          : "COTIZACIÓN DE GESTIÓN ADUANAL"}
+                      </h2>
+                      <span>
+                        {quoteForm.include_freight
+                          ? "VEHÍCULOS · GUATEMALA"
+                          : "SERVICIOS ADUANALES · GUATEMALA"}
+                      </span>
                     </div>
                     <div className="quote-sheet-meta">
                       <span>Fecha</span><strong>{new Date().toLocaleDateString("es-GT")}</strong>
@@ -5728,14 +5796,28 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <div className="quote-sheet-subtotal"><span>TOTAL GUATEMALA</span><strong>{moneyGTQ(quoteGuatemalaTotal)}</strong></div>
                     </div>
 
-                    <div className="quote-sheet-card quote-freight-card">
-                      <small>TRANSPORTE MARÍTIMO</small>
-                      <div><span>Categoría</span><strong>{freight?.category || "—"}</strong></div>
-                      <div><span>Largo</span><strong>{dimensions?.length_inches ? `${Number(dimensions.length_inches).toFixed(2)}"` : "—"}</strong></div>
-                      <div><span>Configuración</span><strong>{dimensions?.dimension_model || vehicle?.model || "—"}</strong></div>
-                      <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
-                      <div className="quote-freight-price"><span>FLETE MARÍTIMO</span><strong>{moneyUSD(quoteFreightUsd)}</strong></div>
-                    </div>
+                    {quoteForm.include_freight ? (
+                      <div className="quote-sheet-card quote-freight-card">
+                        <small>TRANSPORTE MARÍTIMO</small>
+                        <div><span>Categoría</span><strong>{freight?.category || "—"}</strong></div>
+                        <div><span>Largo</span><strong>{dimensions?.length_inches ? `${Number(dimensions.length_inches).toFixed(2)}"` : "—"}</strong></div>
+                        <div><span>Configuración</span><strong>{dimensions?.dimension_model || vehicle?.model || "—"}</strong></div>
+                        <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
+                        <div className="quote-freight-price"><span>FLETE MARÍTIMO</span><strong>{moneyUSD(quoteFreightUsd)}</strong></div>
+                      </div>
+                    ) : (
+                      <div className="quote-sheet-card quote-customs-only-card">
+                        <small>MODALIDAD DE SERVICIO</small>
+                        <strong>SOLO GESTIÓN ADUANAL</strong>
+                        <p>
+                          Esta cotización no incluye transporte marítimo.
+                          El vehículo fue embarcado por cuenta del cliente o por un tercero.
+                        </p>
+                        {quoteCraneUsd > 0 && (
+                          <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
+                        )}
+                      </div>
+                    )}
                   </section>
 
                   <section className="quote-grand-summary">
@@ -5743,10 +5825,21 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     {quoteGuatemalaUsd !== null && (
                       <div><span>Equivalente costos Guatemala</span><strong>{moneyUSD(quoteGuatemalaUsd)}</strong></div>
                     )}
-                    <div><span>Flete marítimo</span><strong>{moneyUSD(quoteFreightUsd)}</strong></div>
+                    {quoteForm.include_freight && (
+                      <div>
+                        <span>Flete marítimo</span>
+                        <strong>{moneyUSD(quoteFreightUsd)}</strong>
+                      </div>
+                    )}
                     <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
                     <div className="quote-grand-total">
-                      <span>{quoteGrandTotalUsd !== null ? "TOTAL GENERAL" : "FLETE + COSTOS GUATEMALA"}</span>
+                      <span>
+                        {quoteGrandTotalUsd !== null
+                          ? "TOTAL GENERAL"
+                          : quoteForm.include_freight
+                            ? "FLETE + COSTOS GUATEMALA"
+                            : "COSTOS GUATEMALA + GRÚA"}
+                      </span>
                       <strong>{quoteGrandTotalUsd !== null ? moneyUSD(quoteGrandTotalUsd) : `${moneyUSD(quoteTransportUsd)} + ${moneyGTQ(quoteGuatemalaTotal)}`}</strong>
                     </div>
                   </section>

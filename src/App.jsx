@@ -129,6 +129,102 @@ function buildWhatsAppUrl(number, message) {
   return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 }
 
+
+const CUSTOMS_STAGES = [
+  ["docs_collected_at", "Documentos recogidos"],
+  ["emptied_at", "Vaciado"],
+  ["da_at", "DA"],
+  ["corroboration_at", "Corroboración"],
+  ["digitization_started_at", "Inicio digitación"],
+  ["review_started_at", "En revisión"],
+  ["declaration_signed_at", "Firma declaración"],
+  ["iva_form_sent_at", "Formulario IVA enviado"],
+  ["iva_paid_at", "IVA pagado"],
+  ["selective_at", "Selectivo"],
+  ["port_exit_at", "Salida del puerto"],
+  ["docs_set_built_at", "Juego de documentos armado"],
+  ["envelope_ready_at", "Sobre preparado"],
+  ["delivered_at", "Vehículo / documentos entregados"],
+];
+
+function emptyCustomsForm() {
+  return {
+    notice_date: new Date().toISOString().slice(0, 10),
+    client_name: "",
+    phone: "",
+    email: "",
+    bl: "",
+    container_number: "",
+    vin: "",
+    make: "",
+    model: "",
+    vehicle_trim: "",
+    model_year: "",
+    shipping_line: "",
+    responsible: "",
+    priority: "Normal",
+
+    sat_vehicle_id: "",
+    sat_line: "",
+    sat_vehicle_type: "",
+    sat_match_score: "",
+    taxable_value_gtq: "",
+    iva_rate: "",
+    iva_gtq: "",
+    iprima_rate: "",
+    iprima_gtq: "",
+    plates_gtq: "",
+    total_taxes_gtq: "",
+    tax_status: "PENDIENTE",
+
+    document_collection_gtq: "",
+    port_expenses_gtq: "",
+    professional_fees_gtq: "",
+    other_charges_gtq: "",
+    other_charges_note: "",
+    crane_usd: "",
+  };
+}
+
+
+function getVehicleDisplayVersion(vehicle, sat) {
+  const nativeVersion = [vehicle?.series, vehicle?.trim]
+    .filter(Boolean)
+    .join(" • ")
+    .trim();
+
+  if (nativeVersion) {
+    return nativeVersion;
+  }
+
+  const satLine =
+    sat?.selected_match?.line ||
+    sat?.best_match?.line ||
+    "";
+
+  const model = String(vehicle?.model || "").trim();
+
+  if (!satLine || !model) {
+    return "Versión no especificada";
+  }
+
+  const normalizedLine = String(satLine).trim();
+  const escapedModel = model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Quita el modelo base del inicio de la línea SAT.
+  // Ej.: "OUTLANDER XLS" -> "XLS"
+  //      "HIGHLANDER LE AWD" -> "LE AWD"
+  const variant = normalizedLine
+    .replace(new RegExp(`^${escapedModel}\\s*`, "i"), "")
+    .trim();
+
+  if (!variant || variant.toUpperCase() === model.toUpperCase()) {
+    return "Versión no especificada";
+  }
+
+  return `Versión ${variant}`;
+}
+
 function App() {
   // V22.1 · Landing pública + cotizador + sistema interno
   // Todas las Edge Functions reciben explícitamente el JWT de la sesión activa.
@@ -240,6 +336,23 @@ function App() {
   });
   const [prospectSaving, setProspectSaving] = useState(false);
   const [prospectMessage, setProspectMessage] = useState("");
+  const [prospectQuoteLoadingId, setProspectQuoteLoadingId] = useState(null);
+  const [quoteRecipient, setQuoteRecipient] = useState(null);
+
+  // V23 · Control Aduanal
+  const [customsSearch, setCustomsSearch] = useState("");
+  const [customsCases, setCustomsCases] = useState([]);
+  const [customsLoading, setCustomsLoading] = useState(false);
+  const [customsError, setCustomsError] = useState("");
+  const [showCustomsForm, setShowCustomsForm] = useState(false);
+  const [customsForm, setCustomsForm] = useState(emptyCustomsForm());
+  const [customsDecodeLoading, setCustomsDecodeLoading] = useState(false);
+  const [customsDecodeResult, setCustomsDecodeResult] = useState(null);
+  const [customsSaving, setCustomsSaving] = useState(false);
+  const [selectedCustomsCase, setSelectedCustomsCase] = useState(null);
+  const [customsDetail, setCustomsDetail] = useState(null);
+  const [customsDetailSaving, setCustomsDetailSaving] = useState(false);
+  const [customsMessage, setCustomsMessage] = useState("");
 
   const [selectedSatId, setSelectedSatId] = useState(null);
   const [selectedDimension, setSelectedDimension] = useState(null);
@@ -683,6 +796,18 @@ function App() {
       setPublicError(err?.message || "No fue posible consultar el vehículo.");
     } finally {
       setPublicLoading(false);
+    }
+  }
+
+  async function markImportRequest(queryId = null) {
+    try {
+      const { error: requestError } = await supabase.rpc(
+        "customer_mark_import_request",
+        { p_query_id: queryId }
+      );
+      if (requestError) console.error("IMPORT REQUEST LOG ERROR:", requestError);
+    } catch (err) {
+      console.error("IMPORT REQUEST LOG EXCEPTION:", err);
     }
   }
 
@@ -1139,7 +1264,7 @@ function App() {
     }
   }
 
-  function makeQuoteCode() {
+  function makeQuoteCode(vinOverride = null) {
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, "0");
@@ -1147,7 +1272,8 @@ function App() {
     const hh = String(now.getHours()).padStart(2, "0");
     const mm = String(now.getMinutes()).padStart(2, "0");
     const ss = String(now.getSeconds()).padStart(2, "0");
-    return `ER-${y}${m}${d}-${hh}${mm}${ss}-${(vehicle?.vin || "VIN").slice(-6)}`;
+    const codeVin = vinOverride || vehicle?.vin || "VIN";
+    return `ER-${y}${m}${d}-${hh}${mm}${ss}-${codeVin.slice(-6)}`;
   }
 
   function openQuoteModal() {
@@ -1240,6 +1366,372 @@ function App() {
     if (functionError) throw functionError;
     if (!data?.success) throw new Error(data?.error || "No fue posible guardar la cotización.");
     return data.quotation;
+  }
+
+  async function loadCustomsCases(search = customsSearch) {
+    setCustomsLoading(true);
+    setCustomsError("");
+
+    try {
+      let query = supabase
+        .from("customs_cases")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(300);
+
+      const cleanSearch = String(search || "").trim();
+
+      if (cleanSearch) {
+        const safeSearch = cleanSearch.replace(/[%(),]/g, " ");
+        query = query.or(
+          `case_code.ilike.%${safeSearch}%,client_name.ilike.%${safeSearch}%,vin.ilike.%${safeSearch}%,bl.ilike.%${safeSearch}%,container_number.ilike.%${safeSearch}%`
+        );
+      }
+
+      const { data, error: casesError } = await query;
+
+      if (casesError) throw casesError;
+
+      setCustomsCases(data || []);
+
+      if (selectedCustomsCase) {
+        const refreshed = (data || []).find(
+          (item) => item.id === selectedCustomsCase.id
+        );
+
+        if (refreshed) {
+          setSelectedCustomsCase(refreshed);
+          setCustomsDetail(refreshed);
+        }
+      }
+    } catch (err) {
+      console.error("CUSTOMS CASES LOAD ERROR:", err);
+      setCustomsError(
+        err?.message || "No fue posible cargar el control aduanal."
+      );
+    } finally {
+      setCustomsLoading(false);
+    }
+  }
+
+  function openCustomsView() {
+    setActiveView("customs");
+    setShowCustomsForm(false);
+    setSelectedCustomsCase(null);
+    setCustomsDetail(null);
+    setCustomsMessage("");
+    loadCustomsCases("");
+  }
+
+  function openManualCustomsCase() {
+    setCustomsForm(emptyCustomsForm());
+    setCustomsDecodeResult(null);
+    setCustomsError("");
+    setCustomsMessage("");
+    setShowCustomsForm(true);
+  }
+
+  async function calculateManualCustomsTaxes() {
+    const cleanVin = String(customsForm.vin || "")
+      .trim()
+      .toUpperCase();
+
+    if (cleanVin.length !== 17) {
+      setCustomsError("El VIN debe tener 17 caracteres para calcular SAT, IVA e IPRIMA.");
+      return;
+    }
+
+    setCustomsDecodeLoading(true);
+    setCustomsError("");
+    setCustomsDecodeResult(null);
+
+    try {
+      const { data, error: decodeError } =
+        await invokeFunction("decode-vin", {
+          body: { vin: cleanVin },
+        });
+
+      if (decodeError) throw decodeError;
+      if (!data?.success) {
+        throw new Error(
+          data?.error || "No fue posible calcular el vehículo."
+        );
+      }
+
+      setCustomsDecodeResult(data);
+
+      const v = data?.vehicle || {};
+      const s = data?.sat || {};
+      const t = data?.taxes || {};
+      const summaryData = data?.summary || {};
+      const selected =
+        s?.selected_match || s?.best_match || {};
+
+      setCustomsForm((prev) => ({
+        ...prev,
+        vin: cleanVin,
+        make: v.make || prev.make,
+        model: v.model || prev.model,
+        vehicle_trim: v.trim || v.series || prev.vehicle_trim,
+        model_year: v.model_year || prev.model_year,
+
+        sat_vehicle_id:
+          selected.sat_vehicle_id ?? prev.sat_vehicle_id,
+        sat_line:
+          summaryData.sat_line ||
+          selected.line ||
+          prev.sat_line,
+        sat_vehicle_type:
+          t.vehicle_type ||
+          selected.vehicle_type ||
+          prev.sat_vehicle_type,
+        sat_match_score:
+          summaryData.sat_match_score ??
+          selected.match_score ??
+          prev.sat_match_score,
+        taxable_value_gtq:
+          t.taxable_value_gtq ??
+          summaryData.sat_value_gtq ??
+          selected.taxable_value ??
+          prev.taxable_value_gtq,
+        iva_rate:
+          t.iva_rate ?? prev.iva_rate,
+        iva_gtq:
+          t.iva_gtq ?? prev.iva_gtq,
+        iprima_rate:
+          t.iprima_rate ?? prev.iprima_rate,
+        iprima_gtq:
+          t.iprima_gtq ?? prev.iprima_gtq,
+        plates_gtq:
+          t.plates_gtq ?? prev.plates_gtq,
+        total_taxes_gtq:
+          t.total_taxes_gtq ?? prev.total_taxes_gtq,
+        tax_status:
+          data?.calculation_status === "READY"
+            ? "CALCULADO"
+            : "REVISION",
+      }));
+
+      if (data?.calculation_status !== "READY") {
+        setCustomsError(
+          "El VIN fue identificado, pero SAT requiere revisión. Podés completar/corregir los valores manualmente antes de guardar el expediente."
+        );
+      }
+    } catch (err) {
+      console.error("CUSTOMS DECODE ERROR:", err);
+      setCustomsError(
+        err?.message || "No fue posible calcular IVA e IPRIMA."
+      );
+    } finally {
+      setCustomsDecodeLoading(false);
+    }
+  }
+
+  async function saveManualCustomsCase(event) {
+    event?.preventDefault?.();
+
+    if (!String(customsForm.client_name || "").trim()) {
+      setCustomsError("Ingresá el nombre del cliente.");
+      return;
+    }
+
+    if (!String(customsForm.vin || "").trim()) {
+      setCustomsError("Ingresá el VIN del vehículo.");
+      return;
+    }
+
+    setCustomsSaving(true);
+    setCustomsError("");
+    setCustomsMessage("");
+
+    try {
+      const payload = {
+        source_type: "CUSTOMS_ONLY",
+        notice_date:
+          customsForm.notice_date || new Date().toISOString().slice(0, 10),
+        client_name: String(customsForm.client_name || "").trim(),
+        phone: String(customsForm.phone || "").trim() || null,
+        email: String(customsForm.email || "").trim().toLowerCase() || null,
+        bl: String(customsForm.bl || "").trim().toUpperCase() || null,
+        container_number:
+          String(customsForm.container_number || "").trim().toUpperCase() || null,
+        vin: String(customsForm.vin || "").trim().toUpperCase(),
+        make: String(customsForm.make || "").trim() || null,
+        model: String(customsForm.model || "").trim() || null,
+        vehicle_trim:
+          String(customsForm.vehicle_trim || "").trim() || null,
+        model_year:
+          customsForm.model_year !== ""
+            ? Number(customsForm.model_year)
+            : null,
+        shipping_line:
+          String(customsForm.shipping_line || "").trim() || null,
+        responsible:
+          String(customsForm.responsible || "").trim() || null,
+        priority: customsForm.priority || "Normal",
+
+        sat_vehicle_id:
+          customsForm.sat_vehicle_id !== ""
+            ? Number(customsForm.sat_vehicle_id)
+            : null,
+        sat_line:
+          String(customsForm.sat_line || "").trim() || null,
+        sat_vehicle_type:
+          String(customsForm.sat_vehicle_type || "").trim() || null,
+        sat_match_score:
+          customsForm.sat_match_score !== ""
+            ? Number(customsForm.sat_match_score)
+            : null,
+        taxable_value_gtq:
+          customsForm.taxable_value_gtq !== ""
+            ? Number(customsForm.taxable_value_gtq)
+            : null,
+        iva_rate:
+          customsForm.iva_rate !== ""
+            ? Number(customsForm.iva_rate)
+            : null,
+        iva_gtq:
+          customsForm.iva_gtq !== ""
+            ? Number(customsForm.iva_gtq)
+            : null,
+        iprima_rate:
+          customsForm.iprima_rate !== ""
+            ? Number(customsForm.iprima_rate)
+            : null,
+        iprima_gtq:
+          customsForm.iprima_gtq !== ""
+            ? Number(customsForm.iprima_gtq)
+            : null,
+        plates_gtq:
+          customsForm.plates_gtq !== ""
+            ? Number(customsForm.plates_gtq)
+            : null,
+        total_taxes_gtq:
+          customsForm.total_taxes_gtq !== ""
+            ? Number(customsForm.total_taxes_gtq)
+            : null,
+        tax_status: customsForm.tax_status || "PENDIENTE",
+
+        document_collection_gtq:
+          Number(customsForm.document_collection_gtq || 0),
+        port_expenses_gtq:
+          Number(customsForm.port_expenses_gtq || 0),
+        professional_fees_gtq:
+          Number(customsForm.professional_fees_gtq || 0),
+        other_charges_gtq:
+          Number(customsForm.other_charges_gtq || 0),
+        other_charges_note:
+          String(customsForm.other_charges_note || "").trim() || null,
+        crane_usd:
+          Number(customsForm.crane_usd || 0),
+
+        created_by: user?.id || null,
+      };
+
+      const { data, error: insertError } =
+        await supabase
+          .from("customs_cases")
+          .insert(payload)
+          .select()
+          .single();
+
+      if (insertError) throw insertError;
+
+      setShowCustomsForm(false);
+      setCustomsForm(emptyCustomsForm());
+      setCustomsDecodeResult(null);
+      setCustomsMessage(
+        `Expediente ${data.case_code} creado correctamente.`
+      );
+
+      await loadCustomsCases("");
+    } catch (err) {
+      console.error("CUSTOMS CASE SAVE ERROR:", err);
+      setCustomsError(
+        err?.message || "No fue posible crear el expediente aduanal."
+      );
+    } finally {
+      setCustomsSaving(false);
+    }
+  }
+
+  function openCustomsDetail(item) {
+    setSelectedCustomsCase(item);
+    setCustomsDetail({ ...item });
+    setCustomsMessage("");
+    setCustomsError("");
+  }
+
+  async function saveCustomsDetail() {
+    if (!customsDetail?.id) return;
+
+    setCustomsDetailSaving(true);
+    setCustomsError("");
+    setCustomsMessage("");
+
+    try {
+      const allowedKeys = [
+        "client_name", "phone", "email", "bl", "container_number",
+        "shipping_line", "responsible", "priority",
+        "docs_collected_at", "emptied_at", "da_at", "corroboration_at",
+        "digitization_started_at", "review_started_at",
+        "declaration_signed_at", "iva_form_sent_at", "iva_paid_at",
+        "selective_type", "selective_at", "port_exit_at",
+        "docs_set_built_at", "envelope_ready_at", "delivered_at",
+        "incident_status", "problem_reason", "action_taken",
+        "pending_from", "delivery_status",
+        "document_collection_gtq", "port_expenses_gtq",
+        "professional_fees_gtq", "other_charges_gtq",
+        "other_charges_note", "crane_usd",
+      ];
+
+      const updatePayload = {};
+
+      for (const key of allowedKeys) {
+        let value = customsDetail[key];
+
+        if (
+          [
+            "document_collection_gtq",
+            "port_expenses_gtq",
+            "professional_fees_gtq",
+            "other_charges_gtq",
+            "crane_usd",
+          ].includes(key)
+        ) {
+          value = Number(value || 0);
+        } else if (value === "") {
+          value = null;
+        }
+
+        updatePayload[key] = value;
+      }
+
+      updatePayload.updated_by = user?.id || null;
+      updatePayload.updated_at = new Date().toISOString();
+
+      const { data, error: updateError } =
+        await supabase
+          .from("customs_cases")
+          .update(updatePayload)
+          .eq("id", customsDetail.id)
+          .select()
+          .single();
+
+      if (updateError) throw updateError;
+
+      setSelectedCustomsCase(data);
+      setCustomsDetail(data);
+      setCustomsMessage("Expediente actualizado correctamente.");
+      await loadCustomsCases(customsSearch);
+    } catch (err) {
+      console.error("CUSTOMS UPDATE ERROR:", err);
+      setCustomsError(
+        err?.message || "No fue posible actualizar el expediente."
+      );
+    } finally {
+      setCustomsDetailSaving(false);
+    }
   }
 
   async function loadProspects(search = prospectSearch) {
@@ -1350,6 +1842,90 @@ function App() {
       );
     } finally {
       setProspectSaving(false);
+    }
+  }
+
+  async function generateProspectQuotation(query) {
+    if (!query?.vin) return;
+    setProspectQuoteLoadingId(query.id);
+    setProspectsError("");
+    setError("");
+
+    try {
+      const data = await ejecutarDecode(String(query.vin).trim().toUpperCase(), true);
+      const ready =
+        data?.calculation_status === "READY" ||
+        data?.summary?.calculation_status === "READY";
+
+      if (!ready || data?.freight_requires_review) {
+        throw new Error("Este vehículo todavía requiere revisión antes de generar una cotización comercial.");
+      }
+
+      setVin(query.vin);
+      setQuoteForm({
+        document_collection_gtq: "",
+        port_expenses_gtq: "",
+        professional_fees_gtq: "",
+        crane_usd: "",
+      });
+      setQuoteRecipient({
+        name: selectedProspect?.full_name || query.full_name || "Cliente",
+        phone: selectedProspect?.phone || query.phone || "",
+        contact_key: selectedProspect?.contact_key || query.contact_key || "",
+        query_id: query.id,
+      });
+      setQuoteCode(makeQuoteCode(query.vin));
+      setActiveView("new");
+      setShowQuoteModal(true);
+    } catch (err) {
+      console.error("PROSPECT QUOTE ERROR:", err);
+      setProspectsError(err?.message || "No fue posible preparar la cotización.");
+    } finally {
+      setProspectQuoteLoadingId(null);
+    }
+  }
+
+  async function downloadQuoteAndOpenWhatsApp() {
+    if (!quoteRef.current) return;
+
+    try {
+      setQuoteGenerating(true);
+      const savedQuotation = await saveCurrentQuotation();
+
+      const canvas = await html2canvas(quoteRef.current, {
+        scale: 2,
+        backgroundColor: "#f4f7fb",
+        useCORS: true,
+        logging: false,
+      });
+
+      const link = document.createElement("a");
+      link.download = `Cotizacion-${vehicle?.vin || "EYR"}.png`;
+      link.href = canvas.toDataURL("image/png", 1);
+      link.click();
+
+      if (quoteRecipient?.query_id) {
+        await supabase.rpc("admin_mark_quote_generated", {
+          p_query_id: quoteRecipient.query_id,
+          p_quote_code: savedQuotation?.quote_code || quoteNumber(),
+        });
+      }
+
+      const recipientPhone = normalizeWhatsAppNumber(quoteRecipient?.phone);
+      if (recipientPhone) {
+        const clientName = String(quoteRecipient?.name || "cliente").trim();
+        const message =
+          `Hola ${clientName}, te compartimos la cotización de importación para tu ` +
+          `${[vehicle?.model_year, vehicle?.make, vehicle?.model, vehicle?.trim].filter(Boolean).join(" ")} ` +
+          `(VIN ${vehicle?.vin || "—"}). La imagen ya fue generada; adjuntala en este chat para enviarla al cliente.`;
+
+        window.open(buildWhatsAppUrl(recipientPhone, message), "_blank", "noopener,noreferrer");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "No fue posible generar la cotización para WhatsApp.");
+    } finally {
+      setQuoteGenerating(false);
     }
   }
 
@@ -2146,16 +2722,18 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         </div>
 
                         {whatsappConfigured ? (
-                          <a
+                          <button
+                            type="button"
                             className="whatsapp-action import-whatsapp-action"
-                            href={importWhatsAppUrl}
-                            target="_blank"
-                            rel="noreferrer"
+                            onClick={async () => {
+                              await markImportRequest(publicResult?.customer_query_id || null);
+                              window.open(importWhatsAppUrl, "_blank", "noopener,noreferrer");
+                            }}
                           >
                             <span className="whatsapp-icon">💬</span>
                             Iniciar mi importación
                             <span>→</span>
-                          </a>
+                          </button>
                         ) : (
                           <div className="whatsapp-not-configured">
                             WhatsApp temporalmente no disponible
@@ -2380,6 +2958,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Prospectos
           </button>
 
+          <button
+            className={`nav-item ${activeView === "customs" ? "active" : ""}`}
+            onClick={openCustomsView}
+          >
+            <span>▣</span>
+            Control Aduanal
+          </button>
+
           <button className="nav-item">
             <span>⚠</span>
             Revisiones
@@ -2420,7 +3006,1010 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "prospects" ? (
+        {activeView === "customs" ? (
+          <section className="customs-module">
+            <header className="topbar customs-topbar">
+              <div>
+                <span className="eyebrow">OPERACIÓN · GUATEMALA</span>
+                <h1>Control Aduanal</h1>
+                <p>
+                  Expedientes, tributos, seguimiento documental y entrega final.
+                </p>
+              </div>
+
+              <button
+                className="primary-button customs-new-button"
+                onClick={openManualCustomsCase}
+              >
+                + Nueva gestión aduanal
+              </button>
+            </header>
+
+            <section className="customs-kpis">
+              <article>
+                <span>Expedientes activos</span>
+                <strong>
+                  {customsCases.filter((item) => !item.delivered_at).length}
+                </strong>
+              </article>
+              <article>
+                <span>Pendiente documentos</span>
+                <strong>
+                  {customsCases.filter((item) => !item.docs_collected_at).length}
+                </strong>
+              </article>
+              <article>
+                <span>En digitación / revisión</span>
+                <strong>
+                  {customsCases.filter((item) =>
+                    ["Digitación iniciada", "En revisión"].includes(item.current_status)
+                  ).length}
+                </strong>
+              </article>
+              <article>
+                <span>Con selectivo</span>
+                <strong>
+                  {customsCases.filter((item) => Boolean(item.selective_at)).length}
+                </strong>
+              </article>
+              <article className="urgent">
+                <span>Urgentes</span>
+                <strong>
+                  {customsCases.filter((item) => item.traffic_light === "URGENTE").length}
+                </strong>
+              </article>
+            </section>
+
+            <section className="customs-search-card">
+              <div>
+                <span className="section-label">EXPEDIENTES ADUANALES</span>
+                <h2>Seguimiento operativo</h2>
+              </div>
+
+              <form
+                className="customs-search-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  loadCustomsCases(customsSearch);
+                }}
+              >
+                <input
+                  value={customsSearch}
+                  onChange={(e) => setCustomsSearch(e.target.value)}
+                  placeholder="Buscar expediente, cliente, VIN, BL o contenedor..."
+                />
+                <button type="submit" disabled={customsLoading}>
+                  {customsLoading ? "Buscando..." : "Buscar"}
+                </button>
+              </form>
+            </section>
+
+            {customsMessage && (
+              <div className="customer-message success">{customsMessage}</div>
+            )}
+
+            {customsError && (
+              <div className="customer-message error">{customsError}</div>
+            )}
+
+            <section className="customs-table-card">
+              <div className="customs-table-head">
+                <div>
+                  <span className="section-label">CONTROL GENERAL</span>
+                  <h2>
+                    {customsLoading
+                      ? "Cargando..."
+                      : `${customsCases.length} expediente${customsCases.length === 1 ? "" : "s"}`}
+                  </h2>
+                </div>
+
+                <button
+                  className="secondary-button"
+                  onClick={() => loadCustomsCases(customsSearch)}
+                  disabled={customsLoading}
+                >
+                  ↻ Actualizar
+                </button>
+              </div>
+
+              <div className="customs-table-wrap">
+                <table className="customs-table">
+                  <thead>
+                    <tr>
+                      <th>Expediente</th>
+                      <th>Cliente</th>
+                      <th>Vehículo</th>
+                      <th>BL / Contenedor</th>
+                      <th>Naviera</th>
+                      <th>Estado</th>
+                      <th>Progreso</th>
+                      <th>Semáforo</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!customsLoading && customsCases.length === 0 && (
+                      <tr>
+                        <td colSpan="9" className="empty-cell">
+                          No hay expedientes registrados.
+                        </td>
+                      </tr>
+                    )}
+
+                    {customsCases.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong>{item.case_code}</strong>
+                          <small>
+                            {item.source_type === "CUSTOMS_ONLY"
+                              ? "Gestión aduanal externa"
+                              : "Importación E&R"}
+                          </small>
+                        </td>
+                        <td>
+                          <strong>{item.client_name}</strong>
+                          <small>{item.phone || "Sin teléfono"}</small>
+                        </td>
+                        <td>
+                          <strong>
+                            {[item.model_year, item.make, item.model, item.vehicle_trim]
+                              .filter(Boolean)
+                              .join(" ") || "—"}
+                          </strong>
+                          <small>{item.vin}</small>
+                        </td>
+                        <td>
+                          <strong>{item.bl || "—"}</strong>
+                          <small>{item.container_number || "Sin contenedor"}</small>
+                        </td>
+                        <td>
+                          <strong>{item.shipping_line || "—"}</strong>
+                          <small>{item.responsible || "Sin responsable"}</small>
+                        </td>
+                        <td>
+                          <span className="customs-current-status">
+                            {item.current_status || "Pendiente"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="customs-progress">
+                            <div>
+                              <span
+                                style={{
+                                  width: `${Math.round(Number(item.progress || 0) * 100)}%`,
+                                }}
+                              ></span>
+                            </div>
+                            <strong>
+                              {Math.round(Number(item.progress || 0) * 100)}%
+                            </strong>
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`customs-light ${String(
+                              item.traffic_light || "EN TIEMPO"
+                            )
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
+                            {item.traffic_light || "EN TIEMPO"}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="prospect-open-button"
+                            onClick={() => openCustomsDetail(item)}
+                          >
+                            Ver →
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {showCustomsForm && (
+              <div
+                className="quote-modal-backdrop"
+                onMouseDown={(e) => {
+                  if (e.target === e.currentTarget && !customsSaving) {
+                    setShowCustomsForm(false);
+                  }
+                }}
+              >
+                <div className="customs-form-modal">
+                  <div className="quote-modal-head">
+                    <div>
+                      <small>NUEVA GESTIÓN ADUANAL</small>
+                      <h2>Registrar expediente externo</h2>
+                      <p>
+                        Para clientes que no embarcaron con E&amp;R y únicamente
+                        solicitan la gestión aduanal en Guatemala.
+                      </p>
+                    </div>
+                    <button
+                      className="quote-close"
+                      onClick={() => setShowCustomsForm(false)}
+                      disabled={customsSaving}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <form onSubmit={saveManualCustomsCase}>
+                    <section className="customs-form-section">
+                      <div className="customs-section-title">
+                        <span>01</span>
+                        <div>
+                          <strong>Cliente y expediente</strong>
+                          <small>
+                            El número E&amp;R-AAAA-XXXX se generará automáticamente.
+                          </small>
+                        </div>
+                      </div>
+
+                      <div className="customs-form-grid">
+                        <label>
+                          <span>Fecha de aviso</span>
+                          <input
+                            type="date"
+                            value={customsForm.notice_date}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                notice_date: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="span-2">
+                          <span>Cliente *</span>
+                          <input
+                            value={customsForm.client_name}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                client_name: e.target.value,
+                              }))
+                            }
+                            placeholder="Nombre o razón social"
+                          />
+                        </label>
+                        <label>
+                          <span>Teléfono</span>
+                          <input
+                            value={customsForm.phone}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                phone: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Correo</span>
+                          <input
+                            type="email"
+                            value={customsForm.email}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                email: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>BL</span>
+                          <input
+                            value={customsForm.bl}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                bl: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Contenedor</span>
+                          <input
+                            value={customsForm.container_number}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                container_number: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Naviera</span>
+                          <input
+                            value={customsForm.shipping_line}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                shipping_line: e.target.value,
+                              }))
+                            }
+                            placeholder="Port to Port, North Atlantic..."
+                          />
+                        </label>
+                        <label>
+                          <span>Responsable</span>
+                          <input
+                            value={customsForm.responsible}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                responsible: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Prioridad</span>
+                          <select
+                            value={customsForm.priority}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                priority: e.target.value,
+                              }))
+                            }
+                          >
+                            <option>Normal</option>
+                            <option>Alta</option>
+                            <option>Urgente</option>
+                          </select>
+                        </label>
+                      </div>
+                    </section>
+
+                    <section className="customs-form-section customs-tax-section">
+                      <div className="customs-section-title">
+                        <span>02</span>
+                        <div>
+                          <strong>Vehículo + cálculo SAT</strong>
+                          <small>
+                            El mismo motor VIN calcula valor SAT, IVA e IPRIMA.
+                          </small>
+                        </div>
+                      </div>
+
+                      <div className="customs-vin-row">
+                        <input
+                          value={customsForm.vin}
+                          maxLength="17"
+                          onChange={(e) =>
+                            setCustomsForm((p) => ({
+                              ...p,
+                              vin: e.target.value.toUpperCase(),
+                            }))
+                          }
+                          placeholder="VIN de 17 caracteres"
+                        />
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={calculateManualCustomsTaxes}
+                          disabled={customsDecodeLoading}
+                        >
+                          {customsDecodeLoading
+                            ? "Calculando..."
+                            : "Calcular IVA e IPRIMA"}
+                          <span>→</span>
+                        </button>
+                      </div>
+
+                      {customsDecodeResult && (
+                        <div className="customs-decode-summary">
+                          <div>
+                            <span>Vehículo identificado</span>
+                            <strong>
+                              {[
+                                customsForm.model_year,
+                                customsForm.make,
+                                customsForm.model,
+                                customsForm.vehicle_trim,
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                            </strong>
+                          </div>
+                          <div>
+                            <span>Estado del motor</span>
+                            <strong>{customsDecodeResult.calculation_status}</strong>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="customs-form-grid">
+                        <label>
+                          <span>Marca</span>
+                          <input
+                            value={customsForm.make}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                make: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Modelo</span>
+                          <input
+                            value={customsForm.model}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                model: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Año</span>
+                          <input
+                            type="number"
+                            value={customsForm.model_year}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                model_year: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Versión</span>
+                          <input
+                            value={customsForm.vehicle_trim}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                vehicle_trim: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="span-2">
+                          <span>Línea SAT</span>
+                          <input
+                            value={customsForm.sat_line}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                sat_line: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Tipo SAT</span>
+                          <input
+                            value={customsForm.sat_vehicle_type}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                sat_vehicle_type: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Valor imponible (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.taxable_value_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                taxable_value_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>IVA utilizado</span>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={customsForm.iva_rate}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                iva_rate: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>IVA (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.iva_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                iva_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>IPRIMA utilizada</span>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={customsForm.iprima_rate}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                iprima_rate: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>IPRIMA (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.iprima_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                iprima_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Placas (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.plates_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                plates_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Total tributos (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.total_taxes_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                total_taxes_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+                    </section>
+
+                    <section className="customs-form-section">
+                      <div className="customs-section-title">
+                        <span>03</span>
+                        <div>
+                          <strong>Cobro de la gestión</strong>
+                          <small>
+                            Costos comerciales de E&amp;R para este expediente.
+                          </small>
+                        </div>
+                      </div>
+
+                      <div className="customs-form-grid">
+                        <label>
+                          <span>Recolección documentos (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.document_collection_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                document_collection_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Gastos portuarios (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.port_expenses_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                port_expenses_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Honorarios (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.professional_fees_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                professional_fees_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Grúa (USD)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.crane_usd}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                crane_usd: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label>
+                          <span>Otros gastos (Q)</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={customsForm.other_charges_gtq}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                other_charges_gtq: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="span-2">
+                          <span>Concepto de otros gastos</span>
+                          <input
+                            value={customsForm.other_charges_note}
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                other_charges_note: e.target.value,
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <div className="customs-cost-summary">
+                        <div>
+                          <span>Tributos estimados</span>
+                          <strong>
+                            {moneyGTQ(Number(customsForm.total_taxes_gtq || 0))}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Cobro E&amp;R en Guatemala</span>
+                          <strong>
+                            {moneyGTQ(
+                              Number(customsForm.document_collection_gtq || 0) +
+                              Number(customsForm.port_expenses_gtq || 0) +
+                              Number(customsForm.professional_fees_gtq || 0) +
+                              Number(customsForm.other_charges_gtq || 0)
+                            )}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Grúa</span>
+                          <strong>
+                            {moneyUSD(Number(customsForm.crane_usd || 0))}
+                          </strong>
+                        </div>
+                      </div>
+                    </section>
+
+                    <div className="customs-form-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => setShowCustomsForm(false)}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="primary-button"
+                        disabled={customsSaving}
+                      >
+                        {customsSaving
+                          ? "Creando expediente..."
+                          : "Crear expediente automático"}
+                        <span>→</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {selectedCustomsCase && customsDetail && (
+              <div
+                className="quote-modal-backdrop"
+                onMouseDown={(e) => {
+                  if (
+                    e.target === e.currentTarget &&
+                    !customsDetailSaving
+                  ) {
+                    setSelectedCustomsCase(null);
+                    setCustomsDetail(null);
+                  }
+                }}
+              >
+                <div className="customs-detail-modal">
+                  <div className="quote-modal-head">
+                    <div>
+                      <small>EXPEDIENTE ADUANAL</small>
+                      <h2>{customsDetail.case_code}</h2>
+                      <p>
+                        {customsDetail.client_name} · {customsDetail.vin}
+                      </p>
+                    </div>
+                    <button
+                      className="quote-close"
+                      onClick={() => {
+                        setSelectedCustomsCase(null);
+                        setCustomsDetail(null);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="customs-detail-summary">
+                    <article>
+                      <span>Estado actual</span>
+                      <strong>{customsDetail.current_status}</strong>
+                    </article>
+                    <article>
+                      <span>Progreso</span>
+                      <strong>
+                        {Math.round(Number(customsDetail.progress || 0) * 100)}%
+                      </strong>
+                    </article>
+                    <article>
+                      <span>Días sin movimiento</span>
+                      <strong>{customsDetail.days_without_movement ?? 0}</strong>
+                    </article>
+                    <article>
+                      <span>Semáforo</span>
+                      <strong>{customsDetail.traffic_light}</strong>
+                    </article>
+                  </div>
+
+                  <section className="customs-detail-section">
+                    <div className="customs-section-title">
+                      <span>01</span>
+                      <div>
+                        <strong>Etapas del expediente</strong>
+                        <small>
+                          Registrá la fecha cuando cada paso se complete.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="customs-stage-grid">
+                      {CUSTOMS_STAGES.map(([key, label], index) => (
+                        <label key={key} className={customsDetail[key] ? "done" : ""}>
+                          <span>{String(index + 1).padStart(2, "0")}</span>
+                          <div>
+                            <strong>{label}</strong>
+                            <input
+                              type="date"
+                              value={
+                                customsDetail[key]
+                                  ? String(customsDetail[key]).slice(0, 10)
+                                  : ""
+                              }
+                              onChange={(e) =>
+                                setCustomsDetail((p) => ({
+                                  ...p,
+                                  [key]: e.target.value || null,
+                                }))
+                              }
+                            />
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="customs-form-grid detail-selects">
+                      <label>
+                        <span>Tipo de selectivo</span>
+                        <select
+                          value={customsDetail.selective_type || ""}
+                          onChange={(e) =>
+                            setCustomsDetail((p) => ({
+                              ...p,
+                              selective_type: e.target.value || null,
+                            }))
+                          }
+                        >
+                          <option value="">Pendiente</option>
+                          <option value="Verde">Verde</option>
+                          <option value="Rojo">Rojo</option>
+                          <option value="Sin selectivo">Sin selectivo</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>Estado entrega</span>
+                        <select
+                          value={customsDetail.delivery_status || "Pendiente"}
+                          onChange={(e) =>
+                            setCustomsDetail((p) => ({
+                              ...p,
+                              delivery_status: e.target.value,
+                            }))
+                          }
+                        >
+                          <option>Pendiente</option>
+                          <option>Listo para entrega</option>
+                          <option>Entregado</option>
+                          <option>Archivado</option>
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="customs-detail-section">
+                    <div className="customs-section-title">
+                      <span>02</span>
+                      <div>
+                        <strong>Incidencias y pendientes</strong>
+                        <small>
+                          Conserva la lógica del control operativo actual.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="customs-form-grid">
+                      <label>
+                        <span>Estado incidencia</span>
+                        <select
+                          value={customsDetail.incident_status || ""}
+                          onChange={(e) =>
+                            setCustomsDetail((p) => ({
+                              ...p,
+                              incident_status: e.target.value || null,
+                            }))
+                          }
+                        >
+                          <option value="">Sin incidencia</option>
+                          <option value="Pendiente">Pendiente</option>
+                          <option value="En gestión">En gestión</option>
+                          <option value="Resuelta">Resuelta</option>
+                        </select>
+                      </label>
+                      <label className="span-2">
+                        <span>Motivo / problema</span>
+                        <textarea
+                          rows="2"
+                          value={customsDetail.problem_reason || ""}
+                          onChange={(e) =>
+                            setCustomsDetail((p) => ({
+                              ...p,
+                              problem_reason: e.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="span-2">
+                        <span>Acción realizada</span>
+                        <textarea
+                          rows="2"
+                          value={customsDetail.action_taken || ""}
+                          onChange={(e) =>
+                            setCustomsDetail((p) => ({
+                              ...p,
+                              action_taken: e.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Pendiente de</span>
+                        <input
+                          value={customsDetail.pending_from || ""}
+                          onChange={(e) =>
+                            setCustomsDetail((p) => ({
+                              ...p,
+                              pending_from: e.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="customs-detail-section">
+                    <div className="customs-section-title">
+                      <span>03</span>
+                      <div>
+                        <strong>Valores del expediente</strong>
+                        <small>
+                          Tributos calculados y cobro comercial registrado.
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="customs-value-cards">
+                      <article>
+                        <span>Valor SAT</span>
+                        <strong>{moneyGTQ(customsDetail.taxable_value_gtq || 0)}</strong>
+                      </article>
+                      <article>
+                        <span>
+                          IVA {displayTaxRate(customsDetail.iva_rate)}
+                        </span>
+                        <strong>{moneyGTQ(customsDetail.iva_gtq || 0)}</strong>
+                      </article>
+                      <article>
+                        <span>
+                          IPRIMA {displayTaxRate(customsDetail.iprima_rate)}
+                        </span>
+                        <strong>{moneyGTQ(customsDetail.iprima_gtq || 0)}</strong>
+                      </article>
+                      <article>
+                        <span>Total tributos</span>
+                        <strong>{moneyGTQ(customsDetail.total_taxes_gtq || 0)}</strong>
+                      </article>
+                    </div>
+                  </section>
+
+                  <div className="customs-form-actions sticky">
+                    <button
+                      className="secondary-button"
+                      onClick={() => {
+                        setSelectedCustomsCase(null);
+                        setCustomsDetail(null);
+                      }}
+                    >
+                      Cerrar
+                    </button>
+                    <button
+                      className="primary-button"
+                      onClick={saveCustomsDetail}
+                      disabled={customsDetailSaving}
+                    >
+                      {customsDetailSaving
+                        ? "Guardando..."
+                        : "Guardar seguimiento"}
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : activeView === "prospects" ? (
           <section className="prospects-module">
             <header className="topbar prospects-topbar">
               <div>
@@ -2699,6 +4288,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                                 .join(" ") || "Vehículo consultado"}
                             </strong>
                             <small>{q.vin}</small>
+                            {q.import_requested_at && (
+                              <span className="import-request-badge">🔥 Solicitó iniciar importación</span>
+                            )}
                           </div>
                           <span className={`query-result ${String(q.calculation_status || "").toLowerCase()}`}>
                             {q.calculation_status || "—"}
@@ -2723,6 +4315,28 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                             <dd>{q.freight_usd ? moneyUSD(q.freight_usd) : "—"}</dd>
                           </div>
                         </dl>
+
+                        {q.import_requested_at && (
+                          <div className="prospect-import-actions">
+                            <div>
+                              <small>SOLICITUD DE IMPORTACIÓN</small>
+                              <span>{new Date(q.import_requested_at).toLocaleString("es-GT")}</span>
+                            </div>
+                            <button
+                              className="primary-button prospect-generate-quote"
+                              onClick={() => generateProspectQuotation(q)}
+                              disabled={prospectQuoteLoadingId === q.id || q.calculation_status !== "READY"}
+                            >
+                              {prospectQuoteLoadingId === q.id ? "Preparando..." : "Generar cotización"} <span>→</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {q.quote_generated_at && (
+                          <div className="prospect-quote-generated">
+                            ✓ Cotización {q.quote_code || ""} generada
+                          </div>
+                        )}
 
                         <small className="prospect-query-date">
                           {q.created_at
@@ -3788,10 +5402,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </h2>
 
                 <p className="vehicle-version">
-                  {[vehicle?.series, vehicle?.trim]
-                    .filter(Boolean)
-                    .join(" • ") ||
-                    "Versión no especificada"}
+                  {getVehicleDisplayVersion(vehicle, sat)}
                 </p>
 
                 <div className="detail-list">
@@ -4001,6 +5612,13 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   <small>COTIZACIÓN PARA CLIENTE</small>
                   <h2>Completar costos variables</h2>
                   <p>El vehículo, impuestos y flete ya vienen del cálculo realizado.</p>
+                  {quoteRecipient && (
+                    <div className="quote-recipient-pill">
+                      <span>CLIENTE</span>
+                      <strong>{quoteRecipient.name || "Prospecto"}</strong>
+                      <small>{quoteRecipient.phone || "Sin celular"}</small>
+                    </div>
+                  )}
                 </div>
                 <div className="quote-modal-head-actions">
                   <button
@@ -4153,6 +5771,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
                 <div className="quote-sticky-buttons">
                   <button className="secondary-button" onClick={closeQuoteModal}>Cancelar</button>
+                  {quoteRecipient?.phone && (
+                    <button className="whatsapp-action quote-whatsapp-send" onClick={downloadQuoteAndOpenWhatsApp} disabled={quoteGenerating}>
+                      <span className="whatsapp-icon">💬</span>
+                      {quoteGenerating ? "Generando..." : "Descargar y abrir WhatsApp"}
+                    </button>
+                  )}
                   <button className="primary-button" onClick={downloadQuoteImage} disabled={quoteGenerating}>
                     {quoteGenerating ? "Generando imagen..." : "Descargar cotización PNG"} <span>↓</span>
                   </button>

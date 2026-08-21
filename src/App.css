@@ -5504,3 +5504,45 @@ nav {
     text-align: left;
   }
 }
+/* =========================================================
+   V24 · GESTIONES DE IMPORTACIÓN
+   ========================================================= */
+.imports-module{width:100%;max-width:1460px;margin:0 auto;padding-bottom:64px}
+.imports-topbar{margin-bottom:20px}
+.imports-count-card{min-width:125px;padding:15px 18px;border:1px solid #dce5ef;border-radius:18px;background:#fff;display:grid;gap:2px}
+.imports-count-card span{color:#9b711e;font-size:9px;font-weight:950;letter-spacing:.1em}
+.imports-count-card strong{color:#08284e;font-size:27px}
+.imports-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:18px}
+.imports-kpis article{padding:18px 19px;border:1px solid #dde6ef;border-radius:18px;background:#fff}
+.imports-kpis span{display:block;margin-bottom:4px;color:#7d8da1;font-size:11px;font-weight:800}
+.imports-kpis strong{color:#08284e;font-size:27px}
+.imports-search-card{margin-bottom:18px;padding:20px 23px;border:1px solid #dce5ef;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:22px}
+.imports-search-card h2{margin:4px 0 0;color:#08284e;font-size:20px}
+.imports-search-form{flex:1;max-width:650px;display:flex;gap:9px}
+.imports-search-form input{flex:1;min-width:0;min-height:48px;padding:0 16px;border:1px solid #cedae7;border-radius:13px;background:#f9fbfd;color:#153a62;outline:none;font-weight:700}
+.imports-search-form button{min-width:100px;border:0;border-radius:13px;background:#0c315b;color:#fff;font-weight:850;cursor:pointer}
+.imports-table-card{overflow:hidden;border:1px solid #dce5ef;border-radius:22px;background:#fff}
+.imports-table-head{padding:20px 23px;border-bottom:1px solid #e7edf4;display:flex;align-items:center;justify-content:space-between}
+.imports-table-head h2{margin:4px 0 0;color:#08284e}
+.imports-table-wrap{overflow-x:auto}
+.imports-table{width:100%;min-width:1050px;border-collapse:collapse}
+.imports-table th{padding:12px 14px;background:#f5f8fc;color:#77889e;text-align:left;font-size:10px}
+.imports-table td{padding:15px 14px;border-top:1px solid #edf1f6;vertical-align:middle;color:#173b63;font-size:12px}
+.imports-table td strong,.imports-table td small{display:block}
+.imports-table td small{margin-top:3px;color:#8c9aad;font-size:10px}
+.import-status{display:inline-flex;min-height:27px;padding:0 9px;border-radius:999px;align-items:center;background:#edf3f9;color:#536c89;font-size:9px;font-weight:950}
+.prospect-quote-generated{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}
+.prospect-convert-management{min-height:35px!important;padding:0 10px!important;font-size:9px!important}
+.prospect-management-created{border:0;background:transparent;color:#256294;font-size:9px;font-weight:900;cursor:pointer}
+.import-detail-modal{width:min(1050px,calc(100vw - 38px));max-height:calc(100vh - 36px);overflow-y:auto;border-radius:26px;background:#f6f8fb}
+.import-detail-body{padding:0 24px 24px;display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.import-vehicle-card,.import-progress-card,.import-logistics-grid{padding:20px;border:1px solid #dce5ef;border-radius:18px;background:#fff}
+.import-vehicle-card h3{margin:5px 0;color:#08284e}
+.import-vehicle-card p{margin:0 0 15px;color:#8594a7;font-size:11px}
+.import-progress-card{display:grid;gap:14px}
+.import-progress-card select,.import-progress-card input,.import-logistics-grid input,.import-logistics-grid textarea{width:100%;min-height:44px;padding:9px 11px;border:1px solid #ccd8e5;border-radius:11px;background:#fbfcfe;color:#173b63;outline:none;font:inherit}
+.import-progress-card label,.import-logistics-grid label{display:grid;gap:6px}
+.import-progress-card label span,.import-logistics-grid label span{color:#526b87;font-size:10px;font-weight:900}
+.import-logistics-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.import-logistics-grid .span-2{grid-column:span 2}
+@media(max-width:820px){.imports-kpis{grid-template-columns:1fr 1fr}.imports-search-card,.imports-search-form{align-items:stretch;flex-direction:column}.import-detail-body{grid-template-columns:1fr}.import-logistics-grid{grid-template-columns:1fr}.import-logistics-grid .span-2{grid-column:auto}}

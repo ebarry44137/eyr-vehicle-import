@@ -355,6 +355,17 @@ function App() {
   const [customsDetailSaving, setCustomsDetailSaving] = useState(false);
   const [customsMessage, setCustomsMessage] = useState("");
 
+  // V24 · Gestiones de Importación
+  const [importSearch, setImportSearch] = useState("");
+  const [importManagements, setImportManagements] = useState([]);
+  const [importManagementsLoading, setImportManagementsLoading] = useState(false);
+  const [importManagementsError, setImportManagementsError] = useState("");
+  const [selectedImportManagement, setSelectedImportManagement] = useState(null);
+  const [importManagementDetail, setImportManagementDetail] = useState(null);
+  const [importManagementSaving, setImportManagementSaving] = useState(false);
+  const [importManagementMessage, setImportManagementMessage] = useState("");
+  const [convertingQueryId, setConvertingQueryId] = useState(null);
+
   const [selectedSatId, setSelectedSatId] = useState(null);
   const [selectedDimension, setSelectedDimension] = useState(null);
 
@@ -1372,6 +1383,123 @@ function App() {
     if (functionError) throw functionError;
     if (!data?.success) throw new Error(data?.error || "No fue posible guardar la cotización.");
     return data.quotation;
+  }
+
+  async function loadImportManagements(search = importSearch) {
+    setImportManagementsLoading(true);
+    setImportManagementsError("");
+
+    try {
+      let query = supabase
+        .from("import_managements")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(300);
+
+      const clean = String(search || "").trim();
+      if (clean) {
+        const safe = clean.replace(/[%(),]/g, " ");
+        query = query.or(
+          `management_code.ilike.%${safe}%,client_name.ilike.%${safe}%,vin.ilike.%${safe}%,quote_code.ilike.%${safe}%`
+        );
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setImportManagements(data || []);
+    } catch (err) {
+      console.error("IMPORT MANAGEMENT LOAD ERROR:", err);
+      setImportManagementsError(err?.message || "No fue posible cargar las gestiones.");
+    } finally {
+      setImportManagementsLoading(false);
+    }
+  }
+
+  function openImportManagementsView() {
+    setActiveView("imports");
+    setSelectedImportManagement(null);
+    setImportManagementDetail(null);
+    setImportManagementMessage("");
+    loadImportManagements("");
+  }
+
+  async function convertProspectToImportManagement(query) {
+    if (!query?.id) return;
+    setConvertingQueryId(query.id);
+    setProspectsError("");
+    setProspectMessage("");
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "admin_create_import_management",
+        { p_query_id: query.id }
+      );
+      if (error) throw error;
+
+      const row = Array.isArray(data) ? data[0] : data;
+      setProspectMessage(
+        row?.management_code
+          ? `Gestión ${row.management_code} creada correctamente.`
+          : "Gestión de importación creada correctamente."
+      );
+
+      await loadProspectQueries(selectedProspect?.contact_key);
+      await loadProspects(prospectSearch);
+    } catch (err) {
+      console.error("CONVERT IMPORT MANAGEMENT ERROR:", err);
+      setProspectsError(err?.message || "No fue posible convertir el prospecto en gestión.");
+    } finally {
+      setConvertingQueryId(null);
+    }
+  }
+
+  function openImportManagementDetail(item) {
+    setSelectedImportManagement(item);
+    setImportManagementDetail({ ...item });
+    setImportManagementMessage("");
+    setImportManagementsError("");
+  }
+
+  async function saveImportManagementDetail() {
+    if (!importManagementDetail?.id) return;
+
+    setImportManagementSaving(true);
+    setImportManagementsError("");
+    setImportManagementMessage("");
+
+    try {
+      const { data, error } = await supabase
+        .from("import_managements")
+        .update({
+          status: importManagementDetail.status,
+          responsible: importManagementDetail.responsible || null,
+          pickup_location: importManagementDetail.pickup_location || null,
+          destination_port: importManagementDetail.destination_port || null,
+          shipping_line: importManagementDetail.shipping_line || null,
+          container_number: importManagementDetail.container_number || null,
+          bl: importManagementDetail.bl || null,
+          estimated_sailing_date: importManagementDetail.estimated_sailing_date || null,
+          estimated_arrival_date: importManagementDetail.estimated_arrival_date || null,
+          notes: importManagementDetail.notes || null,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id || null,
+        })
+        .eq("id", importManagementDetail.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSelectedImportManagement(data);
+      setImportManagementDetail({ ...data });
+      setImportManagementMessage("Gestión actualizada correctamente.");
+      await loadImportManagements(importSearch);
+    } catch (err) {
+      console.error("IMPORT MANAGEMENT UPDATE ERROR:", err);
+      setImportManagementsError(err?.message || "No fue posible actualizar la gestión.");
+    } finally {
+      setImportManagementSaving(false);
+    }
   }
 
   async function loadCustomsCases(search = customsSearch) {
@@ -2976,6 +3104,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           </button>
 
           <button
+            className={`nav-item ${activeView === "imports" ? "active" : ""}`}
+            onClick={openImportManagementsView}
+          >
+            <span>🚢</span>
+            Gestiones de Importación
+          </button>
+
+          <button
             className={`nav-item ${activeView === "customs" ? "active" : ""}`}
             onClick={openCustomsView}
           >
@@ -3023,7 +3159,123 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "customs" ? (
+        {activeView === "imports" ? (
+          <section className="imports-module">
+            <header className="topbar imports-topbar">
+              <div>
+                <span className="eyebrow">OPERACIÓN INTERNACIONAL</span>
+                <h1>Gestiones de Importación</h1>
+                <p>Seguimiento de clientes que confirmaron su importación con E&amp;R.</p>
+              </div>
+              <div className="imports-count-card">
+                <span>GESTIONES</span>
+                <strong>{importManagements.length}</strong>
+              </div>
+            </header>
+
+            <section className="imports-kpis">
+              <article><span>Activas</span><strong>{importManagements.filter((i) => !["ENTREGADO","CANCELADO"].includes(i.status)).length}</strong></article>
+              <article><span>Confirmadas</span><strong>{importManagements.filter((i) => i.status === "CLIENTE_CONFIRMÓ").length}</strong></article>
+              <article><span>En tránsito</span><strong>{importManagements.filter((i) => ["EMBARCADO","TRÁNSITO_MARÍTIMO"].includes(i.status)).length}</strong></article>
+              <article><span>En Guatemala</span><strong>{importManagements.filter((i) => ["ARRIBÓ_GUATEMALA","CONTROL_ADUANAL","LIBERADO"].includes(i.status)).length}</strong></article>
+            </section>
+
+            <section className="imports-search-card">
+              <div>
+                <span className="section-label">GESTIONES</span>
+                <h2>Control de importaciones</h2>
+              </div>
+              <form className="imports-search-form" onSubmit={(e) => { e.preventDefault(); loadImportManagements(importSearch); }}>
+                <input value={importSearch} onChange={(e) => setImportSearch(e.target.value)} placeholder="Buscar gestión, cliente, VIN o cotización..." />
+                <button type="submit" disabled={importManagementsLoading}>{importManagementsLoading ? "Buscando..." : "Buscar"}</button>
+              </form>
+            </section>
+
+            {importManagementMessage && <div className="customer-message success">{importManagementMessage}</div>}
+            {importManagementsError && <div className="customer-message error">{importManagementsError}</div>}
+
+            <section className="imports-table-card">
+              <div className="imports-table-head">
+                <div><span className="section-label">CONTROL GENERAL</span><h2>{importManagementsLoading ? "Cargando..." : `${importManagements.length} gestión${importManagements.length === 1 ? "" : "es"}`}</h2></div>
+                <button className="secondary-button" onClick={() => loadImportManagements(importSearch)} disabled={importManagementsLoading}>↻ Actualizar</button>
+              </div>
+              <div className="imports-table-wrap">
+                <table className="imports-table">
+                  <thead><tr><th>Gestión</th><th>Cliente</th><th>Vehículo</th><th>Cotización</th><th>Estado</th><th>Responsable</th><th></th></tr></thead>
+                  <tbody>
+                    {!importManagementsLoading && importManagements.length === 0 && <tr><td colSpan="7" className="empty-cell">Todavía no hay gestiones de importación.</td></tr>}
+                    {importManagements.map((item) => (
+                      <tr key={item.id}>
+                        <td><strong>{item.management_code}</strong><small>{new Date(item.created_at).toLocaleDateString("es-GT")}</small></td>
+                        <td><strong>{item.client_name}</strong><small>{item.phone || "Sin teléfono"}</small></td>
+                        <td><strong>{[item.model_year,item.make,item.model,item.vehicle_trim].filter(Boolean).join(" ")}</strong><small>{item.vin}</small></td>
+                        <td><strong>{item.quote_code || "—"}</strong><small>{item.freight_usd ? `Flete ${moneyUSD(item.freight_usd)}` : "Sin flete"}</small></td>
+                        <td><span className="import-status">{String(item.status || "").replaceAll("_"," ")}</span></td>
+                        <td><strong>{item.responsible || "Sin asignar"}</strong></td>
+                        <td><button className="prospect-open-button" onClick={() => openImportManagementDetail(item)}>Ver →</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {selectedImportManagement && importManagementDetail && (
+              <div className="quote-modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !importManagementSaving) { setSelectedImportManagement(null); setImportManagementDetail(null); } }}>
+                <div className="import-detail-modal">
+                  <div className="quote-modal-head">
+                    <div><small>GESTIÓN DE IMPORTACIÓN</small><h2>{importManagementDetail.management_code}</h2><p>{importManagementDetail.client_name} · {importManagementDetail.vin}</p></div>
+                    <button className="quote-close" onClick={() => { setSelectedImportManagement(null); setImportManagementDetail(null); }}>×</button>
+                  </div>
+
+                  <div className="import-detail-body">
+                    <section className="import-vehicle-card">
+                      <span className="section-label">VEHÍCULO</span>
+                      <h3>{[importManagementDetail.model_year,importManagementDetail.make,importManagementDetail.model,importManagementDetail.vehicle_trim].filter(Boolean).join(" ")}</h3>
+                      <p>VIN · {importManagementDetail.vin}</p>
+                      <div><span>Cotización</span><strong>{importManagementDetail.quote_code || "—"}</strong></div>
+                    </section>
+
+                    <section className="import-progress-card">
+                      <span className="section-label">ESTADO OPERATIVO</span>
+                      <select value={importManagementDetail.status || "COTIZADO"} onChange={(e) => setImportManagementDetail((p) => ({...p,status:e.target.value}))}>
+                        <option value="COTIZADO">Cotizado</option>
+                        <option value="CLIENTE_CONFIRMÓ">Cliente confirmó</option>
+                        <option value="PAGO_INICIAL">Pago inicial</option>
+                        <option value="POR_RECOGER">Vehículo por recoger</option>
+                        <option value="TRÁNSITO_A_PUERTO">En tránsito a puerto</option>
+                        <option value="EMBARCADO">Embarcado</option>
+                        <option value="TRÁNSITO_MARÍTIMO">En tránsito marítimo</option>
+                        <option value="ARRIBÓ_GUATEMALA">Arribó a Guatemala</option>
+                        <option value="CONTROL_ADUANAL">Control aduanal</option>
+                        <option value="LIBERADO">Liberado</option>
+                        <option value="ENTREGADO">Entregado</option>
+                        <option value="CANCELADO">Cancelado</option>
+                      </select>
+                      <label><span>Responsable</span><input value={importManagementDetail.responsible || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,responsible:e.target.value}))} placeholder="Responsable E&R" /></label>
+                    </section>
+
+                    <section className="import-logistics-grid">
+                      <label><span>Lugar de recogida</span><input value={importManagementDetail.pickup_location || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,pickup_location:e.target.value}))} /></label>
+                      <label><span>Puerto destino</span><input value={importManagementDetail.destination_port || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,destination_port:e.target.value}))} /></label>
+                      <label><span>Naviera</span><input value={importManagementDetail.shipping_line || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,shipping_line:e.target.value}))} /></label>
+                      <label><span>Contenedor</span><input value={importManagementDetail.container_number || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,container_number:e.target.value}))} /></label>
+                      <label><span>BL</span><input value={importManagementDetail.bl || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,bl:e.target.value}))} /></label>
+                      <label><span>Fecha estimada embarque</span><input type="date" value={importManagementDetail.estimated_sailing_date || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,estimated_sailing_date:e.target.value}))} /></label>
+                      <label><span>Fecha estimada arribo</span><input type="date" value={importManagementDetail.estimated_arrival_date || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,estimated_arrival_date:e.target.value}))} /></label>
+                      <label className="span-2"><span>Notas</span><textarea rows="4" value={importManagementDetail.notes || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,notes:e.target.value}))} /></label>
+                    </section>
+                  </div>
+
+                  <div className="customs-form-actions sticky">
+                    <button className="secondary-button" onClick={() => { setSelectedImportManagement(null); setImportManagementDetail(null); }}>Cerrar</button>
+                    <button className="primary-button" onClick={saveImportManagementDetail} disabled={importManagementSaving}>{importManagementSaving ? "Guardando..." : "Guardar gestión"} <span>→</span></button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : activeView === "customs" ? (
           <section className="customs-module">
             <header className="topbar customs-topbar">
               <div>
@@ -4351,7 +4603,25 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
                         {q.quote_generated_at && (
                           <div className="prospect-quote-generated">
-                            ✓ Cotización {q.quote_code || ""} generada
+                            <span>✓ Cotización {q.quote_code || ""} generada</span>
+
+                            {q.import_management_id ? (
+                              <button
+                                className="prospect-management-created"
+                                onClick={openImportManagementsView}
+                              >
+                                Gestión creada · Ver →
+                              </button>
+                            ) : (
+                              <button
+                                className="primary-button prospect-convert-management"
+                                onClick={() => convertProspectToImportManagement(q)}
+                                disabled={convertingQueryId === q.id}
+                              >
+                                {convertingQueryId === q.id ? "Creando..." : "Convertir en gestión"}
+                                <span>→</span>
+                              </button>
+                            )}
                           </div>
                         )}
 
@@ -5835,7 +6105,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                           Esta cotización no incluye transporte marítimo.
                           El vehículo fue embarcado por cuenta del cliente o por un tercero.
                         </p>
-                                           </div>
+                        
+                      </div>
                     )}
                   </section>
 

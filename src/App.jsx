@@ -2027,7 +2027,10 @@ function App() {
     quoteForm.include_freight
       ? Number(freight?.price_usd || 0)
       : 0;
-  const quoteCraneUsd = Number(quoteForm.crane_usd || 0);
+  const quoteCraneUsd =
+    quoteForm.include_freight
+      ? Number(quoteForm.crane_usd || 0)
+      : 0;
   const quoteTransportUsd = quoteFreightUsd + quoteCraneUsd;
   const quoteExchangeRate = Number(
     summary?.exchange_rate || result?.exchange_rate || taxes?.exchange_rate || 0
@@ -5676,6 +5679,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       setQuoteForm((prev) => ({
                         ...prev,
                         include_freight: e.target.checked,
+                        crane_usd: e.target.checked ? prev.crane_usd : "",
                       }))
                     }
                   />
@@ -5713,9 +5717,22 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 <label>
                   <span>Grúa (USD)</span>
                   <input
-                    type="number" min="0" step="0.01" placeholder="0.00"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={
+                      quoteForm.include_freight
+                        ? "0.00"
+                        : "No aplica sin flete"
+                    }
                     value={quoteForm.crane_usd}
-                    onChange={(e) => setQuoteForm((p) => ({ ...p, crane_usd: e.target.value }))}
+                    disabled={!quoteForm.include_freight}
+                    onChange={(e) =>
+                      setQuoteForm((p) => ({
+                        ...p,
+                        crane_usd: e.target.value,
+                      }))
+                    }
                   />
                 </label>
               </div>
@@ -5802,7 +5819,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         <div><span>Categoría</span><strong>{freight?.category || "—"}</strong></div>
                         <div><span>Largo</span><strong>{dimensions?.length_inches ? `${Number(dimensions.length_inches).toFixed(2)}"` : "—"}</strong></div>
                         <div><span>Configuración</span><strong>{dimensions?.dimension_model || vehicle?.model || "—"}</strong></div>
-                        <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
+                        {quoteForm.include_freight && (
+                      <div>
+                        <span>Grúa</span>
+                        <strong>{moneyUSD(quoteCraneUsd)}</strong>
+                      </div>
+                    )}
                         <div className="quote-freight-price"><span>FLETE MARÍTIMO</span><strong>{moneyUSD(quoteFreightUsd)}</strong></div>
                       </div>
                     ) : (
@@ -5813,10 +5835,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                           Esta cotización no incluye transporte marítimo.
                           El vehículo fue embarcado por cuenta del cliente o por un tercero.
                         </p>
-                        {quoteCraneUsd > 0 && (
-                          <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
-                        )}
-                      </div>
+                                           </div>
                     )}
                   </section>
 
@@ -5831,14 +5850,19 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         <strong>{moneyUSD(quoteFreightUsd)}</strong>
                       </div>
                     )}
-                    <div><span>Grúa</span><strong>{moneyUSD(quoteCraneUsd)}</strong></div>
+                    {quoteForm.include_freight && (
+                      <div>
+                        <span>Grúa</span>
+                        <strong>{moneyUSD(quoteCraneUsd)}</strong>
+                      </div>
+                    )}
                     <div className="quote-grand-total">
                       <span>
                         {quoteGrandTotalUsd !== null
                           ? "TOTAL GENERAL"
                           : quoteForm.include_freight
                             ? "FLETE + COSTOS GUATEMALA"
-                            : "COSTOS GUATEMALA + GRÚA"}
+                            : "COSTOS GUATEMALA"}
                       </span>
                       <strong>{quoteGrandTotalUsd !== null ? moneyUSD(quoteGrandTotalUsd) : `${moneyUSD(quoteTransportUsd)} + ${moneyGTQ(quoteGuatemalaTotal)}`}</strong>
                     </div>

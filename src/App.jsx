@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { supabase } from "./supabaseClient";
 import eyrSolutionsLogo from "./assets/eyr-solutions-logo.png";
+import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
+import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
+import ImporterCustomsServiceRequest from "./modules/importer-customs/ImporterCustomsServiceRequest";
+import AdminNotificationBell from "./modules/notifications/AdminNotificationBell";
 import "./App.css";
 
 function moneyGTQ(value) {
@@ -271,14 +275,22 @@ function App() {
     password: "",
   });
   const [publicVin, setPublicVin] = useState("");
+  const [publicQuoteMode, setPublicQuoteMode] = useState("SAT");
+  const [publicInvoiceValueUsd, setPublicInvoiceValueUsd] = useState("");
   const [publicLoading, setPublicLoading] = useState(false);
   const [publicResult, setPublicResult] = useState(null);
   const [publicError, setPublicError] = useState("");
   const [publicQuotaRemaining, setPublicQuotaRemaining] = useState(null);
   const [subscriptionRequestLoading, setSubscriptionRequestLoading] = useState(false);
 
-  const [appSettings, setAppSettings] = useState({ whatsapp_number: "" });
-  const [settingsForm, setSettingsForm] = useState({ whatsapp_number: "" });
+  const [appSettings, setAppSettings] = useState({
+    whatsapp_number: "",
+    importer_exchange_rate: "",
+  });
+  const [settingsForm, setSettingsForm] = useState({
+    whatsapp_number: "",
+    importer_exchange_rate: "",
+  });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState("");
@@ -322,6 +334,16 @@ function App() {
   const [quotationLoading, setQuotationLoading] = useState(false);
   const [quotationError, setQuotationError] = useState("");
   const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [quotationUsers, setQuotationUsers] = useState([]);
+  const [quotationOwnerFilter, setQuotationOwnerFilter] = useState("");
+
+  // V26 · Usuarios y Suscripciones
+  const [subscriptionSearch, setSubscriptionSearch] = useState("");
+  const [subscriptionUsers, setSubscriptionUsers] = useState([]);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState("");
+  const [subscriptionMessage, setSubscriptionMessage] = useState("");
+  const [subscriptionActionUserId, setSubscriptionActionUserId] = useState(null);
 
   // V22.6 · Prospectos / captación comercial
   const [prospectSearch, setProspectSearch] = useState("");
@@ -505,11 +527,21 @@ function App() {
       const { data, error } = await supabase
         .from("app_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["whatsapp_number"]);
+        .in("setting_key", ["whatsapp_number", "importer_exchange_rate"]);
       if (error) throw error;
-      const next = { whatsapp_number: "" };
+      const next = {
+        whatsapp_number: "",
+        importer_exchange_rate: "",
+      };
+
       for (const row of data || []) {
-        if (row.setting_key === "whatsapp_number") next.whatsapp_number = String(row.setting_value || "");
+        if (row.setting_key === "whatsapp_number") {
+          next.whatsapp_number = String(row.setting_value || "");
+        }
+
+        if (row.setting_key === "importer_exchange_rate") {
+          next.importer_exchange_rate = String(row.setting_value || "");
+        }
       }
       setAppSettings(next);
       setSettingsForm(next);
@@ -534,13 +566,31 @@ function App() {
         throw new Error("Ingresá el número con código de país. Ejemplo: 50255555555.");
       }
 
+      const importerExchangeRate = Number(settingsForm.importer_exchange_rate);
+
+      if (!Number.isFinite(importerExchangeRate) || importerExchangeRate <= 0) {
+        throw new Error(
+          "Ingresá un tipo de cambio interno válido para el cotizador de importadores."
+        );
+      }
+
       const { error } = await supabase.rpc("update_app_setting", {
         p_setting_key: "whatsapp_number",
         p_setting_value: cleanWhatsapp,
       });
       if (error) throw error;
 
-      const next = { ...appSettings, whatsapp_number: cleanWhatsapp };
+      const { error: exchangeError } = await supabase.rpc("update_app_setting", {
+        p_setting_key: "importer_exchange_rate",
+        p_setting_value: importerExchangeRate.toFixed(4),
+      });
+      if (exchangeError) throw exchangeError;
+
+      const next = {
+        ...appSettings,
+        whatsapp_number: cleanWhatsapp,
+        importer_exchange_rate: importerExchangeRate.toFixed(4),
+      };
       setAppSettings(next);
       setSettingsForm(next);
       setSettingsMessage("Configuración guardada correctamente.");
@@ -762,6 +812,8 @@ function App() {
     setProfile(null);
     setPublicResult(null);
     setPublicVin("");
+    setPublicQuoteMode("SAT");
+    setPublicInvoiceValueUsd("");
     setPublicError("");
     setPublicQuotaRemaining(null);
   }
@@ -770,6 +822,19 @@ function App() {
     const cleanVin = publicVin.trim().toUpperCase();
     if (cleanVin.length !== 17 || !session) return;
 
+    const importerInvoice =
+      publicQuoteMode === "IMPORTER"
+        ? Number(publicInvoiceValueUsd)
+        : null;
+
+    if (
+      publicQuoteMode === "IMPORTER" &&
+      (!Number.isFinite(importerInvoice) || importerInvoice <= 0)
+    ) {
+      setPublicError("Ingresá un valor de factura válido en USD.");
+      return;
+    }
+
     setPublicLoading(true);
     setPublicError("");
     setPublicResult(null);
@@ -777,7 +842,16 @@ function App() {
     try {
       const { data, error: functionError } = await invokeFunction(
         "decode-vin",
-        { body: { vin: cleanVin } }
+        {
+          body: {
+            vin: cleanVin,
+            calculation_mode: publicQuoteMode,
+            invoice_value_usd:
+              publicQuoteMode === "IMPORTER"
+                ? importerInvoice
+                : null,
+          },
+        }
       );
 
       if (functionError) throw functionError;
@@ -940,15 +1014,29 @@ function App() {
     });
   }
 
-  async function ejecutarDecode(cleanVin, clearResult = true) {
+  async function ejecutarDecode(
+    cleanVin,
+    clearResult = true,
+    decodeOptions = {}
+  ) {
     if (clearResult) {
       setResult(null);
     }
+
+    const calculationMode =
+      String(decodeOptions?.calculation_method || "SAT").toUpperCase();
+
+    const invoiceValueUsd =
+      calculationMode === "IMPORTER"
+        ? Number(decodeOptions?.invoice_value_usd || 0)
+        : null;
 
     const { data, error: functionError } =
       await invokeFunction("decode-vin", {
         body: {
           vin: cleanVin,
+          calculation_mode: calculationMode,
+          invoice_value_usd: invoiceValueUsd,
         },
       });
 
@@ -1316,6 +1404,14 @@ function App() {
   async function saveCurrentQuotation() {
     const payload = {
       quote_code: quoteNumber(),
+      calculation_method:
+        result?.calculation_method ||
+        summary?.calculation_method ||
+        "SAT",
+      invoice_value_usd:
+        result?.calculation_method === "IMPORTER"
+          ? Number(result?.invoice_value_usd || summary?.invoice_value_usd || 0)
+          : null,
       vin: vehicle?.vin,
       model_year: vehicle?.model_year,
       make: vehicle?.make,
@@ -1344,6 +1440,16 @@ function App() {
       dimension_model: dimensions?.dimension_model ?? summary?.dimension_model ?? null,
       dimension_source: dimensions?.dimension_source ?? vehicle?.dimension_source ?? null,
       quote_snapshot: {
+        calculation: {
+          method:
+            result?.calculation_method ||
+            summary?.calculation_method ||
+            "SAT",
+          invoice_value_usd:
+            result?.calculation_method === "IMPORTER"
+              ? Number(result?.invoice_value_usd || summary?.invoice_value_usd || 0)
+              : null,
+        },
         vehicle: {
           vin: vehicle?.vin, model_year: vehicle?.model_year, make: vehicle?.make,
           model: vehicle?.model, trim: vehicle?.trim, engine_liters: vehicle?.engine_liters,
@@ -1986,7 +2092,14 @@ function App() {
     setError("");
 
     try {
-      const data = await ejecutarDecode(String(query.vin).trim().toUpperCase(), true);
+      const data = await ejecutarDecode(
+        String(query.vin).trim().toUpperCase(),
+        true,
+        {
+          calculation_method: query.calculation_method || "SAT",
+          invoice_value_usd: query.invoice_value_usd || null,
+        }
+      );
       const ready =
         data?.calculation_status === "READY" ||
         data?.summary?.calculation_status === "READY";
@@ -2066,16 +2179,112 @@ function App() {
     }
   }
 
-  async function loadQuotations(search = quotationSearch) {
+  async function loadSubscriptions(search = subscriptionSearch) {
+    setSubscriptionLoading(true);
+    setSubscriptionError("");
+    setSubscriptionMessage("");
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "admin_list_subscriptions",
+        {
+          p_search: String(search || "").trim() || null,
+        }
+      );
+
+      if (error) throw error;
+
+      setSubscriptionUsers(data || []);
+    } catch (err) {
+      console.error("SUBSCRIPTIONS LOAD ERROR:", err);
+      setSubscriptionError(
+        err?.message || "No fue posible cargar los usuarios y suscripciones."
+      );
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }
+
+  function openSubscriptionsView() {
+    setActiveView("subscriptions");
+    setSubscriptionSearch("");
+    setSubscriptionError("");
+    setSubscriptionMessage("");
+    loadSubscriptions("");
+  }
+
+  async function manageSubscription(userId, action, months = 1) {
+    if (!userId || !action) return;
+
+    setSubscriptionActionUserId(userId);
+    setSubscriptionError("");
+    setSubscriptionMessage("");
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "admin_manage_subscription",
+        {
+          p_user_id: userId,
+          p_action: action,
+          p_months: months,
+        }
+      );
+
+      if (error) throw error;
+
+      const row = Array.isArray(data) ? data[0] : data;
+
+      const actionLabels = {
+        ACTIVATE: "Suscripción activada",
+        RENEW: "Suscripción renovada",
+        SUSPEND: "Suscripción suspendida",
+        RESUME: "Suscripción reactivada",
+        CANCEL: "Suscripción cancelada",
+        ENABLE_ACCOUNT: "Cuenta habilitada",
+        DISABLE_ACCOUNT: "Cuenta deshabilitada",
+      };
+
+      setSubscriptionMessage(
+        `${actionLabels[action] || "Suscripción actualizada"}${
+          row?.full_name ? ` para ${row.full_name}` : ""
+        }.`
+      );
+
+      await loadSubscriptions(subscriptionSearch);
+    } catch (err) {
+      console.error("SUBSCRIPTION ACTION ERROR:", err);
+      setSubscriptionError(
+        err?.message || "No fue posible actualizar la suscripción."
+      );
+    } finally {
+      setSubscriptionActionUserId(null);
+    }
+  }
+
+  async function loadQuotations(
+    search = quotationSearch,
+    ownerUserId = quotationOwnerFilter
+  ) {
     setQuotationLoading(true);
     setQuotationError("");
+
     try {
       const { data, error: functionError } = await invokeFunction("quotation-manager", {
-        body: { action: "list", search: String(search || "").trim(), limit: 100 },
+        body: {
+          action: "list",
+          search: String(search || "").trim(),
+          owner_user_id: String(ownerUserId || "").trim() || null,
+          limit: 100,
+        },
       });
+
       if (functionError) throw functionError;
-      if (!data?.success) throw new Error(data?.error || "No fue posible cargar las cotizaciones.");
+      if (!data?.success) {
+        throw new Error(data?.error || "No fue posible cargar las cotizaciones.");
+      }
+
       setQuotations(data.quotations || []);
+      setQuotationUsers(data.user_summary || []);
       setSelectedQuotation(null);
     } catch (err) {
       console.error(err);
@@ -2087,7 +2296,8 @@ function App() {
 
   function openQuotationsView() {
     setActiveView("quotations");
-    loadQuotations("");
+    setQuotationOwnerFilter("");
+    loadQuotations("", "");
   }
 
   function openNewQuoteView() {
@@ -2382,6 +2592,11 @@ function App() {
     const publicTaxes = publicResult?.taxes || {};
     const publicFreight = publicResult?.freight || {};
     const publicSummary = publicResult?.summary || {};
+    const publicCalculationMode =
+      publicResult?.calculation_method ||
+      publicSummary?.calculation_method ||
+      publicQuoteMode;
+    const publicImporterMode = publicCalculationMode === "IMPORTER";
     const publicReady = publicResult?.calculation_status === "READY";
     const publicNeedsReview =
       publicResult &&
@@ -2425,10 +2640,10 @@ Motor: ${publicVehicle?.engine_liters ? `${publicVehicle.engine_liters}L` : "—
 Combustible: ${humanFuel(publicVehicle?.fuel_type)}
 Tracción: ${humanDrive(publicVehicle?.drive_type)}
 
-🇬🇹 SAT GUATEMALA
-Línea SAT: ${publicSummary?.sat_line || publicResult?.sat?.selected_match?.line || "—"}
+📌 MÉTODO DE CÁLCULO
+${publicImporterMode ? "FACTURA DE IMPORTADOR" : "TABLA SAT"}
+${publicImporterMode ? `Valor factura: ${moneyUSD(publicResult?.invoice_value_usd || publicInvoiceValueUsd)}` : `Línea SAT: ${publicSummary?.sat_line || publicResult?.sat?.selected_match?.line || "—"}`}
 Tipo SAT: ${publicTaxes?.vehicle_type || publicResult?.sat?.selected_match?.vehicle_type || "—"}
-Valor imponible: ${publicTaxes?.taxable_value_gtq ? moneyGTQ(publicTaxes.taxable_value_gtq) : "—"}
 
 🧾 TRIBUTOS ESTIMADOS
 IVA (${displayTaxRate(publicTaxes?.iva_rate, 0.12)}): ${publicTaxes?.iva_gtq ? moneyGTQ(publicTaxes.iva_gtq) : "—"}
@@ -2754,10 +2969,43 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               <>
                 <section className="public-vin-card">
                   <div>
-                    <span className="public-kicker">CONSULTA INTELIGENTE</span>
-                    <h2>¿Qué vehículo querés cotizar?</h2>
-                    <p>Ingresá el VIN y E&amp;R hará el análisis automáticamente.</p>
+                    <span className="public-kicker">
+                      {publicQuoteMode === "IMPORTER"
+                        ? "COTIZADOR PARA IMPORTADORES"
+                        : "CONSULTA INTELIGENTE"}
+                    </span>
+                    <h2>
+                      {publicQuoteMode === "IMPORTER"
+                        ? "VIN + factura. Nosotros hacemos el resto."
+                        : "¿Qué vehículo querés cotizar?"}
+                    </h2>
+                    <p>
+                      {publicQuoteMode === "IMPORTER"
+                        ? "Usamos el valor real de tu factura como base para IVA e IPRIMA y calculamos el flete por tamaño."
+                        : "Ingresá el VIN y E&R hará el análisis automáticamente."}
+                    </p>
                   </div>
+                  <QuoteModeTabs
+                    mode={publicQuoteMode}
+                    disabled={publicLoading}
+                    onChange={(nextMode) => {
+                      setPublicQuoteMode(nextMode);
+                      setPublicResult(null);
+                      setPublicError("");
+                      if (nextMode === "SAT") {
+                        setPublicInvoiceValueUsd("");
+                      }
+                    }}
+                  />
+
+                  {publicQuoteMode === "IMPORTER" && (
+                    <ImporterQuoteFields
+                      invoiceValue={publicInvoiceValueUsd}
+                      onInvoiceChange={setPublicInvoiceValueUsd}
+                      disabled={publicLoading}
+                    />
+                  )}
+
                   <div className="public-vin-search">
                     <label>
                       <span>VIN DEL VEHÍCULO</span>
@@ -2771,7 +3019,15 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                             )
                           }
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && publicVin.length === 17 && !publicLoading) {
+                            if (
+                              e.key === "Enter" &&
+                              publicVin.length === 17 &&
+                              !publicLoading &&
+                              (
+                                publicQuoteMode !== "IMPORTER" ||
+                                Number(publicInvoiceValueUsd) > 0
+                              )
+                            ) {
                               consultarPublico();
                             }
                           }}
@@ -2783,9 +3039,20 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     <button
                       className="public-primary"
                       onClick={consultarPublico}
-                      disabled={publicVin.length !== 17 || publicLoading || !publicCanQuote}
+                      disabled={
+                        publicVin.length !== 17 ||
+                        publicLoading ||
+                        !publicCanQuote ||
+                        (publicQuoteMode === "IMPORTER" &&
+                          Number(publicInvoiceValueUsd) <= 0)
+                      }
                     >
-                      {publicLoading ? "Analizando..." : "Consultar vehículo"} <span>→</span>
+                      {publicLoading
+                        ? "Analizando..."
+                        : publicQuoteMode === "IMPORTER"
+                          ? "Calcular con factura"
+                          : "Consultar vehículo"}{" "}
+                      <span>→</span>
                     </button>
                   </div>
                 </section>
@@ -2802,7 +3069,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     {publicReady && (
                       <div className="public-result-status ready">
                         <div><span>✓</span><div><small>RESULTADO DEL ANÁLISIS</small><strong>Cotización estimada lista</strong></div></div>
-                        <b>READY</b>
+                        <div className="public-ready-tags">
+                          <b>READY</b>
+                          <em>
+                            {publicImporterMode
+                              ? "FACTURA IMPORTADOR"
+                              : "TABLA SAT"}
+                          </em>
+                        </div>
                       </div>
                     )}
 
@@ -2816,7 +3090,10 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     <div className="public-result-grid">
                       <article>
                         <span className="public-card-label">
-                          TIPO SAT · {publicTaxes?.vehicle_type || publicResult?.sat?.selected_match?.vehicle_type || "NO ESPECIFICADO"}
+                          {publicImporterMode ? "IMPORTADOR" : "TIPO SAT"} ·{" "}
+                          {publicTaxes?.vehicle_type ||
+                            publicResult?.sat?.selected_match?.vehicle_type ||
+                            "NO ESPECIFICADO"}
                         </span>
                         <h3>{publicVehicle?.model_year} {publicVehicle?.make}</h3>
                         <strong>{publicVehicle?.model} {publicVehicle?.trim || ""}</strong>
@@ -2830,6 +3107,19 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <article>
                         <span className="public-card-label">TRIBUTOS ESTIMADOS</span>
                         <h3>{publicTaxes?.total_taxes_gtq ? moneyGTQ(publicTaxes.total_taxes_gtq) : "Pendiente"}</h3>
+
+                        <div className={`public-tax-basis ${publicImporterMode ? "invoice" : "sat"}`}>
+                          <span>Base de cálculo</span>
+                          <strong>
+                            {publicImporterMode
+                              ? `Factura · ${moneyUSD(
+                                  publicResult?.invoice_value_usd ||
+                                  publicInvoiceValueUsd
+                                )}`
+                              : "Tabla SAT"}
+                          </strong>
+                        </div>
+
                         <dl>
                           <div>
                             <dt>IVA <small className="public-tax-rate">({displayTaxRate(publicTaxes?.iva_rate, 0.12)})</small></dt>
@@ -2855,36 +3145,49 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     </div>
 
                     {publicReady && (
-                      <div className="public-import-cta">
-                        <div className="public-import-cta-copy">
-                          <span className="public-import-kicker">✓ VEHÍCULO LISTO PARA AVANZAR</span>
-                          <h3>¿Estás listo para hacer tu importación?</h3>
-                          <p>
-                            Ya tenemos identificado el vehículo y los valores estimados.
-                            Contactanos por WhatsApp para coordinar los siguientes pasos
-                            e iniciar la gestión con E&amp;R.
-                          </p>
-                        </div>
-
-                        {whatsappConfigured ? (
-                          <button
-                            type="button"
-                            className="whatsapp-action import-whatsapp-action"
-                            onClick={async () => {
-                              await markImportRequest(publicResult?.customer_query_id || null);
-                              window.open(importWhatsAppUrl, "_blank", "noopener,noreferrer");
-                            }}
-                          >
-                            <span className="whatsapp-icon">💬</span>
-                            Iniciar mi importación
-                            <span>→</span>
-                          </button>
-                        ) : (
-                          <div className="whatsapp-not-configured">
-                            WhatsApp temporalmente no disponible
+                      publicImporterMode ? (
+                        <ImporterCustomsServiceRequest
+                          result={publicResult}
+                          invokeFunction={invokeFunction}
+                          onCreated={(customsCase) => {
+                            setPublicResult((previous) => ({
+                              ...previous,
+                              customs_service_request: customsCase,
+                            }));
+                          }}
+                        />
+                      ) : (
+                        <div className="public-import-cta">
+                          <div className="public-import-cta-copy">
+                            <span className="public-import-kicker">✓ VEHÍCULO LISTO PARA AVANZAR</span>
+                            <h3>¿Estás listo para hacer tu importación?</h3>
+                            <p>
+                              Ya tenemos identificado el vehículo y los valores estimados.
+                              Contactanos por WhatsApp para coordinar los siguientes pasos
+                              e iniciar la gestión con E&amp;R.
+                            </p>
                           </div>
-                        )}
-                      </div>
+
+                          {whatsappConfigured ? (
+                            <button
+                              type="button"
+                              className="whatsapp-action import-whatsapp-action"
+                              onClick={async () => {
+                                await markImportRequest(publicResult?.customer_query_id || null);
+                                window.open(importWhatsAppUrl, "_blank", "noopener,noreferrer");
+                              }}
+                            >
+                              <span className="whatsapp-icon">💬</span>
+                              Iniciar mi importación
+                              <span>→</span>
+                            </button>
+                          ) : (
+                            <div className="whatsapp-not-configured">
+                              WhatsApp temporalmente no disponible
+                            </div>
+                          )}
+                        </div>
+                      )
                     )}
 
                     {publicNeedsReview && (
@@ -3073,6 +3376,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           </div>
         </div>
 
+        <AdminNotificationBell
+          supabase={supabase}
+          userId={session?.user?.id || null}
+        />
+
         <nav>
           <button className="nav-item">
             <span>▦</span>
@@ -3093,6 +3401,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           >
             <span>▤</span>
             Cotizaciones
+          </button>
+
+          <button
+            className={`nav-item ${activeView === "subscriptions" ? "active" : ""}`}
+            onClick={openSubscriptionsView}
+          >
+            <span>♙</span>
+            Usuarios y Suscripciones
           </button>
 
           <button
@@ -3159,7 +3475,310 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "imports" ? (
+        {activeView === "subscriptions" ? (
+          <section className="subscriptions-module">
+            <header className="topbar subscriptions-topbar">
+              <div>
+                <span className="eyebrow">ADMINISTRACIÓN DEL SISTEMA</span>
+                <h1>Usuarios y Suscripciones</h1>
+                <p>
+                  Activación, renovaciones, vencimientos y control de acceso al cotizador.
+                </p>
+              </div>
+
+              <button
+                className="secondary-button"
+                onClick={() => loadSubscriptions(subscriptionSearch)}
+                disabled={subscriptionLoading}
+              >
+                ↻ Actualizar
+              </button>
+            </header>
+
+            <section className="subscription-kpis">
+              <article>
+                <span>Usuarios</span>
+                <strong>{subscriptionUsers.length}</strong>
+              </article>
+              <article className="active">
+                <span>Suscripciones activas</span>
+                <strong>
+                  {subscriptionUsers.filter((item) => item.effective_status === "ACTIVE").length}
+                </strong>
+              </article>
+              <article className="warning">
+                <span>Vencen en 7 días</span>
+                <strong>
+                  {subscriptionUsers.filter((item) =>
+                    item.effective_status === "ACTIVE" &&
+                    item.days_remaining !== null &&
+                    item.days_remaining >= 0 &&
+                    item.days_remaining <= 7
+                  ).length}
+                </strong>
+              </article>
+              <article className="expired">
+                <span>Vencidas / bloqueadas</span>
+                <strong>
+                  {subscriptionUsers.filter((item) =>
+                    ["EXPIRED", "SUSPENDED", "CANCELLED"].includes(item.effective_status)
+                  ).length}
+                </strong>
+              </article>
+            </section>
+
+            <section className="subscription-search-card">
+              <div>
+                <span className="section-label">CLIENTES DEL SISTEMA</span>
+                <h2>Control de acceso</h2>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  loadSubscriptions(subscriptionSearch);
+                }}
+              >
+                <input
+                  value={subscriptionSearch}
+                  onChange={(e) => setSubscriptionSearch(e.target.value)}
+                  placeholder="Buscar nombre, correo o teléfono..."
+                />
+                <button type="submit" disabled={subscriptionLoading}>
+                  {subscriptionLoading ? "Buscando..." : "Buscar"}
+                </button>
+                {subscriptionSearch && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => {
+                      setSubscriptionSearch("");
+                      loadSubscriptions("");
+                    }}
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </form>
+            </section>
+
+            {subscriptionMessage && (
+              <div className="customer-message success">{subscriptionMessage}</div>
+            )}
+            {subscriptionError && (
+              <div className="customer-message error">{subscriptionError}</div>
+            )}
+
+            <section className="subscription-table-card">
+              <div className="subscription-table-head">
+                <div>
+                  <span className="section-label">SUSCRIPCIONES</span>
+                  <h2>
+                    {subscriptionLoading
+                      ? "Cargando..."
+                      : `${subscriptionUsers.length} usuario${subscriptionUsers.length === 1 ? "" : "s"}`}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="subscription-table-wrap">
+                <table className="subscription-table">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Plan</th>
+                      <th>Estado</th>
+                      <th>Vigencia</th>
+                      <th>Uso</th>
+                      <th>Cuenta</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!subscriptionLoading && subscriptionUsers.length === 0 && (
+                      <tr>
+                        <td colSpan="7" className="empty-cell">
+                          No hay usuarios que coincidan con la búsqueda.
+                        </td>
+                      </tr>
+                    )}
+
+                    {subscriptionUsers.map((item) => {
+                      const busy = subscriptionActionUserId === item.user_id;
+                      const status = String(item.effective_status || "FREE").toUpperCase();
+                      const internal = ["ADMIN", "OPERADOR"].includes(
+                        String(item.role || "").toUpperCase()
+                      );
+
+                      return (
+                        <tr key={item.user_id}>
+                          <td>
+                            <div className="subscription-user">
+                              <div className="subscription-avatar">
+                                {(item.full_name || item.email || "U").charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <strong>{item.full_name || "Sin nombre"}</strong>
+                                <span>{item.email || "Sin correo"}</span>
+                                <small>{item.phone || "Sin teléfono"} · {item.role}</small>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td>
+                            <strong>{internal ? "INTERNO" : item.subscription_plan || "FREE"}</strong>
+                            {!internal && (
+                              <small>
+                                {item.subscription_started_at
+                                  ? `Desde ${new Date(item.subscription_started_at).toLocaleDateString("es-GT")}`
+                                  : "Sin suscripción"}
+                              </small>
+                            )}
+                          </td>
+
+                          <td>
+                            <span className={`subscription-status ${status.toLowerCase()}`}>
+                              {internal ? "INTERNO" : status}
+                            </span>
+                          </td>
+
+                          <td>
+                            {internal ? (
+                              <strong>Sin vencimiento</strong>
+                            ) : item.subscription_expires_at ? (
+                              <>
+                                <strong>
+                                  {new Date(item.subscription_expires_at).toLocaleDateString("es-GT")}
+                                </strong>
+                                <small>
+                                  {item.days_remaining >= 0
+                                    ? `${item.days_remaining} día${item.days_remaining === 1 ? "" : "s"} restante${item.days_remaining === 1 ? "" : "s"}`
+                                    : `Venció hace ${Math.abs(item.days_remaining)} día${Math.abs(item.days_remaining) === 1 ? "" : "s"}`}
+                                </small>
+                              </>
+                            ) : (
+                              <span>—</span>
+                            )}
+                          </td>
+
+                          <td>
+                            <strong>{item.query_count || 0} consultas</strong>
+                            <small>
+                              Gratis usadas: {item.free_quotes_used || 0}/3
+                            </small>
+                          </td>
+
+                          <td>
+                            <span className={`account-status ${item.active ? "enabled" : "disabled"}`}>
+                              {item.active ? "Habilitada" : "Deshabilitada"}
+                            </span>
+                          </td>
+
+                          <td>
+                            {internal ? (
+                              <span className="subscription-internal-note">
+                                Acceso ilimitado
+                              </span>
+                            ) : (
+                              <div className="subscription-actions">
+                                {["FREE", "EXPIRED", "CANCELLED"].includes(status) && (
+                                  <button
+                                    className="subscription-action primary"
+                                    disabled={busy || !item.active}
+                                    onClick={() =>
+                                      manageSubscription(item.user_id, "ACTIVATE", 1)
+                                    }
+                                  >
+                                    {busy ? "..." : "Activar 1 mes"}
+                                  </button>
+                                )}
+
+                                {status === "ACTIVE" && (
+                                  <>
+                                    <button
+                                      className="subscription-action primary"
+                                      disabled={busy}
+                                      onClick={() =>
+                                        manageSubscription(item.user_id, "RENEW", 1)
+                                      }
+                                    >
+                                      +1 mes
+                                    </button>
+                                    <button
+                                      className="subscription-action warning"
+                                      disabled={busy}
+                                      onClick={() =>
+                                        manageSubscription(item.user_id, "SUSPEND", 1)
+                                      }
+                                    >
+                                      Suspender
+                                    </button>
+                                  </>
+                                )}
+
+                                {status === "SUSPENDED" && (
+                                  <button
+                                    className="subscription-action primary"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      manageSubscription(item.user_id, "RESUME", 1)
+                                    }
+                                  >
+                                    Reactivar
+                                  </button>
+                                )}
+
+                                {!["CANCELLED", "FREE"].includes(status) && (
+                                  <button
+                                    className="subscription-action danger"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      manageSubscription(item.user_id, "CANCEL", 1)
+                                    }
+                                  >
+                                    Cancelar
+                                  </button>
+                                )}
+
+                                <button
+                                  className={`subscription-action ${
+                                    item.active ? "neutral" : "primary"
+                                  }`}
+                                  disabled={busy}
+                                  onClick={() =>
+                                    manageSubscription(
+                                      item.user_id,
+                                      item.active ? "DISABLE_ACCOUNT" : "ENABLE_ACCOUNT",
+                                      1
+                                    )
+                                  }
+                                >
+                                  {item.active ? "Deshabilitar cuenta" : "Habilitar cuenta"}
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="subscription-info-card">
+              <div>💡</div>
+              <div>
+                <strong>Cómo funciona el vencimiento</strong>
+                <p>
+                  Al llegar la fecha de vencimiento, el motor bloquea nuevas consultas
+                  automáticamente. Si el cliente paga antes de vencer, “+1 mes” suma
+                  el nuevo mes sobre su fecha actual de vencimiento.
+                </p>
+              </div>
+            </section>
+          </section>
+        ) : activeView === "imports" ? (
           <section className="imports-module">
             <header className="topbar imports-topbar">
               <div>
@@ -4665,12 +5284,42 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     <input
                       type="tel"
                       value={settingsForm.whatsapp_number}
-                      onChange={(e) => setSettingsForm({ whatsapp_number: e.target.value })}
+                      onChange={(e) =>
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          whatsapp_number: e.target.value,
+                        }))
+                      }
                       placeholder="50255555555"
                       disabled={settingsLoading || settingsSaving}
                     />
                   </div>
                   <small>Incluí código de país. Para Guatemala: 502 + número de 8 dígitos.</small>
+                </label>
+
+                <label>
+                  <span>Tipo de cambio interno · Facturas de importadores</span>
+                  <div className="settings-input-row">
+                    <span className="country-prefix">Q</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.0001"
+                      value={settingsForm.importer_exchange_rate}
+                      onChange={(e) =>
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          importer_exchange_rate: e.target.value,
+                        }))
+                      }
+                      placeholder="Ej. 7.6500"
+                      disabled={settingsLoading || settingsSaving}
+                    />
+                  </div>
+                  <small>
+                    Uso interno. El cliente no verá este valor; se utiliza para convertir
+                    su factura USD antes de calcular IVA e IPRIMA.
+                  </small>
                 </label>
 
                 <div className="settings-preview">
@@ -4706,12 +5355,86 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               <div>
                 <span className="eyebrow">E&R GLOBAL LOGISTIC</span>
                 <h1>Cotizaciones</h1>
-                <p>Historial de cotizaciones generadas para clientes.</p>
+                <p>
+                  {["ADMIN", "OPERADOR"].includes(String(profile?.role || "").toUpperCase())
+                    ? "Control de cotizaciones separado por usuario."
+                    : "Tus cotizaciones y consultas generadas."}
+                </p>
               </div>
               <button className="primary-button" onClick={openNewQuoteView}>
                 ＋ Nueva cotización
               </button>
             </header>
+
+            {["ADMIN", "OPERADOR"].includes(String(profile?.role || "").toUpperCase()) && (
+              <section className="quotation-users-card">
+                <div className="quotation-users-head">
+                  <div>
+                    <span className="section-label">CONTROL POR USUARIO</span>
+                    <h2>Quién está utilizando el sistema</h2>
+                    <p>
+                      Seleccioná un usuario para ver únicamente sus cotizaciones.
+                    </p>
+                  </div>
+
+                  <button
+                    className={`quotation-user-filter ${quotationOwnerFilter === "" ? "active" : ""}`}
+                    onClick={() => {
+                      setQuotationOwnerFilter("");
+                      loadQuotations(quotationSearch, "");
+                    }}
+                  >
+                    <span>Todos</span>
+                    <strong>
+                      {quotationUsers.reduce(
+                        (total, item) => total + Number(item.quotation_count || 0),
+                        0
+                      )}
+                    </strong>
+                  </button>
+                </div>
+
+                <div className="quotation-user-grid">
+                  {quotationUsers.map((item) => {
+                    const ownerId = item.owner_user_id || "__HISTORICAL__";
+                    const isHistorical = !item.owner_user_id;
+
+                    return (
+                      <button
+                        key={ownerId}
+                        className={`quotation-user-card ${
+                          quotationOwnerFilter === ownerId ? "active" : ""
+                        } ${isHistorical ? "historical" : ""}`}
+                        onClick={() => {
+                          if (isHistorical) {
+                            setQuotationOwnerFilter("");
+                            setQuotationSearch("");
+                            setQuotations([]);
+                            setQuotationError(
+                              "Las cotizaciones históricas no tienen usuario asignado porque fueron creadas antes del control multiusuario."
+                            );
+                            return;
+                          }
+
+                          setQuotationOwnerFilter(ownerId);
+                          loadQuotations(quotationSearch, ownerId);
+                        }}
+                      >
+                        <div className="quotation-user-avatar">
+                          {(item.owner_name || "H").slice(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                          <strong>{item.owner_name || "Histórico / Sin asignar"}</strong>
+                          <span>{item.owner_email || "Cotizaciones anteriores"}</span>
+                          <small>{item.owner_role || "HISTÓRICO"}</small>
+                        </div>
+                        <b>{item.quotation_count || 0}</b>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             <section className="quotation-search-card">
               <div>
@@ -4723,14 +5446,28 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 <input
                   value={quotationSearch}
                   onChange={(e) => setQuotationSearch(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => { if (e.key === "Enter") loadQuotations(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      loadQuotations(quotationSearch, quotationOwnerFilter);
+                    }
+                  }}
                   placeholder="Ej. ER-20260819-154500-629619"
                 />
-                <button className="primary-button" onClick={() => loadQuotations()} disabled={quotationLoading}>
+                <button
+                  className="primary-button"
+                  onClick={() => loadQuotations(quotationSearch, quotationOwnerFilter)}
+                  disabled={quotationLoading}
+                >
                   {quotationLoading ? "Buscando..." : "Buscar"} <span>⌕</span>
                 </button>
                 {quotationSearch && (
-                  <button className="secondary-button" onClick={() => { setQuotationSearch(""); loadQuotations(""); }}>
+                  <button
+                    className="secondary-button"
+                    onClick={() => {
+                      setQuotationSearch("");
+                      loadQuotations("", quotationOwnerFilter);
+                    }}
+                  >
                     Limpiar
                   </button>
                 )}
@@ -4745,7 +5482,13 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   <span className="section-label">HISTORIAL</span>
                   <h2>{quotationLoading ? "Cargando..." : `${quotations.length} cotización${quotations.length === 1 ? "" : "es"}`}</h2>
                 </div>
-                <button className="secondary-button" onClick={() => loadQuotations()} disabled={quotationLoading}>↻ Actualizar</button>
+                <button
+                  className="secondary-button"
+                  onClick={() => loadQuotations(quotationSearch, quotationOwnerFilter)}
+                  disabled={quotationLoading}
+                >
+                  ↻ Actualizar
+                </button>
               </div>
 
               <div className="quotation-table-wrap">
@@ -4754,6 +5497,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     <tr>
                       <th>Código</th>
                       <th>Fecha</th>
+                      <th>Usuario</th>
                       <th>VIN</th>
                       <th>Vehículo</th>
                       <th>Match SAT</th>
@@ -4766,12 +5510,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   </thead>
                   <tbody>
                     {!quotationLoading && quotations.length === 0 && (
-                      <tr><td colSpan="10" className="quotation-empty">No hay cotizaciones que coincidan con la búsqueda.</td></tr>
+                      <tr><td colSpan="11" className="quotation-empty">No hay cotizaciones que coincidan con la búsqueda.</td></tr>
                     )}
                     {quotations.map((q) => (
                       <tr key={q.id || q.quote_code}>
                         <td><strong>{q.quote_code}</strong></td>
                         <td>{q.created_at ? new Date(q.created_at).toLocaleDateString("es-GT") : "—"}</td>
+                        <td>
+                          <strong>{q.owner_name || "Histórico"}</strong>
+                          <small>{q.owner_email || "Sin usuario asignado"}</small>
+                        </td>
                         <td className="quotation-vin">{q.vin}</td>
                         <td>{[q.model_year, q.make, q.model, q.vehicle_trim].filter(Boolean).join(" ")}</td>
                         <td>
@@ -4802,6 +5550,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
 
                 <div className="quotation-detail-grid">
+                  <div className="quotation-detail-block quotation-owner-detail">
+                    <small>USUARIO / PROPIETARIO</small>
+                    <strong>{selectedQuotation.owner_name || "Histórico / Sin asignar"}</strong>
+                    <span>{selectedQuotation.owner_email || "Esta cotización fue creada antes del control multiusuario."}</span>
+                  </div>
                   <div className="quotation-detail-block">
                     <small>VEHÍCULO</small>
                     <strong>{[selectedQuotation.model_year, selectedQuotation.make, selectedQuotation.model, selectedQuotation.trim].filter(Boolean).join(" ")}</strong>
@@ -6034,14 +6787,18 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     </div>
                     <div className="quote-sheet-title">
                       <h2>
-                        {quoteForm.include_freight
-                          ? "COTIZACIÓN DE IMPORTACIÓN"
-                          : "COTIZACIÓN DE GESTIÓN ADUANAL"}
+                        {(result?.calculation_method || summary?.calculation_method) === "IMPORTER"
+                          ? "COTIZACIÓN PARA IMPORTADOR"
+                          : quoteForm.include_freight
+                            ? "COTIZACIÓN DE IMPORTACIÓN"
+                            : "COTIZACIÓN DE GESTIÓN ADUANAL"}
                       </h2>
                       <span>
-                        {quoteForm.include_freight
-                          ? "VEHÍCULOS · GUATEMALA"
-                          : "SERVICIOS ADUANALES · GUATEMALA"}
+                        {(result?.calculation_method || summary?.calculation_method) === "IMPORTER"
+                          ? "BASE · FACTURA DE SUBASTA"
+                          : quoteForm.include_freight
+                            ? "VEHÍCULOS · GUATEMALA"
+                            : "SERVICIOS ADUANALES · GUATEMALA"}
                       </span>
                     </div>
                     <div className="quote-sheet-meta">
@@ -6068,6 +6825,18 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   <section className="quote-sheet-grid">
                     <div className="quote-sheet-card">
                       <small>COSTOS EN GUATEMALA</small>
+                      {(result?.calculation_method || summary?.calculation_method) === "IMPORTER" && (
+                        <div className="quote-importer-basis">
+                          <span>Factura utilizada</span>
+                          <strong>
+                            {moneyUSD(
+                              result?.invoice_value_usd ||
+                              summary?.invoice_value_usd ||
+                              0
+                            )}
+                          </strong>
+                        </div>
+                      )}
                       <div>
                         <span>IVA ({displayTaxRate(taxes?.iva_rate, 0.12)})</span>
                         <strong>{moneyGTQ(taxes?.iva_gtq || 0)}</strong>

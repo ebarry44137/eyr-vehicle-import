@@ -1,0 +1,441 @@
+/* =========================================================
+   E&R VEHICLE IMPORT · PROSPECTOS CRM V29.2
+   CSS MODULAR — NO DEPENDE DE App.css
+   ========================================================= */
+
+.prospects-layout{
+  display:block !important;
+  width:100% !important;
+  max-width:none !important;
+  grid-template-columns:1fr !important;
+}
+
+.prospects-layout .prospects-list-card{
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+}
+
+/* ---------- Lista ---------- */
+
+.prospect-range{
+  display:block;
+  margin-top:5px;
+  color:#8a99aa;
+  font-size:10px;
+  font-weight:600;
+}
+
+/* ---------- Paginación ---------- */
+
+.prospect-pagination{
+  width:100%;
+  box-sizing:border-box;
+  min-height:76px;
+  padding:14px 18px !important;
+  border-top:1px solid #e5ebf1 !important;
+  background:linear-gradient(180deg,#fbfcfe 0%,#f7f9fc 100%) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:18px !important;
+}
+
+.prospect-pagination-info{
+  display:grid !important;
+  gap:2px !important;
+}
+
+.prospect-pagination-info>span{
+  color:#a37620 !important;
+  font-size:8px !important;
+  line-height:1 !important;
+  letter-spacing:.08em !important;
+  font-weight:950 !important;
+}
+
+.prospect-pagination-info>strong{
+  color:#12395f !important;
+  font-size:13px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+}
+
+.prospect-pagination-info em{
+  color:#8b99a9 !important;
+  font-size:10px !important;
+  font-style:normal !important;
+  font-weight:650 !important;
+}
+
+.prospect-pagination-controls{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+}
+
+.prospect-page-button{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  min-width:105px !important;
+  height:40px !important;
+  margin:0 !important;
+  padding:0 13px !important;
+  border:1px solid #d7e0e9 !important;
+  border-radius:11px !important;
+  background:#fff !important;
+  color:#183d63 !important;
+  box-shadow:0 3px 10px rgba(12,48,82,.045) !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  font-family:inherit !important;
+  font-size:10px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  transition:.18s ease !important;
+}
+
+.prospect-page-button:hover:not(:disabled){
+  transform:translateY(-1px) !important;
+  border-color:#b8c8d8 !important;
+  box-shadow:0 6px 15px rgba(12,48,82,.08) !important;
+}
+
+.prospect-page-button.next{
+  border-color:#123d68 !important;
+  background:#123d68 !important;
+  color:#fff !important;
+}
+
+.prospect-page-button.next:hover:not(:disabled){
+  background:#0d335a !important;
+}
+
+.prospect-page-button:disabled{
+  opacity:.38 !important;
+  cursor:not-allowed !important;
+  transform:none !important;
+  box-shadow:none !important;
+}
+
+.prospect-page-counter{
+  min-width:80px !important;
+  height:40px !important;
+  padding:0 10px !important;
+  border:1px solid #dde5ed !important;
+  border-radius:11px !important;
+  background:#f3f6f9 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+}
+
+.prospect-page-counter small{
+  display:none !important;
+}
+
+.prospect-page-counter strong{
+  color:#12395f !important;
+  font-size:13px !important;
+  font-weight:950 !important;
+}
+
+.prospect-page-counter span{
+  color:#8b99a9 !important;
+  font-size:10px !important;
+  font-weight:750 !important;
+}
+
+/* =========================================================
+   DRAWER
+   ========================================================= */
+
+.prospect-drawer-backdrop{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:99999 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:stretch !important;
+  justify-content:flex-end !important;
+  background:rgba(3,20,38,.55) !important;
+  backdrop-filter:blur(3px) !important;
+  -webkit-backdrop-filter:blur(3px) !important;
+  overflow:hidden !important;
+  animation:prospectBackdropIn .16s ease-out both !important;
+}
+
+.prospect-detail-drawer{
+  position:relative !important;
+  inset:auto !important;
+  flex:0 0 auto !important;
+  width:min(720px,52vw) !important;
+  max-width:720px !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-left:1px solid rgba(217,227,237,.9) !important;
+  border-radius:0 !important;
+  background:#f5f8fb !important;
+  box-shadow:-28px 0 70px rgba(3,25,48,.27) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+  animation:prospectDrawerIn .22s cubic-bezier(.2,.8,.2,1) both !important;
+}
+
+.prospect-drawer-header{
+  position:relative !important;
+  flex:0 0 auto !important;
+  min-height:104px !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  padding:22px 24px 18px !important;
+  border:0 !important;
+  border-bottom:1px solid #dde6ee !important;
+  background:#fff !important;
+  display:flex !important;
+  align-items:flex-start !important;
+  justify-content:space-between !important;
+  gap:20px !important;
+}
+
+.prospect-drawer-header h2{
+  margin:5px 0 7px !important;
+  color:#082e56 !important;
+  font-size:25px !important;
+  line-height:1.1 !important;
+  font-weight:900 !important;
+}
+
+.prospect-drawer-meta{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:7px !important;
+  color:#8795a5 !important;
+  font-size:10px !important;
+}
+
+.prospect-drawer-close{
+  appearance:none !important;
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:1px solid #dbe3eb !important;
+  border-radius:11px !important;
+  background:#f7f9fb !important;
+  color:#607386 !important;
+  display:grid !important;
+  place-items:center !important;
+  font-family:inherit !important;
+  font-size:23px !important;
+  line-height:1 !important;
+  cursor:pointer !important;
+}
+
+.prospect-drawer-close:hover{
+  background:#eef3f7 !important;
+  color:#173d63 !important;
+}
+
+.prospect-drawer-scroll{
+  position:relative !important;
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:18px 22px 36px !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+.prospect-contact-card{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  margin:0 0 12px !important;
+}
+
+.prospect-contact-card>div{
+  min-width:0 !important;
+  padding:12px 14px !important;
+  border:1px solid #e0e7ef !important;
+  border-radius:13px !important;
+  background:#fff !important;
+}
+
+.prospect-contact-card>div:last-child{
+  grid-column:1/-1 !important;
+}
+
+.prospect-contact-card small,
+.prospect-contact-card strong{
+  display:block !important;
+}
+
+.prospect-contact-card small{
+  margin:0 0 3px !important;
+  color:#a07624 !important;
+  font-size:8px !important;
+  font-weight:950 !important;
+  letter-spacing:.06em !important;
+}
+
+.prospect-contact-card strong{
+  overflow-wrap:anywhere !important;
+  color:#163b60 !important;
+  font-size:10px !important;
+}
+
+.prospect-drawer-section{
+  margin:14px 0 0 !important;
+  padding:17px !important;
+  border:1px solid #dfe7ef !important;
+  border-radius:16px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+}
+
+.prospect-drawer-section-title{
+  margin:0 0 13px !important;
+}
+
+.prospect-drawer-section-title h3,
+.prospect-history-title h3{
+  margin:3px 0 0 !important;
+  color:#12385f !important;
+  font-size:15px !important;
+  line-height:1.25 !important;
+}
+
+.prospect-detail-drawer .prospect-whatsapp{
+  width:100% !important;
+  box-sizing:border-box !important;
+  justify-content:center !important;
+}
+
+.prospect-detail-drawer .prospect-query-history{
+  padding:17px !important;
+}
+
+.prospect-detail-drawer .prospect-query-item{
+  margin-top:12px !important;
+}
+
+@keyframes prospectDrawerIn{
+  from{transform:translate3d(100%,0,0);}
+  to{transform:translate3d(0,0,0);}
+}
+
+@keyframes prospectBackdropIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media(max-width:760px){
+  .prospects-table-wrap{
+    overflow-x:auto !important;
+  }
+
+  .prospects-table{
+    min-width:760px !important;
+  }
+
+  .prospect-pagination{
+    min-height:auto !important;
+    padding:12px !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    gap:10px !important;
+  }
+
+  .prospect-pagination-info{
+    display:none !important;
+  }
+
+  .prospect-pagination-controls{
+    width:100% !important;
+    justify-content:space-between !important;
+  }
+
+  .prospect-page-button{
+    flex:1 1 0 !important;
+    min-width:0 !important;
+  }
+
+  .prospect-page-counter{
+    flex:0 0 64px !important;
+    min-width:64px !important;
+  }
+
+  .prospect-detail-drawer{
+    position:fixed !important;
+    inset:0 !important;
+    width:100vw !important;
+    max-width:100vw !important;
+    height:100dvh !important;
+    max-height:100dvh !important;
+    border-left:0 !important;
+  }
+
+  .prospect-drawer-header{
+    min-height:90px !important;
+    padding:16px 16px 13px !important;
+  }
+
+  .prospect-drawer-header h2{
+    font-size:21px !important;
+  }
+
+  .prospect-drawer-scroll{
+    padding:13px 13px 28px !important;
+  }
+
+  .prospect-contact-card{
+    grid-template-columns:1fr !important;
+  }
+
+  .prospect-contact-card>div:last-child{
+    grid-column:auto !important;
+  }
+
+  .prospect-drawer-section{
+    padding:13px !important;
+    border-radius:14px !important;
+  }
+
+  .prospect-detail-drawer .prospect-query-item dl{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  .prospect-detail-drawer .prospect-import-actions,
+  .prospect-detail-drawer .prospect-quote-generated{
+    align-items:stretch !important;
+    flex-direction:column !important;
+  }
+
+  .prospect-detail-drawer .prospect-import-actions button,
+  .prospect-detail-drawer .prospect-quote-generated button{
+    width:100% !important;
+    justify-content:center !important;
+  }
+}

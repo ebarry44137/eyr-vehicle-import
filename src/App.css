@@ -6042,3 +6042,283 @@ nav {
   .importer-service-request>button{justify-content:center}
   .admin-notification-panel{position:fixed;left:12px;right:12px;top:90px;width:auto}
 }
+/* =========================================================
+   V29 · PROSPECTOS CRM · DRAWER + PAGINACIÓN
+   ========================================================= */
+
+.prospects-layout{
+  display:block !important;
+  grid-template-columns:1fr !important;
+}
+
+.prospects-list-card{
+  width:100%;
+  min-width:0;
+}
+
+.prospect-range{
+  display:block;
+  margin-top:4px;
+  color:#8b9aab;
+  font-size:10px;
+}
+
+.prospect-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:15px 18px;
+  border-top:1px solid #e8edf3;
+  background:#fbfcfe;
+}
+
+.prospect-pagination button{
+  min-height:38px;
+  padding:0 14px;
+  border:1px solid #d8e1ea;
+  border-radius:10px;
+  background:#fff;
+  color:#143b62;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.prospect-pagination button:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+}
+
+.prospect-pagination div{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:#8796a7;
+  font-size:9px;
+}
+
+.prospect-pagination strong{
+  color:#143b62;
+  font-size:10px;
+}
+
+/* Backdrop */
+.prospect-drawer-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:2500;
+  display:flex;
+  justify-content:flex-end;
+  background:rgba(4,24,45,.48);
+  backdrop-filter:blur(2px);
+  animation:prospectBackdropIn .18s ease-out;
+}
+
+/* Drawer desktop */
+.prospect-detail-drawer{
+  width:min(720px,52vw);
+  height:100dvh;
+  background:#f7f9fc;
+  box-shadow:-24px 0 60px rgba(4,25,47,.22);
+  display:flex;
+  flex-direction:column;
+  animation:prospectDrawerIn .24s cubic-bezier(.2,.8,.2,1);
+}
+
+.prospect-drawer-header{
+  flex:0 0 auto;
+  padding:22px 24px 18px;
+  border-bottom:1px solid #e0e7ef;
+  background:#fff;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:20px;
+}
+
+.prospect-drawer-header h2{
+  margin:4px 0 6px;
+  color:#0b315b;
+  font-size:25px;
+  line-height:1.1;
+}
+
+.prospect-drawer-meta{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#8594a5;
+  font-size:10px;
+}
+
+.prospect-drawer-close{
+  width:38px;
+  height:38px;
+  border:1px solid #dbe3eb;
+  border-radius:11px;
+  background:#f8fafc;
+  color:#607386;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+}
+
+.prospect-drawer-scroll{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:18px 22px 34px;
+}
+
+.prospect-contact-card{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.prospect-contact-card>div{
+  min-width:0;
+  padding:12px 14px;
+  border:1px solid #e0e7ef;
+  border-radius:13px;
+  background:#fff;
+}
+
+.prospect-contact-card>div:last-child{
+  grid-column:1/-1;
+}
+
+.prospect-contact-card small,
+.prospect-contact-card strong{
+  display:block;
+}
+
+.prospect-contact-card small{
+  margin-bottom:3px;
+  color:#9a7a35;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+
+.prospect-contact-card strong{
+  overflow-wrap:anywhere;
+  color:#163b60;
+  font-size:10px;
+}
+
+.prospect-drawer-section{
+  margin-top:14px;
+  padding:17px;
+  border:1px solid #e0e7ef;
+  border-radius:16px;
+  background:#fff;
+}
+
+.prospect-drawer-section-title{
+  margin-bottom:13px;
+}
+
+.prospect-drawer-section-title h3,
+.prospect-history-title h3{
+  margin:3px 0 0;
+  color:#12385f;
+  font-size:15px;
+}
+
+.prospect-detail-drawer .prospect-whatsapp{
+  width:100%;
+  justify-content:center;
+  box-sizing:border-box;
+}
+
+.prospect-detail-drawer .prospect-query-history{
+  padding:17px;
+}
+
+.prospect-detail-drawer .prospect-query-item{
+  margin-top:12px;
+}
+
+@keyframes prospectDrawerIn{
+  from{transform:translateX(100%);}
+  to{transform:translateX(0);}
+}
+
+@keyframes prospectBackdropIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+/* Mobile: detail becomes an app-like full screen sheet */
+@media(max-width:760px){
+  .prospects-table-wrap{
+    overflow-x:auto;
+  }
+
+  .prospects-table{
+    min-width:760px;
+  }
+
+  .prospect-pagination{
+    padding:12px;
+  }
+
+  .prospect-pagination button{
+    padding:0 10px;
+    font-size:9px;
+  }
+
+  .prospect-detail-drawer{
+    width:100%;
+    max-width:none;
+    height:100dvh;
+  }
+
+  .prospect-drawer-header{
+    padding:16px 16px 13px;
+    position:sticky;
+    top:0;
+    z-index:3;
+  }
+
+  .prospect-drawer-header h2{
+    font-size:21px;
+  }
+
+  .prospect-drawer-scroll{
+    padding:13px 13px 28px;
+  }
+
+  .prospect-contact-card{
+    grid-template-columns:1fr;
+  }
+
+  .prospect-contact-card>div:last-child{
+    grid-column:auto;
+  }
+
+  .prospect-drawer-section{
+    padding:13px;
+    border-radius:14px;
+  }
+
+  .prospect-detail-drawer .prospect-query-item dl{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .prospect-detail-drawer .prospect-import-actions,
+  .prospect-detail-drawer .prospect-quote-generated{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .prospect-detail-drawer .prospect-import-actions button,
+  .prospect-detail-drawer .prospect-quote-generated button{
+    width:100%;
+    justify-content:center;
+  }
+}

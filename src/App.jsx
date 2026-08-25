@@ -6,6 +6,11 @@ import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
 import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
 import ImporterCustomsServiceRequest from "./modules/importer-customs/ImporterCustomsServiceRequest";
 import AdminNotificationBell from "./modules/notifications/AdminNotificationBell";
+import ProspectList from "./modules/prospects/ProspectList";
+import ProspectDetailDrawer from "./modules/prospects/ProspectDetailDrawer";
+import InternalUsersPage from "./modules/internal-users/InternalUsersPage";
+import FinanceDashboard from "./modules/finance/FinanceDashboard";
+import CustomsCaseFinance from "./modules/finance/CustomsCaseFinance";
 import "./App.css";
 
 function moneyGTQ(value) {
@@ -360,6 +365,8 @@ function App() {
   const [prospectSaving, setProspectSaving] = useState(false);
   const [prospectMessage, setProspectMessage] = useState("");
   const [prospectQuoteLoadingId, setProspectQuoteLoadingId] = useState(null);
+  const [prospectPage, setProspectPage] = useState(1);
+  const PROSPECT_PAGE_SIZE = 20;
   const [quoteRecipient, setQuoteRecipient] = useState(null);
 
   // V23 · Control Aduanal
@@ -424,7 +431,7 @@ function App() {
   async function loadInternalProfile(userId) {
     const { data, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, role, active, free_quotes_used, subscription_status, subscription_expires_at")
+      .select("id, full_name, email, phone, role, job_title, active, free_quotes_used, subscription_status, subscription_expires_at")
       .eq("id", userId)
       .single();
 
@@ -1989,6 +1996,7 @@ function App() {
       if (rpcError) throw rpcError;
 
       setProspects(Array.isArray(data) ? data : []);
+      setProspectPage(1);
     } catch (err) {
       console.error("PROSPECTS LOAD ERROR:", err);
       setProspectsError(
@@ -2429,6 +2437,14 @@ function App() {
   const isExceptionalResolved = summary?.sat_exceptional_resolution === true;
 
   const internalRole = String(profile?.role || "").toUpperCase();
+  const internalJobTitle = String(profile?.job_title || "").toUpperCase();
+  const isSystemAdmin = internalRole === "ADMIN";
+  const internalRoleLabel =
+    isSystemAdmin
+      ? "ADMIN"
+      : internalJobTitle === "DIGITADOR"
+        ? "DIGITADOR"
+        : internalRole;
   const customerRole = internalRole === "CUSTOMER";
   const subscriptionStatus = String(profile?.subscription_status || "FREE").toUpperCase();
   const subscriptionActive =
@@ -3403,13 +3419,25 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Cotizaciones
           </button>
 
-          <button
-            className={`nav-item ${activeView === "subscriptions" ? "active" : ""}`}
-            onClick={openSubscriptionsView}
-          >
-            <span>♙</span>
-            Usuarios y Suscripciones
-          </button>
+          {isSystemAdmin && (
+            <button
+              className={`nav-item ${activeView === "subscriptions" ? "active" : ""}`}
+              onClick={openSubscriptionsView}
+            >
+              <span>♙</span>
+              Usuarios y Suscripciones
+            </button>
+          )}
+
+          {isSystemAdmin && (
+            <button
+              className={`nav-item ${activeView === "internal-users" ? "active" : ""}`}
+              onClick={() => setActiveView("internal-users")}
+            >
+              <span>♟</span>
+              Usuarios Internos
+            </button>
+          )}
 
           <button
             className={`nav-item ${activeView === "prospects" ? "active" : ""}`}
@@ -3440,13 +3468,25 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Revisiones
           </button>
 
-          <button
-            className={`nav-item ${activeView === "settings" ? "active" : ""}`}
-            onClick={openSettingsView}
-          >
-            <span>⚙</span>
-            Configuración
-          </button>
+          {isSystemAdmin && (
+            <button
+              className={`nav-item ${activeView === "finance" ? "active" : ""}`}
+              onClick={() => setActiveView("finance")}
+            >
+              <span>💰</span>
+              Finanzas
+            </button>
+          )}
+
+          {isSystemAdmin && (
+            <button
+              className={`nav-item ${activeView === "settings" ? "active" : ""}`}
+              onClick={openSettingsView}
+            >
+              <span>⚙</span>
+              Configuración
+            </button>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -3457,7 +3497,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <div className="sidebar-user-copy">
               <strong>{profile?.full_name || "Usuario E&R"}</strong>
               <span>{profile?.email}</span>
-              <small>{internalRole}</small>
+              <small>{internalRoleLabel}</small>
             </div>
           </div>
 
@@ -3475,7 +3515,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "subscriptions" ? (
+        {activeView === "finance" && isSystemAdmin ? (
+          <FinanceDashboard supabase={supabase} />
+        ) : activeView === "internal-users" ? (
+          <InternalUsersPage
+            invokeFunction={invokeFunction}
+            currentUserId={session?.user?.id || null}
+          />
+        ) : activeView === "subscriptions" ? (
           <section className="subscriptions-module">
             <header className="topbar subscriptions-topbar">
               <div>
@@ -4872,6 +4919,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     </div>
                   </section>
 
+                  {isSystemAdmin && (
+                    <CustomsCaseFinance
+                      supabase={supabase}
+                      caseId={customsDetail.id}
+                      caseCode={customsDetail.case_code}
+                      clientName={customsDetail.client_name}
+                      onChanged={() => loadCustomsCases(customsSearch)}
+                    />
+                  )}
+
                   <div className="customs-form-actions sticky">
                     <button
                       className="secondary-button"
@@ -4971,290 +5028,41 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               <div className="customer-message error">{prospectsError}</div>
             )}
 
-            <div className={`prospects-layout ${selectedProspect ? "has-detail" : ""}`}>
-              <section className="prospects-list-card">
-                <div className="prospects-list-head">
-                  <div>
-                    <span className="section-label">BASE DE PROSPECTOS</span>
-                    <h2>
-                      {prospectsLoading
-                        ? "Cargando..."
-                        : `${prospects.length} prospecto${prospects.length === 1 ? "" : "s"}`}
-                    </h2>
-                  </div>
-
-                  <button
-                    className="secondary-button"
-                    onClick={() => loadProspects(prospectSearch)}
-                    disabled={prospectsLoading}
-                  >
-                    ↻ Actualizar
-                  </button>
-                </div>
-
-                <div className="prospects-table-wrap">
-                  <table className="prospects-table">
-                    <thead>
-                      <tr>
-                        <th>Cliente</th>
-                        <th>Consultas</th>
-                        <th>Último vehículo</th>
-                        <th>Actividad</th>
-                        <th>Estado</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {!prospectsLoading && prospects.length === 0 && (
-                        <tr>
-                          <td colSpan="6" className="empty-cell">
-                            No hay prospectos que coincidan con la búsqueda.
-                          </td>
-                        </tr>
-                      )}
-
-                      {prospects.map((item) => (
-                        <tr key={item.contact_key}>
-                          <td>
-                            <strong>{item.full_name || "Cliente sin nombre"}</strong>
-                            <small>{item.email || "Sin correo"}</small>
-                            <small>{item.phone || "Sin celular"}</small>
-                          </td>
-                          <td>
-                            <strong>{item.used_count || 0} / 3</strong>
-                            <small>
-                              {item.query_count || 0} registradas
-                            </small>
-                          </td>
-                          <td>
-                            <strong>{item.latest_vehicle || "—"}</strong>
-                            <small>{item.latest_vin || "Sin VIN registrado"}</small>
-                          </td>
-                          <td>
-                            <strong>
-                              {item.updated_at
-                                ? new Date(item.updated_at).toLocaleDateString("es-GT")
-                                : "—"}
-                            </strong>
-                            <small>
-                              {item.updated_at
-                                ? new Date(item.updated_at).toLocaleTimeString("es-GT", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : ""}
-                            </small>
-                          </td>
-                          <td>
-                            <span className={`lead-status ${(item.lead_status || "NUEVO").toLowerCase()}`}>
-                              {item.lead_status || "NUEVO"}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              className="prospect-open-button"
-                              onClick={() => selectProspect(item)}
-                            >
-                              Ver →
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-
-              {selectedProspect && (
-                <aside className="prospect-detail-card">
-                  <div className="prospect-detail-head">
-                    <div>
-                      <span className="section-label">DETALLE DEL PROSPECTO</span>
-                      <h2>{selectedProspect.full_name || "Cliente"}</h2>
-                      <p>{selectedProspect.email || "Sin correo"}</p>
-                      <p>{selectedProspect.phone || "Sin celular"}</p>
-                    </div>
-
-                    <button
-                      className="prospect-close"
-                      onClick={() => {
-                        setSelectedProspect(null);
-                        setProspectQueries([]);
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  {selectedProspect.phone && (
-                    <a
-                      className="whatsapp-action prospect-whatsapp"
-                      href={buildWhatsAppUrl(
-                        selectedProspect.phone,
-                        `Hola ${selectedProspect.full_name || ""}, te contactamos de E&R Solutions. Vimos que realizaste una cotización de importación de vehículo y queremos ayudarte con los siguientes pasos.`
-                      )}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <span className="whatsapp-icon">💬</span>
-                      Contactar por WhatsApp
-                    </a>
-                  )}
-
-                  <div className="prospect-followup">
-                    <label>
-                      <span>Estado comercial</span>
-                      <select
-                        value={prospectStatusForm.status}
-                        onChange={(e) =>
-                          setProspectStatusForm((prev) => ({
-                            ...prev,
-                            status: e.target.value,
-                          }))
-                        }
-                      >
-                        <option value="NUEVO">Nuevo</option>
-                        <option value="CONTACTADO">Contactado</option>
-                        <option value="SEGUIMIENTO">En seguimiento</option>
-                        <option value="CONVERTIDO">Convertido</option>
-                        <option value="NO_INTERESADO">No interesado</option>
-                      </select>
-                    </label>
-
-                    <label>
-                      <span>Notas de seguimiento</span>
-                      <textarea
-                        rows="3"
-                        value={prospectStatusForm.notes}
-                        onChange={(e) =>
-                          setProspectStatusForm((prev) => ({
-                            ...prev,
-                            notes: e.target.value,
-                          }))
-                        }
-                        placeholder="Ej. Se llamó, interesado en traer el vehículo el próximo mes..."
-                      />
-                    </label>
-
-                    <button
-                      className="primary-button"
-                      onClick={saveProspectStatus}
-                      disabled={prospectSaving}
-                    >
-                      {prospectSaving ? "Guardando..." : "Guardar seguimiento"}
-                    </button>
-
-                    {prospectMessage && (
-                      <div className="customer-message success">{prospectMessage}</div>
-                    )}
-                  </div>
-
-                  <div className="prospect-query-history">
-                    <div className="prospect-history-title">
-                      <span className="section-label">CONSULTAS REALIZADAS</span>
-                      <strong>
-                        {prospectQueriesLoading
-                          ? "Cargando..."
-                          : `${prospectQueries.length} consulta${prospectQueries.length === 1 ? "" : "s"}`}
-                      </strong>
-                    </div>
-
-                    {!prospectQueriesLoading && prospectQueries.length === 0 && (
-                      <div className="prospect-empty-history">
-                        Este prospecto es anterior al registro detallado de consultas.
-                        Las próximas consultas sí aparecerán aquí.
-                      </div>
-                    )}
-
-                    {prospectQueries.map((q) => (
-                      <article className="prospect-query-item" key={q.id}>
-                        <div className="prospect-query-top">
-                          <div>
-                            <strong>
-                              {[q.model_year, q.make, q.model, q.vehicle_trim]
-                                .filter(Boolean)
-                                .join(" ") || "Vehículo consultado"}
-                            </strong>
-                            <small>{q.vin}</small>
-                            {q.import_requested_at && (
-                              <span className="import-request-badge">🔥 Solicitó iniciar importación</span>
-                            )}
-                          </div>
-                          <span className={`query-result ${String(q.calculation_status || "").toLowerCase()}`}>
-                            {q.calculation_status || "—"}
-                          </span>
-                        </div>
-
-                        <dl>
-                          <div>
-                            <dt>Línea SAT</dt>
-                            <dd>{q.sat_line || "Pendiente de revisión"}</dd>
-                          </div>
-                          <div>
-                            <dt>Valor SAT</dt>
-                            <dd>{q.sat_value_gtq ? moneyGTQ(q.sat_value_gtq) : "—"}</dd>
-                          </div>
-                          <div>
-                            <dt>Tributos</dt>
-                            <dd>{q.total_taxes_gtq ? moneyGTQ(q.total_taxes_gtq) : "—"}</dd>
-                          </div>
-                          <div>
-                            <dt>Flete</dt>
-                            <dd>{q.freight_usd ? moneyUSD(q.freight_usd) : "—"}</dd>
-                          </div>
-                        </dl>
-
-                        {q.import_requested_at && (
-                          <div className="prospect-import-actions">
-                            <div>
-                              <small>SOLICITUD DE IMPORTACIÓN</small>
-                              <span>{new Date(q.import_requested_at).toLocaleString("es-GT")}</span>
-                            </div>
-                            <button
-                              className="primary-button prospect-generate-quote"
-                              onClick={() => generateProspectQuotation(q)}
-                              disabled={prospectQuoteLoadingId === q.id || q.calculation_status !== "READY"}
-                            >
-                              {prospectQuoteLoadingId === q.id ? "Preparando..." : "Generar cotización"} <span>→</span>
-                            </button>
-                          </div>
-                        )}
-
-                        {q.quote_generated_at && (
-                          <div className="prospect-quote-generated">
-                            <span>✓ Cotización {q.quote_code || ""} generada</span>
-
-                            {q.import_management_id ? (
-                              <button
-                                className="prospect-management-created"
-                                onClick={openImportManagementsView}
-                              >
-                                Gestión creada · Ver →
-                              </button>
-                            ) : (
-                              <button
-                                className="primary-button prospect-convert-management"
-                                onClick={() => convertProspectToImportManagement(q)}
-                                disabled={convertingQueryId === q.id}
-                              >
-                                {convertingQueryId === q.id ? "Creando..." : "Convertir en gestión"}
-                                <span>→</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-
-                        <small className="prospect-query-date">
-                          {q.created_at
-                            ? new Date(q.created_at).toLocaleString("es-GT")
-                            : ""}
-                        </small>
-                      </article>
-                    ))}
-                  </div>
-                </aside>
-              )}
+            <div className="prospects-layout">
+              <ProspectList
+                prospects={prospects}
+                loading={prospectsLoading}
+                page={prospectPage}
+                pageSize={PROSPECT_PAGE_SIZE}
+                onPageChange={setProspectPage}
+                onOpen={selectProspect}
+                onRefresh={() => loadProspects(prospectSearch)}
+              />
             </div>
+
+            <ProspectDetailDrawer
+              prospect={selectedProspect}
+              queries={prospectQueries}
+              queriesLoading={prospectQueriesLoading}
+              statusForm={prospectStatusForm}
+              setStatusForm={setProspectStatusForm}
+              saving={prospectSaving}
+              message={prospectMessage}
+              quoteLoadingId={prospectQuoteLoadingId}
+              convertingQueryId={convertingQueryId}
+              onClose={() => {
+                setSelectedProspect(null);
+                setProspectQueries([]);
+                setProspectMessage("");
+              }}
+              onSaveStatus={saveProspectStatus}
+              onGenerateQuotation={generateProspectQuotation}
+              onConvertManagement={convertProspectToImportManagement}
+              onOpenManagements={openImportManagementsView}
+              buildWhatsAppUrl={buildWhatsAppUrl}
+              moneyGTQ={moneyGTQ}
+              moneyUSD={moneyUSD}
+            />
           </section>
         ) : activeView === "settings" ? (
           <section className="settings-module">

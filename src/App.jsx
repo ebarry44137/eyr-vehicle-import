@@ -11,6 +11,10 @@ import ProspectDetailDrawer from "./modules/prospects/ProspectDetailDrawer";
 import InternalUsersPage from "./modules/internal-users/InternalUsersPage";
 import FinanceDashboard from "./modules/finance/FinanceDashboard";
 import CustomsCaseFinance from "./modules/finance/CustomsCaseFinance";
+import DeclarationsPage from "./modules/declarations/DeclarationsPage";
+import DucaCorrelativesPage from "./modules/declarations/DucaCorrelativesPage";
+import "./modules/layout/sidebar-scroll.css";
+import "./modules/customs/manual-customs.css";
 import "./App.css";
 
 function moneyGTQ(value) {
@@ -1782,8 +1786,17 @@ function App() {
       return;
     }
 
-    if (!String(customsForm.vin || "").trim()) {
-      setCustomsError("Ingresá el VIN del vehículo.");
+    // En una gestión ingresada manualmente el VIN es opcional.
+    // Si existe, lo guardamos; si no, el expediente puede continuar
+    // sin cálculo automático de SAT / IVA / IPRIMA.
+    const cleanManualVin = String(customsForm.vin || "")
+      .trim()
+      .toUpperCase();
+
+    if (cleanManualVin && cleanManualVin.length !== 17) {
+      setCustomsError(
+        "El VIN es opcional, pero si lo ingresás debe contener 17 caracteres."
+      );
       return;
     }
 
@@ -1802,7 +1815,7 @@ function App() {
         bl: String(customsForm.bl || "").trim().toUpperCase() || null,
         container_number:
           String(customsForm.container_number || "").trim().toUpperCase() || null,
-        vin: String(customsForm.vin || "").trim().toUpperCase(),
+        vin: cleanManualVin || null,
         make: String(customsForm.make || "").trim() || null,
         model: String(customsForm.model || "").trim() || null,
         vehicle_trim:
@@ -1872,7 +1885,7 @@ function App() {
         crane_usd:
           Number(customsForm.crane_usd || 0),
 
-        created_by: user?.id || null,
+        created_by: session?.user?.id || null,
       };
 
       const { data, error: insertError } =
@@ -1954,7 +1967,7 @@ function App() {
         updatePayload[key] = value;
       }
 
-      updatePayload.updated_by = user?.id || null;
+      updatePayload.updated_by = session?.user?.id || null;
       updatePayload.updated_at = new Date().toISOString();
 
       const { data, error: updateError } =
@@ -3463,6 +3476,24 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Control Aduanal
           </button>
 
+          <button
+            className={`nav-item ${activeView === "declarations" ? "active" : ""}`}
+            onClick={() => setActiveView("declarations")}
+          >
+            <span>📄</span>
+            Declaraciones
+          </button>
+
+          {isSystemAdmin && (
+            <button
+              className={`nav-item ${activeView === "correlatives" ? "active" : ""}`}
+              onClick={() => setActiveView("correlatives")}
+            >
+              <span>📑</span>
+              Correlativos DUCA
+            </button>
+          )}
+
           <button className="nav-item">
             <span>⚠</span>
             Revisiones
@@ -3515,7 +3546,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "finance" && isSystemAdmin ? (
+        {activeView === "declarations" ? (
+          <DeclarationsPage supabase={supabase} />
+        ) : activeView === "correlatives" && isSystemAdmin ? (
+          <DucaCorrelativesPage supabase={supabase} />
+        ) : activeView === "finance" && isSystemAdmin ? (
           <FinanceDashboard supabase={supabase} />
         ) : activeView === "internal-users" ? (
           <InternalUsersPage
@@ -4310,36 +4345,56 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <div className="customs-section-title">
                         <span>02</span>
                         <div>
-                          <strong>Vehículo + cálculo SAT</strong>
+                          <strong>Vehículo + cálculo SAT <em className="optional-field">Opcional</em></strong>
                           <small>
-                            El mismo motor VIN calcula valor SAT, IVA e IPRIMA.
+                            Si contás con VIN podés calcular SAT, IVA e IPRIMA automáticamente.
+                            Si no lo tenés, podés crear la gestión sin este cálculo.
                           </small>
                         </div>
                       </div>
 
-                      <div className="customs-vin-row">
-                        <input
-                          value={customsForm.vin}
-                          maxLength="17"
-                          onChange={(e) =>
-                            setCustomsForm((p) => ({
-                              ...p,
-                              vin: e.target.value.toUpperCase(),
-                            }))
-                          }
-                          placeholder="VIN de 17 caracteres"
-                        />
-                        <button
-                          type="button"
-                          className="primary-button"
-                          onClick={calculateManualCustomsTaxes}
-                          disabled={customsDecodeLoading}
-                        >
-                          {customsDecodeLoading
-                            ? "Calculando..."
-                            : "Calcular IVA e IPRIMA"}
-                          <span>→</span>
-                        </button>
+                      <div className="customs-vin-optional-block">
+                        <div className="customs-vin-label">
+                          <span>VIN DEL VEHÍCULO</span>
+                          <small>Opcional</small>
+                        </div>
+
+                        <div className="customs-vin-row">
+                          <input
+                            value={customsForm.vin}
+                            maxLength="17"
+                            onChange={(e) =>
+                              setCustomsForm((p) => ({
+                                ...p,
+                                vin: e.target.value
+                                  .toUpperCase()
+                                  .replace(/\s/g, ""),
+                              }))
+                            }
+                            placeholder="Ingresalo solo si lo tenés"
+                          />
+                          <button
+                            type="button"
+                            className="primary-button"
+                            onClick={calculateManualCustomsTaxes}
+                            disabled={
+                              customsDecodeLoading ||
+                              String(customsForm.vin || "").trim().length !== 17
+                            }
+                          >
+                            {customsDecodeLoading
+                              ? "Calculando..."
+                              : "Calcular IVA e IPRIMA"}
+                            <span>→</span>
+                          </button>
+                        </div>
+
+                        {!customsForm.vin && (
+                          <div className="customs-vin-helper">
+                            ✓ Podés continuar sin VIN. Los impuestos quedarán pendientes
+                            hasta que decidan registrarlos.
+                          </div>
+                        )}
                       </div>
 
                       {customsDecodeResult && (

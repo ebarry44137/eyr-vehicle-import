@@ -1,0 +1,143 @@
+/* =========================================================
+   E&R · V32 DECLARACIONES + CORRELATIVOS DUCA
+   ========================================================= */
+.declarations-module,.correlatives-module{width:100%;max-width:1500px;margin:0 auto;padding-bottom:70px}
+.declarations-header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px}.declarations-header h1{margin:4px 0;color:#082f57;font-size:30px}.declarations-header p{margin:0;color:#7c8da0;font-size:11px}
+.declaration-create-button{min-height:44px;padding:0 15px;border:0;border-radius:11px;background:#d7a73d;color:#092f56;font-size:10px;font-weight:950;cursor:pointer}
+.declaration-kpis,.correlative-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px}.declaration-kpis article,.correlative-kpis article{padding:15px;border:1px solid #dde5ed;border-radius:15px;background:#fff}.declaration-kpis span,.correlative-kpis span{display:block;color:#7a8b9d;font-size:9px;font-weight:850}.declaration-kpis strong,.correlative-kpis strong{display:block;margin-top:4px;color:#0e375f;font-size:22px}.declaration-kpis small{display:block;margin-top:3px;color:#9a7b3d;font-size:7px}.declaration-kpis article.warning{background:#fff8e9;border-color:#ead7aa}
+.declarations-list-card,.correlative-register-card,.correlative-batches-card{overflow:hidden;border:1px solid #dce5ed;border-radius:18px;background:#fff}
+.declarations-list-head{padding:16px 18px;border-bottom:1px solid #e7edf3;display:flex;align-items:center;justify-content:space-between;gap:15px}.declarations-list-head h2{margin:3px 0 0;color:#0b335b;font-size:17px}
+.declaration-search{display:flex;gap:7px}.declaration-search input{width:260px;height:39px;padding:0 10px;border:1px solid #d3dde7;border-radius:9px}.declaration-search button{border:0;border-radius:9px;padding:0 12px;background:#123c67;color:#fff;font-size:9px;font-weight:900}
+.declarations-table-wrap{overflow-x:auto}.declarations-table{width:100%;min-width:900px;border-collapse:collapse}.declarations-table th{padding:10px 12px;background:#f5f8fb;color:#78899b;text-align:left;font-size:8px}.declarations-table td{padding:12px;border-top:1px solid #edf1f5;color:#244766;font-size:9px}.declarations-table td strong,.declarations-table td small{display:block}.declarations-table td small{margin-top:2px;color:#94a0ad;font-size:7px}.declarations-table select{height:31px;border:1px solid #d6e0e8;border-radius:8px;background:#fff;color:#244766;font-size:8px}
+.duca-correlative-badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:#e9f7ee;color:#207146;font-size:9px;font-weight:950}.duca-correlative-missing{display:inline-flex;padding:5px 8px;border-radius:999px;background:#fff0df;color:#a06a17;font-size:8px;font-weight:950}
+.declaration-modal-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(4,24,44,.56);display:grid;place-items:center;padding:18px;backdrop-filter:blur(3px)}.declaration-modal{width:min(720px,calc(100vw - 28px));overflow:hidden;border-radius:21px;background:#fff;box-shadow:0 24px 70px rgba(4,27,52,.28)}.declaration-modal>header{padding:19px 21px;border-bottom:1px solid #e7edf3;display:flex;justify-content:space-between}.declaration-modal h2{margin:4px 0;color:#0b315b}.declaration-modal p{margin:0;color:#7d8d9f;font-size:9px}.declaration-modal>header>button{width:35px;height:35px;border:1px solid #dce4ec;border-radius:10px;background:#f8fafc;color:#607589;font-size:21px}
+.declaration-form-grid{padding:19px 21px;display:grid;grid-template-columns:1fr 1fr;gap:11px}.declaration-form-grid label{display:grid;gap:5px}.declaration-form-grid label>span{font-size:8px;font-weight:900;color:#5c7288}.declaration-form-grid input,.declaration-form-grid select,.declaration-form-grid textarea{width:100%;box-sizing:border-box;padding:0 10px;border:1px solid #d2dde7;border-radius:9px;background:#fbfcfe;color:#173b61;font-family:inherit}.declaration-form-grid input,.declaration-form-grid select{height:40px}.declaration-form-grid textarea{padding-top:9px}.declaration-form-grid small{font-size:7px;color:#9a7b3d}.declaration-form-grid .span-2{grid-column:1/-1}.declaration-modal>footer{padding:13px 21px 19px;display:flex;justify-content:flex-end;gap:8px}
+.correlative-stock-alert{margin-bottom:14px;padding:12px 15px;border:1px solid #e9d6a5;border-radius:12px;background:#fff8e9;color:#8f6519;display:flex;justify-content:space-between;gap:12px;font-size:9px}.correlative-stock-alert.critical{background:#fff0ef;border-color:#edcecb;color:#9b4039}
+.correlatives-grid{display:grid;grid-template-columns:minmax(340px,.8fr) minmax(0,1.2fr);gap:14px;margin-bottom:14px}.correlative-register-card form{padding:15px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.correlative-register-card label{display:grid;gap:4px}.correlative-register-card label>span{color:#5e7489;font-size:8px;font-weight:900}.correlative-register-card input,.correlative-register-card textarea{width:100%;box-sizing:border-box;padding:0 9px;border:1px solid #d2dde7;border-radius:9px;background:#fbfcfe}.correlative-register-card input{height:38px}.correlative-register-card textarea{padding-top:8px}.correlative-register-card .span-2{grid-column:1/-1}.correlative-register-card form>button{grid-column:1/-1;min-height:40px;border:0;border-radius:9px;background:#123c67;color:#fff;font-size:9px;font-weight:950;cursor:pointer}
+.batch-calculation{display:grid;grid-template-columns:1fr 1fr;gap:7px}.batch-calculation>div{padding:8px;border-radius:9px;background:#f6f9fb;border:1px solid #e3e9ef}.batch-calculation span,.batch-calculation strong{display:block}.batch-calculation span{color:#8997a6;font-size:7px}.batch-calculation strong{margin-top:2px;color:#123b62;font-size:10px}
+.correlative-batch-list{max-height:390px;overflow-y:auto}.correlative-batch-list article{padding:11px 14px;border-top:1px solid #edf1f5;display:flex;justify-content:space-between;gap:14px}.correlative-batch-list article:first-child{border-top:0}.correlative-batch-list article>div{display:grid;gap:2px}.correlative-batch-list article>div:last-child{text-align:right}.correlative-batch-list strong{color:#143b62;font-size:10px}.correlative-batch-list span{color:#77899b;font-size:8px}.correlative-batch-list small{color:#9b7a3b;font-size:7px}
+.correlative-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:7px;font-weight:950}.correlative-status.disponible{background:#e8f7ed;color:#217147}.correlative-status.reservado{background:#fff4dc;color:#946319}.correlative-status.utilizado{background:#e9f0fa;color:#2a5f91}.correlative-status.anulado{background:#f5e8e7;color:#9b443d}
+@media(max-width:900px){.correlatives-grid{grid-template-columns:1fr}.declaration-kpis,.correlative-kpis{grid-template-columns:1fr 1fr}}@media(max-width:650px){.declarations-header{align-items:stretch;flex-direction:column}.declaration-search{width:100%}.declaration-search input{width:100%}.declaration-form-grid,.correlative-register-card form{grid-template-columns:1fr}.declaration-form-grid .span-2,.correlative-register-card .span-2,.correlative-register-card form>button{grid-column:auto}}
+
+
+/* =========================================================
+   V32.2 · COMPRAS A CRÉDITO / CARGA INICIAL
+   ========================================================= */
+.initial-balance-button{
+  min-height:42px;
+  padding:0 14px;
+  border:1px solid #d7a73d;
+  border-radius:11px;
+  background:#fff8e9;
+  color:#805a13;
+  font-size:9px;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.correlatives-grid.v32-2{
+  grid-template-columns:minmax(430px,.95fr) minmax(0,1.05fr);
+}
+
+.batch-financial-summary{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:7px;
+  padding:9px;
+  border:1px solid #e4eaf0;
+  border-radius:11px;
+  background:#f7f9fc;
+}
+
+.batch-financial-summary>div{
+  min-width:0;
+  padding:7px;
+  border-radius:8px;
+  background:#fff;
+}
+
+.batch-financial-summary span,
+.batch-financial-summary strong{
+  display:block;
+}
+
+.batch-financial-summary span{
+  color:#8391a1;
+  font-size:7px;
+  font-weight:850;
+}
+
+.batch-financial-summary strong{
+  margin-top:3px;
+  color:#123b62;
+  font-size:10px;
+}
+
+.batch-financial-summary .pending{
+  background:#fff6e5;
+}
+
+.batch-financial-summary .pending strong{
+  color:#9d6a17;
+}
+
+.correlative-batch-list article.batch-v32-2{
+  display:grid;
+  grid-template-columns:1fr 1.15fr .8fr;
+  align-items:center;
+}
+
+.batch-payable-status{
+  text-align:right;
+}
+
+.batch-payable-status span,
+.batch-payable-status strong,
+.batch-payable-status small{
+  display:block;
+}
+
+.batch-payable-status span{
+  color:#9c762e;
+  font-size:7px;
+  font-weight:950;
+}
+
+.batch-payable-status strong{
+  margin-top:2px;
+  color:#9b6413;
+  font-size:10px;
+}
+
+@media(max-width:1050px){
+  .correlatives-grid.v32-2{
+    grid-template-columns:1fr;
+  }
+
+  .batch-financial-summary{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .correlative-batch-list article.batch-v32-2{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .batch-payable-status{
+    grid-column:1/-1;
+    text-align:left;
+  }
+}
+
+@media(max-width:650px){
+  .batch-financial-summary{
+    grid-template-columns:1fr;
+  }
+
+  .correlative-batch-list article.batch-v32-2{
+    grid-template-columns:1fr;
+  }
+
+  .batch-payable-status{
+    grid-column:auto;
+  }
+}

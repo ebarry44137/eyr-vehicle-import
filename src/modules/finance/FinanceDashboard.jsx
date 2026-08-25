@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./finance.css";
+import AccountsPayablePanel from "./AccountsPayablePanel";
 
 function q(value) {
   const number = Number(value || 0);
@@ -225,7 +226,8 @@ export default function FinanceDashboard({ supabase }) {
         <article><span>Costos directos</span><strong>{q(s.direct_costs_gtq)}</strong><small>Gestiones / terceros</small></article>
         <article className="profit"><span>Utilidad bruta</span><strong>{q(s.gross_profit_gtq)}</strong><small>Facturado - costos directos</small></article>
         <article><span>Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong><small>Personal, renta, servicios...</small></article>
-        <article className={Number(s.net_result_gtq) >= 0 ? "profit" : "danger"}><span>Resultado neto</span><strong>{q(s.net_result_gtq)}</strong><small>Cobrado - costos - gastos</small></article>
+        <article><span>Pagos a proveedores</span><strong>{q(s.supplier_payments_gtq || 0)}</strong><small>Salidas reales por cuentas a pagar</small></article>
+        <article className={Number(s.cash_result_gtq ?? s.net_result_gtq) >= 0 ? "profit" : "danger"}><span>Flujo de caja</span><strong>{q(s.cash_result_gtq ?? s.net_result_gtq)}</strong><small>Cobrado - salidas reales - gastos</small></article>
       </section>
 
       <div className="finance-grid-layout">
@@ -324,6 +326,11 @@ export default function FinanceDashboard({ supabase }) {
         </div>
       </section>
 
+      <AccountsPayablePanel
+        supabase={supabase}
+        onChanged={load}
+      />
+
       <section className="finance-closing-section">
         <div className="finance-closing-builder">
           <div>
@@ -341,9 +348,10 @@ export default function FinanceDashboard({ supabase }) {
           <div className="closing-preview">
             <div><span>Saldo inicial</span><strong>{q(closingForm.opening_cash_gtq)}</strong></div>
             <div><span>+ Cobrado</span><strong>{q(s.collected_gtq)}</strong></div>
-            <div><span>- Costos directos</span><strong>{q(s.direct_costs_gtq)}</strong></div>
+            <div><span>- Salidas operativas reales</span><strong>{q(s.cash_direct_outflows_gtq ?? s.direct_costs_gtq)}</strong></div>
+            <div><span className="closing-subnote">Incluye pagos a proveedores: {q(s.supplier_payments_gtq || 0)}</span><strong></strong></div>
             <div><span>- Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong></div>
-            <div className="closing-total"><span>Saldo final estimado</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number(s.direct_costs_gtq || 0) - Number(s.general_expenses_gtq || 0))}</strong></div>
+            <div className="closing-total"><span>Saldo final estimado</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number((s.cash_direct_outflows_gtq ?? s.direct_costs_gtq) || 0) - Number(s.general_expenses_gtq || 0))}</strong></div>
           </div>
         </div>
 

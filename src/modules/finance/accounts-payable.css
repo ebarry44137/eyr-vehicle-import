@@ -1,0 +1,322 @@
+/* =========================================================
+   V32.2 · CUENTAS POR PAGAR
+   ========================================================= */
+.accounts-payable-panel{
+  margin-bottom:14px;
+  overflow:hidden;
+  border:1px solid #dce5ed;
+  border-radius:18px;
+  background:#fff;
+}
+
+.accounts-payable-head{
+  padding:17px 18px;
+  border-bottom:1px solid #e7edf3;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.accounts-payable-head>div:first-child>span,
+.accounts-payable-history-head span,
+.accounts-payable-payment header>div:first-child>span{
+  color:#a4771f;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.09em;
+}
+
+.accounts-payable-head h2{
+  margin:3px 0;
+  color:#0b335b;
+  font-size:17px;
+}
+
+.accounts-payable-head p{
+  margin:0;
+  color:#8190a2;
+  font-size:9px;
+}
+
+.accounts-payable-total{
+  text-align:right;
+}
+
+.accounts-payable-total small,
+.accounts-payable-total strong{
+  display:block;
+}
+
+.accounts-payable-total small{
+  color:#8b99a9;
+  font-size:7px;
+  font-weight:900;
+}
+
+.accounts-payable-total strong{
+  margin-top:3px;
+  color:#a16812;
+  font-size:20px;
+}
+
+.accounts-payable-kpis{
+  padding:12px 14px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  border-bottom:1px solid #edf1f5;
+}
+
+.accounts-payable-kpis article{
+  padding:10px;
+  border:1px solid #e4eaf0;
+  border-radius:11px;
+  background:#f7f9fc;
+}
+
+.accounts-payable-kpis span,
+.accounts-payable-kpis strong{
+  display:block;
+}
+
+.accounts-payable-kpis span{
+  color:#8391a2;
+  font-size:7px;
+  font-weight:850;
+}
+
+.accounts-payable-kpis strong{
+  margin-top:3px;
+  color:#153c62;
+  font-size:12px;
+}
+
+.accounts-payable-kpis .pending{
+  background:#fff7e9;
+  border-color:#eadab6;
+}
+
+.accounts-payable-kpis .pending strong{
+  color:#9d6816;
+}
+
+.accounts-payable-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);
+}
+
+.accounts-payable-list{
+  min-height:240px;
+  max-height:380px;
+  overflow-y:auto;
+  border-right:1px solid #e7edf3;
+}
+
+.accounts-payable-item{
+  width:100%;
+  padding:12px 14px;
+  border:0;
+  border-top:1px solid #edf1f5;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  text-align:left;
+  cursor:pointer;
+}
+
+.accounts-payable-item:first-child{
+  border-top:0;
+}
+
+.accounts-payable-item:hover,
+.accounts-payable-item.active{
+  background:#f5f9fd;
+}
+
+.accounts-payable-item>div{
+  display:grid;
+  gap:2px;
+}
+
+.accounts-payable-item>div:last-child{
+  text-align:right;
+}
+
+.accounts-payable-item strong{
+  color:#143b61;
+  font-size:10px;
+}
+
+.accounts-payable-item span{
+  color:#75889b;
+  font-size:8px;
+}
+
+.accounts-payable-item small{
+  color:#a2782b;
+  font-size:7px;
+  font-weight:800;
+}
+
+.accounts-payable-payment{
+  padding:15px;
+}
+
+.accounts-payable-payment header{
+  padding-bottom:11px;
+  border-bottom:1px solid #edf1f5;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.accounts-payable-payment h3{
+  margin:3px 0;
+  color:#123a61;
+  font-size:14px;
+}
+
+.accounts-payable-payment p{
+  margin:0;
+  color:#8391a2;
+  font-size:8px;
+}
+
+.accounts-payable-payment header>div:last-child{
+  text-align:right;
+}
+
+.accounts-payable-payment header>div:last-child small,
+.accounts-payable-payment header>div:last-child strong{
+  display:block;
+}
+
+.accounts-payable-payment header>div:last-child small{
+  color:#9a7a38;
+  font-size:7px;
+  font-weight:900;
+}
+
+.accounts-payable-payment header>div:last-child strong{
+  margin-top:3px;
+  color:#9c6716;
+  font-size:14px;
+}
+
+.accounts-payable-payment form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+
+.accounts-payable-payment label{
+  display:grid;
+  gap:4px;
+}
+
+.accounts-payable-payment label span{
+  color:#60758a;
+  font-size:8px;
+  font-weight:900;
+}
+
+.accounts-payable-payment input,
+.accounts-payable-payment select{
+  width:100%;
+  box-sizing:border-box;
+  height:38px;
+  padding:0 8px;
+  border:1px solid #d3dde7;
+  border-radius:8px;
+  background:#fbfcfe;
+  color:#173b61;
+  font-size:8px;
+}
+
+.accounts-payable-payment .span-2{
+  grid-column:1/-1;
+}
+
+.accounts-payable-payment button{
+  min-height:39px;
+  border:0;
+  border-radius:9px;
+  background:#123c67;
+  color:#fff;
+  font-size:8px;
+  font-weight:950;
+  cursor:pointer;
+}
+
+.accounts-payable-select,
+.accounts-payable-empty{
+  padding:26px 15px;
+  text-align:center;
+  color:#8a98a8;
+  font-size:9px;
+}
+
+.accounts-payable-history{
+  border-top:1px solid #e7edf3;
+}
+
+.accounts-payable-history-head{
+  padding:10px 14px;
+  background:#f7f9fb;
+}
+
+.accounts-payable-history>div:not(.accounts-payable-history-head){
+  padding:8px 14px;
+  border-top:1px solid #edf1f5;
+  display:grid;
+  grid-template-columns:100px 120px 1fr 120px;
+  gap:8px;
+  color:#718499;
+  font-size:8px;
+}
+
+.accounts-payable-history strong{
+  text-align:right;
+  color:#173c62;
+}
+
+@media(max-width:900px){
+  .accounts-payable-layout{
+    grid-template-columns:1fr;
+  }
+
+  .accounts-payable-list{
+    border-right:0;
+    border-bottom:1px solid #e7edf3;
+  }
+}
+
+@media(max-width:650px){
+  .accounts-payable-head{
+    flex-direction:column;
+  }
+
+  .accounts-payable-total{
+    text-align:left;
+  }
+
+  .accounts-payable-kpis{
+    grid-template-columns:1fr;
+  }
+
+  .accounts-payable-payment form{
+    grid-template-columns:1fr;
+  }
+
+  .accounts-payable-payment .span-2{
+    grid-column:auto;
+  }
+
+  .accounts-payable-history>div:not(.accounts-payable-history-head){
+    grid-template-columns:1fr 1fr;
+  }
+}

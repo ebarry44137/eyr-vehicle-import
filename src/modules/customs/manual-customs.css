@@ -1,0 +1,59 @@
+/* =========================================================
+   E&R · V32.3 · GESTIÓN MANUAL
+   ========================================================= */
+
+.optional-field{
+  display:inline-flex;
+  margin-left:6px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:#eef3f8;
+  color:#728397;
+  font-style:normal;
+  font-size:7px;
+  font-weight:900;
+  vertical-align:middle;
+}
+
+.customs-vin-optional-block{
+  margin-bottom:12px;
+}
+
+.customs-vin-label{
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+
+.customs-vin-label>span{
+  color:#5f7489;
+  font-size:8px;
+  font-weight:950;
+}
+
+.customs-vin-label>small{
+  padding:3px 6px;
+  border-radius:999px;
+  background:#eef3f8;
+  color:#718295;
+  font-size:7px;
+  font-weight:900;
+}
+
+.customs-vin-helper{
+  margin-top:7px;
+  padding:8px 10px;
+  border:1px solid #d9e7dc;
+  border-radius:9px;
+  background:#f2faf5;
+  color:#36714c;
+  font-size:8px;
+  font-weight:750;
+  line-height:1.4;
+}
+
+.customs-vin-row button:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+}

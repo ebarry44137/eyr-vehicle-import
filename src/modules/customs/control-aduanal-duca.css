@@ -1,0 +1,8 @@
+/* V33.1 · Correlativo visible en Control Aduanal */
+.customs-duca-number{
+  display:block;
+  margin-top:3px;
+  color:#9b6d18 !important;
+  font-weight:900 !important;
+  letter-spacing:.01em;
+}

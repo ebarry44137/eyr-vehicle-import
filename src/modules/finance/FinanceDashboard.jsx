@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./finance.css";
 import AccountsPayablePanel from "./AccountsPayablePanel";
+import AccountsReceivablePanel from "./AccountsReceivablePanel";
 
 function q(value) {
   const number = Number(value || 0);
@@ -325,6 +326,11 @@ export default function FinanceDashboard({ supabase }) {
           </table>
         </div>
       </section>
+
+      <AccountsReceivablePanel
+        supabase={supabase}
+        onChanged={load}
+      />
 
       <AccountsPayablePanel
         supabase={supabase}

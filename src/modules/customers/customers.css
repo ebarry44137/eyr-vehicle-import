@@ -1,0 +1,20 @@
+/* =========================================================
+   E&R · V33 · CLIENTE INTELIGENTE
+   ========================================================= */
+.customer-autocomplete{position:relative;width:100%}
+.customer-autocomplete-input{position:relative}
+.customer-autocomplete-input input{padding-right:88px!important}
+.customer-autocomplete-status{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#7f8e9e;font-size:7px;font-weight:900;pointer-events:none}
+.customer-autocomplete-status.linked{color:#287349}
+.customer-autocomplete-menu{position:absolute;z-index:120000;left:0;right:0;top:calc(100% + 6px);max-height:280px;overflow-y:auto;border:1px solid #d6e1ea;border-radius:12px;background:#fff;box-shadow:0 16px 40px rgba(7,39,71,.16)}
+.customer-autocomplete-menu>button{width:100%;min-height:53px;padding:9px 11px;border:0;border-top:1px solid #edf1f5;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;cursor:pointer}
+.customer-autocomplete-menu>button:first-child{border-top:0}
+.customer-autocomplete-menu>button:hover{background:#f5f8fb}
+.customer-autocomplete-menu>button>div{display:grid;gap:2px}
+.customer-autocomplete-menu strong{color:#153c62;font-size:9px}
+.customer-autocomplete-menu span{color:#8493a4;font-size:7px}
+.customer-autocomplete-menu small{color:#9a742d;font-size:7px;font-weight:900}
+.customer-autocomplete-create{background:#fff9ec!important}
+.customer-autocomplete-create strong{color:#8c6117!important}
+.customer-autocomplete-empty{padding:14px;text-align:center;color:#8796a6;font-size:8px}
+.customer-autocomplete-error{display:block;margin-top:5px;color:#a5423b;font-size:7px}

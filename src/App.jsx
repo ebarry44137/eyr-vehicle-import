@@ -12,8 +12,11 @@ import InternalUsersPage from "./modules/internal-users/InternalUsersPage";
 import FinanceDashboard from "./modules/finance/FinanceDashboard";
 import CustomsCaseFinance from "./modules/finance/CustomsCaseFinance";
 import DeclarationsPage from "./modules/declarations/DeclarationsPage";
+import CustomerAutocomplete from "./modules/customers/CustomerAutocomplete";
+import AdminCenterPage from "./modules/admin/AdminCenterPage";
 import DucaCorrelativesPage from "./modules/declarations/DucaCorrelativesPage";
 import "./modules/layout/sidebar-scroll.css";
+import "./modules/customs/control-aduanal-duca.css";
 import "./modules/customs/manual-customs.css";
 import "./App.css";
 
@@ -163,6 +166,7 @@ const CUSTOMS_STAGES = [
 function emptyCustomsForm() {
   return {
     notice_date: new Date().toISOString().slice(0, 10),
+    client_id: null,
     client_name: "",
     phone: "",
     email: "",
@@ -1805,13 +1809,38 @@ function App() {
     setCustomsMessage("");
 
     try {
+      const { data: resolvedClientRows, error: clientResolveError } =
+        await supabase.rpc("resolve_customer_for_work", {
+          p_client_id: customsForm.client_id || null,
+          p_name: String(customsForm.client_name || "").trim(),
+          p_phone: String(customsForm.phone || "").trim() || null,
+          p_email:
+            String(customsForm.email || "").trim().toLowerCase() || null,
+          p_nit: null,
+        });
+
+      if (clientResolveError) throw clientResolveError;
+
+      const resolvedClient = Array.isArray(resolvedClientRows)
+        ? resolvedClientRows[0]
+        : resolvedClientRows;
+
       const payload = {
         source_type: "CUSTOMS_ONLY",
+        client_id: resolvedClient?.id || null,
         notice_date:
           customsForm.notice_date || new Date().toISOString().slice(0, 10),
-        client_name: String(customsForm.client_name || "").trim(),
-        phone: String(customsForm.phone || "").trim() || null,
-        email: String(customsForm.email || "").trim().toLowerCase() || null,
+        client_name:
+          resolvedClient?.name ||
+          String(customsForm.client_name || "").trim(),
+        phone:
+          String(customsForm.phone || "").trim() ||
+          resolvedClient?.phone ||
+          null,
+        email:
+          String(customsForm.email || "").trim().toLowerCase() ||
+          resolvedClient?.email ||
+          null,
         bl: String(customsForm.bl || "").trim().toUpperCase() || null,
         container_number:
           String(customsForm.container_number || "").trim().toUpperCase() || null,
@@ -2409,17 +2438,91 @@ function App() {
    * Si V13 indica no_compatible_match, no permitimos aprobar
    * candidatos contradictorios y abrimos el flujo excepcional.
    */
-  const safeReviewOptions = (sat?.review_options || []).filter(
-    (option) => option.selectable !== false && !option.has_conflict
+  /*
+   * V34.3 · SAT REVIEW YEAR GUARD
+   *
+   * La tabla SAT puede traer simultáneamente:
+   * - una columna específica para el año del VIN; y
+   * - "resto de años".
+   *
+   * Si ya existe valor específico para el año del vehículo,
+   * "resto de años" NO debe competir como candidato.
+   */
+  const vinModelYear = Number(vehicle?.model_year || vehicle?.year || 0);
+
+  function normalizeSatYear(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 1900 ? parsed : null;
+  }
+
+  function applySatYearGuard(options = []) {
+    const usable = (options || []).filter(Boolean);
+
+    if (!usable.length || !vinModelYear) return usable;
+
+    const exactYear = usable.filter(
+      (option) => normalizeSatYear(option.model_year) === vinModelYear
+    );
+
+    // Regla principal: si SAT tiene el año exacto, descartamos resto de años
+    // y cualquier otro año ANTES de mostrar SAT Review.
+    let pool = exactYear.length > 0
+      ? exactYear
+      : usable.filter((option) => normalizeSatYear(option.model_year) === null);
+
+    // Si ni año exacto ni "resto de años" existen, conservamos los candidatos
+    // recibidos para no dejar la revisión sin opciones.
+    if (!pool.length) pool = usable;
+
+    // Deduplicación: misma línea/configuración/año no debe aparecer dos veces
+    // solamente porque el backend entregó registros repetidos.
+    const bestByKey = new Map();
+
+    for (const option of pool) {
+      const key = [
+        String(option.line || "").trim().toUpperCase(),
+        String(option.vehicle_type || "").trim().toUpperCase(),
+        String(option.engine_cc || ""),
+        String(option.fuel_type || "").trim().toUpperCase(),
+        String(option.cylinders || ""),
+        String(option.doors || ""),
+        String(normalizeSatYear(option.model_year) ?? "REST"),
+      ].join("|");
+
+      const current = bestByKey.get(key);
+      const optionScore = Number(option.match_score ?? -1);
+      const currentScore = Number(current?.match_score ?? -1);
+
+      if (!current || optionScore > currentScore) {
+        bestByKey.set(key, option);
+      }
+    }
+
+    return Array.from(bestByKey.values());
+  }
+
+  const safeReviewOptions = applySatYearGuard(
+    (sat?.review_options || []).filter(
+      (option) => option.selectable !== false && !option.has_conflict
+    )
+  );
+
+  const guardedAmbiguousOptions = applySatYearGuard(
+    sat?.ambiguous_options || []
+  );
+
+  const guardedCandidates = applySatYearGuard(
+    (sat?.candidates || []).filter((candidate) => !candidate.has_conflict)
   );
 
   const satReviewOptions =
-    sat?.ambiguous_options?.length > 0
-      ? sat.ambiguous_options
+    guardedAmbiguousOptions.length > 0
+      ? guardedAmbiguousOptions
       : safeReviewOptions.length > 0
         ? safeReviewOptions
         : sat?.requires_review
-          ? (sat?.candidates || []).filter((candidate) => !candidate.has_conflict).slice(0, 6)
+          ? guardedCandidates.slice(0, 6)
           : [];
 
   const blockedSatOptions = (sat?.review_options || [])
@@ -3511,6 +3614,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
           {isSystemAdmin && (
             <button
+              className={`nav-item ${activeView === "admin-center" ? "active" : ""}`}
+              onClick={() => setActiveView("admin-center")}
+            >
+              <span>🛠</span>
+              Administración
+            </button>
+          )}
+
+          {isSystemAdmin && (
+            <button
               className={`nav-item ${activeView === "settings" ? "active" : ""}`}
               onClick={openSettingsView}
             >
@@ -3546,8 +3659,10 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "declarations" ? (
-          <DeclarationsPage supabase={supabase} />
+        {activeView === "admin-center" && isSystemAdmin ? (
+          <AdminCenterPage supabase={supabase} />
+        ) : activeView === "declarations" ? (
+          <DeclarationsPage supabase={supabase} isAdmin={isSystemAdmin} />
         ) : activeView === "correlatives" && isSystemAdmin ? (
           <DucaCorrelativesPage supabase={supabase} />
         ) : activeView === "finance" && isSystemAdmin ? (
@@ -4088,7 +4203,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     <tr>
                       <th>Expediente</th>
                       <th>Cliente</th>
-                      <th>Vehículo</th>
+                      <th>Vehículo / Correlativo DUCA</th>
                       <th>BL / Contenedor</th>
                       <th>Naviera</th>
                       <th>Estado</th>
@@ -4126,7 +4241,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                               .filter(Boolean)
                               .join(" ") || "—"}
                           </strong>
-                          <small>{item.vin}</small>
+                          <small className="customs-duca-number">
+                            DUCA: {item.duca_correlative_number || "Pendiente de asignación"}
+                          </small>
                         </td>
                         <td>
                           <strong>{item.bl || "—"}</strong>
@@ -4237,16 +4354,33 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         </label>
                         <label className="span-2">
                           <span>Cliente *</span>
-                          <input
+                          <CustomerAutocomplete
+                            supabase={supabase}
                             value={customsForm.client_name}
-                            onChange={(e) =>
+                            clientId={customsForm.client_id}
+                            phone={customsForm.phone}
+                            email={customsForm.email}
+                            required
+                            placeholder="Escribí nombre o razón social..."
+                            onSelect={(client) =>
                               setCustomsForm((p) => ({
                                 ...p,
-                                client_name: e.target.value,
+                                client_id: client.id || null,
+                                client_name: client.name || "",
+                                phone:
+                                  p.phone ||
+                                  client.phone ||
+                                  "",
+                                email:
+                                  p.email ||
+                                  client.email ||
+                                  "",
                               }))
                             }
-                            placeholder="Nombre o razón social"
                           />
+                          <small>
+                            Escribí para buscar. Si no existe, podés crearlo sin salir de la gestión.
+                          </small>
                         </label>
                         <label>
                           <span>Teléfono</span>
@@ -5685,6 +5819,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
                           <span>
                             {[
+                              normalizeSatYear(option.model_year)
+                                ? `Año ${normalizeSatYear(option.model_year)}`
+                                : "Resto de años",
                               option.vehicle_type,
                               option.engine_cc
                                 ? `${option.engine_cc} cc`

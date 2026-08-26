@@ -141,3 +141,67 @@
     grid-column:auto;
   }
 }
+
+
+/* =========================================================
+   V32.4 · DINERO SOLO ADMIN
+   ========================================================= */
+.declaration-kpis-operational{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+
+.declaration-operational-notice{
+  margin-bottom:13px;
+  padding:10px 12px;
+  border:1px solid #dbe5ee;
+  border-radius:11px;
+  background:#f5f8fb;
+  color:#60778d;
+  font-size:8px;
+  font-weight:800;
+}
+
+.declaration-exceptional-admin-note{
+  padding:10px 11px;
+  border:1px solid #e3e8ee;
+  border-radius:10px;
+  background:#f7f9fb;
+  display:grid;
+  gap:3px;
+}
+
+.declaration-exceptional-admin-note strong{
+  color:#173c62;
+  font-size:9px;
+}
+
+.declaration-exceptional-admin-note span{
+  color:#8291a2;
+  font-size:8px;
+}
+
+.declaration-charge-pending{
+  display:inline-flex;
+  padding:5px 7px;
+  border-radius:999px;
+  background:#fff5df;
+  color:#956619;
+  font-size:7px;
+  font-weight:950;
+}
+
+.declaration-adjust-charge{
+  min-height:31px;
+  padding:0 9px;
+  border:1px solid #d6e0e9;
+  border-radius:8px;
+  background:#f7f9fb;
+  color:#173d63;
+  font-size:7px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.declaration-adjust-charge:hover{
+  background:#edf3f8;
+}

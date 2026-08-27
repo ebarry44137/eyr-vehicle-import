@@ -6322,3 +6322,32 @@ nav {
     justify-content:center;
   }
 }
+/* E&R V37.1 · Branding fix */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 18px 20px 14px;
+  min-height: 86px;
+}
+
+.sidebar-brand__logo {
+  display: block;
+  width: min(190px, 100%);
+  height: auto;
+  max-height: 62px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (max-width: 760px) {
+  .sidebar-brand {
+    padding: 14px 16px 10px;
+    min-height: 72px;
+  }
+
+  .sidebar-brand__logo {
+    width: 168px;
+    max-height: 54px;
+  }
+}

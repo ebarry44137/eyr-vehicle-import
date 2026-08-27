@@ -1,84 +1,41 @@
 /* =========================================================
-   E&R SOLUTIONS · V35.1
-   SIDEBAR BRAND FIX
+   E&R SOLUTIONS · V37.2
+   BRANDING CORRECTO
    ========================================================= */
 
-.brand-v35{
+.brand-full-logo{
   display:flex!important;
   align-items:center!important;
-  gap:12px!important;
-  padding:4px 4px 16px!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-height:98px!important;
+  padding:10px 14px 16px!important;
+  box-sizing:border-box!important;
 }
 
-.brand-logo-v35{
-  width:54px!important;
-  height:54px!important;
-  min-width:54px!important;
-  flex:0 0 54px!important;
-  display:grid!important;
-  place-items:center!important;
-  overflow:hidden!important;
-  border-radius:14px!important;
-  background:#fff!important;
-  box-shadow:
-    0 8px 24px rgba(0,0,0,.18),
-    inset 0 0 0 1px rgba(8,47,87,.06)!important;
-}
-
-.brand-logo-v35 img{
-  width:42px!important;
-  height:42px!important;
-  max-width:none!important;
-  object-fit:contain!important;
-  transform:none!important;
-}
-
-.brand-copy-v35{
-  min-width:0!important;
-  display:grid!important;
-  gap:2px!important;
-}
-
-.brand-copy-v35 h2{
-  margin:0!important;
-  color:#fff!important;
-  font-size:14px!important;
-  line-height:1.05!important;
-  font-weight:900!important;
-  letter-spacing:-.02em!important;
-  white-space:nowrap!important;
-}
-
-.brand-copy-v35 span{
+.brand-full-logo-image{
   display:block!important;
-  margin:0!important;
-  color:rgba(255,255,255,.62)!important;
-  font-size:6.5px!important;
-  line-height:1.2!important;
-  font-weight:850!important;
-  letter-spacing:.13em!important;
-  text-transform:uppercase!important;
-  white-space:nowrap!important;
+  width:210px!important;
+  max-width:100%!important;
+  height:auto!important;
+  max-height:78px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
+
+.brand-logo-v35,
+.brand-copy-v35{
+  display:none!important;
 }
 
 @media(max-width:720px){
-  .brand-logo-v35{
-    width:48px!important;
-    height:48px!important;
-    min-width:48px!important;
-    flex-basis:48px!important;
+  .brand-full-logo{
+    min-height:84px!important;
+    padding:8px 12px 12px!important;
   }
 
-  .brand-logo-v35 img{
-    width:37px!important;
-    height:37px!important;
-  }
-
-  .brand-copy-v35 h2{
-    font-size:13px!important;
-  }
-
-  .brand-copy-v35 span{
-    font-size:6px!important;
+  .brand-full-logo-image{
+    width:188px!important;
+    max-height:68px!important;
   }
 }

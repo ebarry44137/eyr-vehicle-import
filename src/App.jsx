@@ -21,7 +21,6 @@ import "./modules/customs/control-aduanal-duca.css";
 import "./modules/customs/manual-customs.css";
 import "./modules/branding/branding-v35.css";
 import "./modules/branding/branding-sidebar-fix-v35.1.css";
-import eyrSidebarIcon from "./assets/eyr-sidebar-icon.png";
 import "./App.css";
 
 function moneyGTQ(value) {
@@ -3512,17 +3511,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand brand-v35">
-          <div className="brand-logo-v35">
-            <img
-              src={eyrSidebarIcon}
-              alt="E&R Solutions"
-            />
-          </div>
-          <div className="brand-copy-v35">
-            <h2>E&amp;R Solutions</h2>
-            <span>Agencia Aduanal</span>
-          </div>
+        <div className="brand brand-v35 brand-full-logo">
+          <img
+            src="/branding/eyr-logo-horizontal.png"
+            alt="E&R Solutions Agencia Aduanal"
+            className="brand-full-logo-image"
+          />
         </div>
 
         <AdminNotificationBell

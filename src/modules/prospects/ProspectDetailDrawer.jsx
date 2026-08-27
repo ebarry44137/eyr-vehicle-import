@@ -239,26 +239,27 @@ export default function ProspectDetailDrawer({
                   </div>
                 </dl>
 
-                {q.import_requested_at && (
-                  <div className="prospect-import-actions">
+                {q.calculation_status === "READY" && (
+                  <div className="prospect-import-actions prospect-commercial-ready">
                     <div>
-                      <small>SOLICITUD DE IMPORTACIÓN</small>
+                      <small>✓ CÁLCULO READY</small>
                       <span>
-                        {new Date(q.import_requested_at).toLocaleString("es-GT")}
+                        {q.import_requested_at
+                          ? `Solicitó importación · ${new Date(q.import_requested_at).toLocaleString("es-GT")}`
+                          : "Lista para preparar propuesta comercial E&R"}
                       </span>
                     </div>
 
                     <button
                       className="primary-button prospect-generate-quote"
                       onClick={() => onGenerateQuotation?.(q)}
-                      disabled={
-                        quoteLoadingId === q.id ||
-                        q.calculation_status !== "READY"
-                      }
+                      disabled={quoteLoadingId === q.id}
                     >
                       {quoteLoadingId === q.id
-                        ? "Preparando..."
-                        : "Generar cotización"}{" "}
+                        ? "Abriendo..."
+                        : q.quote_generated_at
+                          ? "Ver / ajustar cotización"
+                          : "Preparar cotización final"}{" "}
                       <span>→</span>
                     </button>
                   </div>

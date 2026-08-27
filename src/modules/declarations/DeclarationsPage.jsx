@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./declarations.css";
+import "./billing-client-v36.css";
 import CustomerAutocomplete from "../customers/CustomerAutocomplete";
 
 const SERVICE_TYPES = [
@@ -35,7 +36,8 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
     declaration_date: new Date().toISOString().slice(0, 10),
     client_id: null,
     client_name: "",
-    client_reference: "",
+    billing_client_id: null,
+    billing_client_name: "",
     service_type: "VEHICULOS",
     charge_gtq: 165,
     description: "",
@@ -96,6 +98,11 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
       return;
     }
 
+    if (!form.billing_client_name.trim()) {
+      setError("Ingresá el cliente que solicita / paga a E&R.");
+      return;
+    }
+
     if (
       isAdmin &&
       form.service_type === "EXCEPCIONAL" &&
@@ -111,12 +118,14 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
 
     try {
       const { data, error: rpcError } = await supabase.rpc(
-        "create_declaration_service_secure_v33",
+        "create_declaration_service_secure_v36",
         {
           p_declaration_date: form.declaration_date,
           p_client_id: form.client_id || null,
           p_client_name: form.client_name.trim(),
-          p_client_reference: form.client_reference.trim() || null,
+          p_billing_client_id: form.billing_client_id || null,
+          p_billing_client_name:
+            form.billing_client_name.trim() || form.client_name.trim(),
           p_service_type: form.service_type,
           p_admin_charge_gtq:
             isAdmin && form.service_type === "EXCEPCIONAL"
@@ -141,7 +150,8 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
         declaration_date: new Date().toISOString().slice(0, 10),
         client_id: null,
         client_name: "",
-        client_reference: "",
+        billing_client_id: null,
+        billing_client_name: "",
         service_type: "VEHICULOS",
         charge_gtq: 165,
         description: "",
@@ -327,7 +337,8 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
               <tr>
                 <th>Declaración</th>
                 <th>Fecha</th>
-                <th>Cliente</th>
+                <th>Cliente DUCA / importador</th>
+                <th>Solicita / paga</th>
                 <th>Servicio</th>
                 <th>Correlativo DUCA</th>
                 {isAdmin && <th>Cobro</th>}
@@ -340,7 +351,7 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
               {!loading && items.length === 0 && (
                 <tr>
                   <td
-                    colSpan={isAdmin ? "8" : "6"}
+                    colSpan={isAdmin ? "9" : "7"}
                     className="empty-cell"
                   >
                     No hay declaraciones registradas.
@@ -352,13 +363,18 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
                 <tr key={item.id}>
                   <td>
                     <strong>{item.declaration_code}</strong>
-                    <small>{item.client_reference || "Sin referencia"}</small>
+                    <small>{item.correlative_number || "Pendiente DUCA"}</small>
                   </td>
 
                   <td>{item.declaration_date}</td>
 
                   <td>
                     <strong>{item.client_name}</strong>
+                  </td>
+
+                  <td>
+                    <strong>{item.billing_client_name || item.client_name}</strong>
+                    <small>Cuenta corriente</small>
                   </td>
 
                   <td>{item.service_label}</td>
@@ -469,13 +485,13 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
               </label>
 
               <label>
-                <span>Cliente</span>
+                <span>Cliente de la DUCA / importador</span>
                 <CustomerAutocomplete
                   supabase={supabase}
                   value={form.client_name}
                   clientId={form.client_id}
                   required
-                  placeholder="Escribí nombre o empresa..."
+                  placeholder="A nombre de quién va la DUCA..."
                   onSelect={(client) =>
                     setForm((p) => ({
                       ...p,
@@ -484,20 +500,26 @@ export default function DeclarationsPage({ supabase, isAdmin = false }) {
                     }))
                   }
                 />
+                <small>Es la persona o empresa que aparecerá como importador.</small>
               </label>
 
               <label>
-                <span>Referencia del cliente</span>
-                <input
-                  value={form.client_reference}
-                  onChange={(e) =>
+                <span>Cliente que solicita / paga a E&R</span>
+                <CustomerAutocomplete
+                  supabase={supabase}
+                  value={form.billing_client_name}
+                  clientId={form.billing_client_id}
+                  required
+                  placeholder="Quién nos envía el trabajo y paga..."
+                  onSelect={(client) =>
                     setForm((p) => ({
                       ...p,
-                      client_reference: e.target.value,
+                      billing_client_id: client.id || null,
+                      billing_client_name: client.name || "",
                     }))
                   }
-                  placeholder="Opcional"
                 />
+                <small>Esta cuenta recibirá el cobro en Finanzas y el cuadre mensual.</small>
               </label>
 
               <label>

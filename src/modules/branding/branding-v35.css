@@ -1,0 +1,238 @@
+/* =========================================================
+   E&R SOLUTIONS · V35 BRANDING
+   ========================================================= */
+
+:root{
+  --eyr-navy:#082f57;
+  --eyr-navy-deep:#062543;
+  --eyr-gold:#f7a62b;
+  --eyr-ink:#373435;
+  --eyr-paper:#ffffff;
+}
+
+/* ---------- Public / customer logo ---------- */
+.public-brand-logo{
+  display:flex;
+  align-items:center;
+  background:transparent!important;
+  border:0!important;
+}
+
+.public-brand-logo img{
+  display:block;
+  width:auto;
+  height:54px;
+  max-width:270px;
+  object-fit:contain;
+}
+
+.public-footer-logo img{
+  height:48px;
+}
+
+/* ---------- Sidebar ---------- */
+.brand-v35{
+  display:flex!important;
+  align-items:center!important;
+  gap:11px!important;
+  padding:3px 4px 15px!important;
+}
+
+.brand-logo-v35{
+  width:58px;
+  height:58px;
+  flex:0 0 58px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:
+    0 7px 22px rgba(0,0,0,.18),
+    inset 0 0 0 1px rgba(255,255,255,.7);
+}
+
+.brand-logo-v35 img{
+  width:118px;
+  max-width:none;
+  height:auto;
+  object-fit:contain;
+  transform:translateX(27px);
+}
+
+.brand-copy-v35{
+  min-width:0;
+}
+
+.brand-copy-v35 h2{
+  margin:0!important;
+  color:#fff!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  letter-spacing:-.02em;
+}
+
+.brand-copy-v35 span{
+  display:block;
+  margin-top:3px;
+  color:rgba(255,255,255,.58)!important;
+  font-size:7px!important;
+  font-weight:850!important;
+  letter-spacing:.14em!important;
+  text-transform:uppercase;
+}
+
+/* ---------- Login ---------- */
+.auth-logo-lockup-v35{
+  width:min(420px,82%);
+  padding:11px 15px!important;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:18px;
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(12px);
+}
+
+.auth-logo-lockup-v35 img{
+  display:block;
+  width:100%;
+  max-width:390px;
+  height:auto;
+  object-fit:contain;
+}
+
+.auth-loading-logo{
+  width:240px;
+  max-width:70vw;
+  height:auto;
+  object-fit:contain;
+  margin-bottom:10px;
+}
+
+/* ---------- Public header refinement ---------- */
+.public-nav{
+  border-bottom:1px solid rgba(8,47,87,.08);
+  box-shadow:0 8px 25px rgba(8,47,87,.04);
+}
+
+.customer-topbar{
+  border-bottom:1px solid rgba(8,47,87,.08);
+}
+
+/* ---------- Brand consistency ---------- */
+.public-kicker,
+.eyebrow,
+.section-label{
+  color:#a96f12;
+}
+
+/* ---------- Mobile ---------- */
+@media(max-width:720px){
+  .public-brand-logo img{
+    height:42px;
+    max-width:205px;
+  }
+
+  .public-footer-logo img{
+    height:42px;
+  }
+
+  .brand-logo-v35{
+    width:48px;
+    height:48px;
+    flex-basis:48px;
+  }
+
+  .brand-logo-v35 img{
+    width:98px;
+    transform:translateX(23px);
+  }
+
+  .brand-copy-v35 h2{
+    font-size:13px!important;
+  }
+}
+/* =========================================================
+   E&R SOLUTIONS · V35.1
+   SIDEBAR BRAND FIX
+   ========================================================= */
+
+.brand-v35{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  padding:4px 4px 16px!important;
+}
+
+.brand-logo-v35{
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  flex:0 0 54px!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.18),
+    inset 0 0 0 1px rgba(8,47,87,.06)!important;
+}
+
+.brand-logo-v35 img{
+  width:42px!important;
+  height:42px!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  transform:none!important;
+}
+
+.brand-copy-v35{
+  min-width:0!important;
+  display:grid!important;
+  gap:2px!important;
+}
+
+.brand-copy-v35 h2{
+  margin:0!important;
+  color:#fff!important;
+  font-size:14px!important;
+  line-height:1.05!important;
+  font-weight:900!important;
+  letter-spacing:-.02em!important;
+  white-space:nowrap!important;
+}
+
+.brand-copy-v35 span{
+  display:block!important;
+  margin:0!important;
+  color:rgba(255,255,255,.62)!important;
+  font-size:6.5px!important;
+  line-height:1.2!important;
+  font-weight:850!important;
+  letter-spacing:.13em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:720px){
+  .brand-logo-v35{
+    width:48px!important;
+    height:48px!important;
+    min-width:48px!important;
+    flex-basis:48px!important;
+  }
+
+  .brand-logo-v35 img{
+    width:37px!important;
+    height:37px!important;
+  }
+
+  .brand-copy-v35 h2{
+    font-size:13px!important;
+  }
+
+  .brand-copy-v35 span{
+    font-size:6px!important;
+  }
+}
+

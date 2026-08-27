@@ -1,0 +1,15 @@
+/* =========================================================
+   E&R · V36 · CLIENTE DE FACTURACIÓN
+   ========================================================= */
+.declaration-form-grid label>small{
+  display:block;
+  margin-top:4px;
+  color:#8795a4;
+  font-size:7px;
+  line-height:1.35;
+}
+
+.declarations-table td>small{
+  display:block;
+  margin-top:3px;
+}

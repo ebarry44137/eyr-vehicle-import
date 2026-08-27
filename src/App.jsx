@@ -14,10 +14,14 @@ import CustomsCaseFinance from "./modules/finance/CustomsCaseFinance";
 import DeclarationsPage from "./modules/declarations/DeclarationsPage";
 import CustomerAutocomplete from "./modules/customers/CustomerAutocomplete";
 import AdminCenterPage from "./modules/admin/AdminCenterPage";
+import CommercialQuotePage from "./modules/commercial-quotes/CommercialQuotePage";
 import DucaCorrelativesPage from "./modules/declarations/DucaCorrelativesPage";
 import "./modules/layout/sidebar-scroll.css";
 import "./modules/customs/control-aduanal-duca.css";
 import "./modules/customs/manual-customs.css";
+import "./modules/branding/branding-v35.css";
+import "./modules/branding/branding-sidebar-fix-v35.1.css";
+import eyrSidebarIcon from "./assets/eyr-sidebar-icon.png";
 import "./App.css";
 
 function moneyGTQ(value) {
@@ -339,6 +343,9 @@ function App() {
   });
   const quoteRef = useRef(null);
   const [quoteCode, setQuoteCode] = useState("");
+
+  // V37 · Cotización comercial E&R
+  const [commercialQuoteContext, setCommercialQuoteContext] = useState(null);
 
   // V20 · Historial de cotizaciones
   const [activeView, setActiveView] = useState("new");
@@ -2150,36 +2157,39 @@ function App() {
           invoice_value_usd: query.invoice_value_usd || null,
         }
       );
+
       const ready =
         data?.calculation_status === "READY" ||
         data?.summary?.calculation_status === "READY";
 
       if (!ready) {
-        throw new Error("Este vehículo todavía requiere revisión SAT antes de generar una cotización comercial.");
+        throw new Error(
+          "Este vehículo todavía requiere revisión antes de preparar la cotización comercial."
+        );
       }
 
-      setVin(query.vin);
-      setQuoteForm({
-        include_freight:
-          !data?.freight_requires_review &&
-          Number(data?.freight?.price_usd || 0) > 0,
-        document_collection_gtq: "",
-        port_expenses_gtq: "",
-        professional_fees_gtq: "",
-        crane_usd: "",
+      const prospectSnapshot = selectedProspect
+        ? { ...selectedProspect }
+        : {
+            full_name: query.full_name || "Cliente",
+            phone: query.phone || "",
+            contact_key: query.contact_key || "",
+          };
+
+      setCommercialQuoteContext({
+        query: { ...query },
+        prospect: prospectSnapshot,
+        result: data,
+        quoteCode: makeQuoteCode(query.vin),
       });
-      setQuoteRecipient({
-        name: selectedProspect?.full_name || query.full_name || "Cliente",
-        phone: selectedProspect?.phone || query.phone || "",
-        contact_key: selectedProspect?.contact_key || query.contact_key || "",
-        query_id: query.id,
-      });
-      setQuoteCode(makeQuoteCode(query.vin));
-      setActiveView("new");
-      setShowQuoteModal(true);
+
+      setSelectedProspect(null);
+      setActiveView("commercial-quote");
     } catch (err) {
-      console.error("PROSPECT QUOTE ERROR:", err);
-      setProspectsError(err?.message || "No fue posible preparar la cotización.");
+      console.error("PROSPECT COMMERCIAL QUOTE ERROR:", err);
+      setProspectsError(
+        err?.message || "No fue posible preparar la cotización comercial."
+      );
     } finally {
       setProspectQuoteLoadingId(null);
     }
@@ -3394,10 +3404,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
     return (
       <div className="auth-shell">
         <div className="auth-loading-card">
-          <div className="auth-brand-mark">E&amp;R</div>
+          <img
+            className="auth-loading-logo"
+            src={eyrSolutionsLogo}
+            alt="E&R Solutions Agencia Aduanal"
+          />
           <div className="auth-spinner"></div>
           <h2>Validando acceso</h2>
-          <p>Conectando con E&amp;R Vehicle Import...</p>
+          <p>Conectando con E&amp;R Solutions...</p>
         </div>
       </div>
     );
@@ -3410,12 +3424,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           <section className="auth-visual">
             <div className="auth-visual-overlay"></div>
             <div className="auth-visual-content">
-              <div className="auth-logo-lockup">
-                <div className="auth-brand-mark auth-brand-mark-large">E&amp;R</div>
-                <div>
-                  <strong>VEHICLE IMPORT</strong>
-                  <span>GLOBAL LOGISTIC</span>
-                </div>
+              <div className="auth-logo-lockup auth-logo-lockup-v35">
+                <img
+                  src={eyrSolutionsLogo}
+                  alt="E&R Solutions Agencia Aduanal"
+                />
               </div>
               <div className="auth-copy">
                 <span className="auth-eyebrow">PLATAFORMA INTERNA</span>
@@ -3499,12 +3512,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-icon">E&R</div>
-
-          <div>
-            <h2>Vehicle Import</h2>
-            <span>Global Logistic</span>
+        <div className="brand brand-v35">
+          <div className="brand-logo-v35">
+            <img
+              src={eyrSidebarIcon}
+              alt="E&R Solutions"
+            />
+          </div>
+          <div className="brand-copy-v35">
+            <h2>E&amp;R Solutions</h2>
+            <span>Agencia Aduanal</span>
           </div>
         </div>
 
@@ -3654,12 +3671,33 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Sistema operativo
           </div>
 
-          <small>E&R Vehicle Import v1.3</small>
+          <small>E&R Solutions · Vehicle Import</small>
         </div>
       </aside>
 
       <main className="main">
-        {activeView === "admin-center" && isSystemAdmin ? (
+        {activeView === "commercial-quote" && isSystemAdmin && commercialQuoteContext ? (
+          <CommercialQuotePage
+            supabase={supabase}
+            context={commercialQuoteContext}
+            logo={eyrSolutionsLogo}
+            buildWhatsAppUrl={buildWhatsAppUrl}
+            onBack={() => {
+              const previousProspect = commercialQuoteContext?.prospect || null;
+              setActiveView("prospects");
+              setSelectedProspect(previousProspect);
+              if (previousProspect?.contact_key) {
+                loadProspectQueries(previousProspect.contact_key);
+              }
+              loadProspects(prospectSearch);
+            }}
+            onFinalized={async () => {
+              if (commercialQuoteContext?.query?.contact_key) {
+                await loadProspectQueries(commercialQuoteContext.query.contact_key);
+              }
+            }}
+          />
+        ) : activeView === "admin-center" && isSystemAdmin ? (
           <AdminCenterPage supabase={supabase} />
         ) : activeView === "declarations" ? (
           <DeclarationsPage supabase={supabase} isAdmin={isSystemAdmin} />

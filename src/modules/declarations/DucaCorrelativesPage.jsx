@@ -87,12 +87,12 @@ export default function DucaCorrelativesPage({ supabase }) {
 
       if (payableError) throw payableError;
 
-      const { data: numberRows, error: numberError } = await supabase
-        .from("duca_correlative_inventory")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(300);
-
+      const { data: numberRows, error: numberError } = await supabase.rpc(
+  "list_duca_inventory_admin",
+  {
+    p_limit: 300,
+  }
+);
       if (numberError) throw numberError;
 
       const { data: summaryRows, error: summaryError } = await supabase.rpc(
@@ -140,8 +140,8 @@ export default function DucaCorrelativesPage({ supabase }) {
     setForm((prev) => ({
       ...prev,
       purchased_quantity: 50,
-      available_first_number: "389-20261789",
-      available_last_number: "389-20261824",
+      available_first_number: "389-202600001789",
+      available_last_number: "389-202600001824",
       unit_cost_gtq: 80,
       payment_condition: "CREDITO",
       initial_payment_gtq: 0,
@@ -374,7 +374,7 @@ export default function DucaCorrelativesPage({ supabase }) {
                       .replace(/\s/g, ""),
                   }))
                 }
-                placeholder="389-20261789"
+                placeholder="389-202600001789"
               />
             </label>
 
@@ -390,7 +390,7 @@ export default function DucaCorrelativesPage({ supabase }) {
                       .replace(/\s/g, ""),
                   }))
                 }
-                placeholder="389-20261824"
+                placeholder="389-202600001824"
               />
             </label>
 

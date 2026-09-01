@@ -132,6 +132,58 @@ export default function AdminCenterPage({ supabase }) {
     }
   }
 
+  async function removeCustomsCase() {
+    if (!selected) return;
+
+    if (!reason.trim()) {
+      setError("Ingresá el motivo antes de eliminar o anular el expediente.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `⚠️ ACCIÓN ADMINISTRATIVA\n\n` +
+        `${selected.primary_label} · ${selected.client_name}\n\n` +
+        `Si el expediente no tiene pagos ni pertenece a un período cerrado, se eliminará y su correlativo DUCA quedará disponible nuevamente.\n\n` +
+        `Si ya tiene movimientos financieros, el sistema lo ANULARÁ sin borrar su historial.\n\n` +
+        `¿Querés continuar?`
+    );
+
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "admin_remove_customs_case",
+        {
+          p_id: selected.id,
+          p_reason: reason.trim(),
+        }
+      );
+
+      if (rpcError) throw rpcError;
+
+      const action = Array.isArray(data) ? data[0] : data;
+
+      setMessage(
+        action === "DELETED"
+          ? "Expediente duplicado eliminado. Si tenía correlativo DUCA, quedó disponible nuevamente."
+          : "El expediente tenía movimientos protegidos y fue ANULADO sin borrar su historial."
+      );
+
+      setSelected(null);
+      setReason("");
+      await search("customs");
+    } catch (err) {
+      console.error("ADMIN REMOVE CUSTOMS ERROR:", err);
+      setError(err?.message || "No fue posible eliminar/anular el expediente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveDeclaration() {
     if (!selected) return;
     if (!reason.trim()) {
@@ -474,6 +526,13 @@ export default function AdminCenterPage({ supabase }) {
                           disabled={saving}
                         >
                           Cambiar correlativo DUCA
+                        </button>
+                        <button
+                          className="danger"
+                          onClick={removeCustomsCase}
+                          disabled={saving}
+                        >
+                          Eliminar / Anular expediente
                         </button>
                       </>
                     )}

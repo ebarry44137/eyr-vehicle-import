@@ -324,6 +324,12 @@ function App() {
   });
 
   const [vin, setVin] = useState("");
+  // V37.4 · Cotizador interno SAT + Importadores
+  const [internalQuoteMode, setInternalQuoteMode] = useState("SAT");
+  const [internalInvoiceValueUsd, setInternalInvoiceValueUsd] = useState("");
+  // V37.4.4 · clasificación tributaria aprendible
+  const [selectedTaxRuleId, setSelectedTaxRuleId] = useState(null);
+  const [taxClassSaving, setTaxClassSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
 
@@ -1005,6 +1011,7 @@ function App() {
 
   function resetReviewState() {
     setSelectedSatId(null);
+    setSelectedTaxRuleId(null);
     setSelectedDimension(null);
     setDimensionConfirmed(false);
     setDimensionForm({
@@ -1065,7 +1072,7 @@ function App() {
       throw functionError;
     }
 
-    if (!data?.success) {
+    if (!data?.success && data?.code !== "TAX_CLASSIFICATION_REVIEW") {
       throw new Error(
         data?.error || "No fue posible consultar el vehículo."
       );
@@ -1083,11 +1090,28 @@ function App() {
 
     if (cleanVin.length !== 17) return;
 
+    const importerInvoice =
+      internalQuoteMode === "IMPORTER"
+        ? Number(internalInvoiceValueUsd)
+        : null;
+
+    if (
+      internalQuoteMode === "IMPORTER" &&
+      (!Number.isFinite(importerInvoice) || importerInvoice <= 0)
+    ) {
+      setError("Ingresá un valor de factura válido en USD.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      await ejecutarDecode(cleanVin);
+      await ejecutarDecode(cleanVin, true, {
+        calculation_method: internalQuoteMode,
+        invoice_value_usd:
+          internalQuoteMode === "IMPORTER" ? importerInvoice : null,
+      });
     } catch (err) {
       console.error(err);
 
@@ -1097,6 +1121,48 @@ function App() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function confirmarClasificacionTributaria() {
+    const review = result?.tax_classification_review;
+    if (!review?.raw_vehicle_type || !selectedTaxRuleId) return;
+
+    setTaxClassSaving(true);
+    setError("");
+
+    try {
+      const { data, error: learnError } = await supabase.rpc(
+        "learn_tax_vehicle_type_v3744",
+        {
+          p_raw_vehicle_type: review.raw_vehicle_type,
+          p_source_rule_id: Number(selectedTaxRuleId),
+        }
+      );
+
+      if (learnError) throw learnError;
+
+      const learned = Array.isArray(data) ? data[0] : data;
+
+      await ejecutarDecode(vin.trim().toUpperCase(), true, {
+        calculation_method: internalQuoteMode,
+        invoice_value_usd:
+          internalQuoteMode === "IMPORTER"
+            ? Number(internalInvoiceValueUsd)
+            : null,
+      });
+
+      setSelectedTaxRuleId(null);
+      setError("");
+      console.info("Clasificación tributaria aprendida:", learned);
+    } catch (err) {
+      console.error("TAX CLASSIFICATION LEARN ERROR:", err);
+      setError(
+        err?.message ||
+          "No fue posible guardar la clasificación tributaria."
+      );
+    } finally {
+      setTaxClassSaving(false);
     }
   }
 
@@ -1497,8 +1563,10 @@ function App() {
           dimension_model: dimensions?.dimension_model ?? summary?.dimension_model ?? null,
         },
         totals: {
-          exchange_rate: quoteExchangeRate || null, total_guatemala_usd: quoteGuatemalaUsd,
+          exchange_rate: quoteExchangeRate || null,
+          total_guatemala_usd: quoteGuatemalaUsd,
           total_usd: quoteGrandTotalUsd,
+          total_gtq: quoteGrandTotalGtq,
         },
       },
     };
@@ -1510,6 +1578,257 @@ function App() {
     if (functionError) throw functionError;
     if (!data?.success) throw new Error(data?.error || "No fue posible guardar la cotización.");
     return data.quotation;
+  }
+
+  // V37.5.2 · Carátula oficial + VIN y vehículo obligatorios
+  async function printVehicleEnvelopeCover(record, source = "customs") {
+    if (!record) return;
+
+    const safe = (value) =>
+      String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+    let workingRecord = { ...record };
+    let cleanVin = String(workingRecord.vin || "").trim().toUpperCase();
+
+    // Nunca imprimir "SIN VIN". Si falta, E&R lo solicita y lo registra.
+    if (!cleanVin) {
+      const enteredVin = window.prompt(
+        "Este expediente no tiene VIN registrado.\n\nIngresá el VIN antes de imprimir la carátula:"
+      );
+
+      if (enteredVin === null) return;
+
+      cleanVin = String(enteredVin || "").trim().toUpperCase();
+
+      if (cleanVin.length !== 17) {
+        window.alert(
+          "El VIN debe tener exactamente 17 caracteres. No se imprimió la carátula."
+        );
+        return;
+      }
+
+      try {
+        const table =
+          source === "import" ? "import_managements" : "customs_cases";
+
+        const { data, error: vinSaveError } = await supabase
+          .from(table)
+          .update({
+            vin: cleanVin,
+            updated_at: new Date().toISOString(),
+            updated_by: session?.user?.id || user?.id || null,
+          })
+          .eq("id", workingRecord.id)
+          .select()
+          .single();
+
+        if (vinSaveError) throw vinSaveError;
+
+        workingRecord = { ...workingRecord, ...data, vin: cleanVin };
+
+        if (source === "import") {
+          setSelectedImportManagement(workingRecord);
+          setImportManagementDetail(workingRecord);
+          await loadImportManagements(importSearch);
+        } else {
+          setSelectedCustomsCase(workingRecord);
+          setCustomsDetail(workingRecord);
+          await loadCustomsCases(customsSearch);
+        }
+      } catch (err) {
+        console.error("ENVELOPE VIN SAVE ERROR:", err);
+        window.alert(
+          `No fue posible registrar el VIN antes de imprimir.\n\n${err?.message || ""}`
+        );
+        return;
+      }
+    }
+
+    const clientName = safe(
+      workingRecord.client_name ||
+        workingRecord.customer_name ||
+        workingRecord.full_name ||
+        "CLIENTE"
+    ).toUpperCase();
+
+    let rawVehicleLabel = String(workingRecord.vehicle_model || "").trim();
+
+    if (!rawVehicleLabel) {
+      rawVehicleLabel = [
+        workingRecord.make,
+        workingRecord.model,
+        workingRecord.vehicle_trim,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    }
+
+    // Nunca imprimir "VEHÍCULO". Si falta, E&R lo solicita y lo registra.
+    if (!rawVehicleLabel) {
+      const enteredVehicle = window.prompt(
+        "Este expediente no tiene el vehículo registrado.\n\nIngresá el vehículo y línea antes de imprimir la carátula:\nEjemplo: TOYOTA YARIS"
+      );
+
+      if (enteredVehicle === null) return;
+
+      rawVehicleLabel = String(enteredVehicle || "").trim().toUpperCase();
+
+      if (!rawVehicleLabel) {
+        window.alert(
+          "Debés ingresar el vehículo y línea. No se imprimió la carátula."
+        );
+        return;
+      }
+
+      try {
+        const table =
+          source === "import" ? "import_managements" : "customs_cases";
+
+        // Guardamos el texto completo en el campo de modelo/línea disponible.
+        // Esto evita inventar una separación Marca / Línea cuando el usuario
+        // ingresó un nombre comercial completo.
+        const vehiclePayload =
+          source === "import"
+            ? {
+                vehicle_model: rawVehicleLabel,
+                updated_at: new Date().toISOString(),
+                updated_by: session?.user?.id || user?.id || null,
+              }
+            : {
+                vehicle_model: rawVehicleLabel,
+                updated_at: new Date().toISOString(),
+                updated_by: session?.user?.id || user?.id || null,
+              };
+
+        const { data, error: vehicleSaveError } = await supabase
+          .from(table)
+          .update(vehiclePayload)
+          .eq("id", workingRecord.id)
+          .select()
+          .single();
+
+        if (vehicleSaveError) throw vehicleSaveError;
+
+        workingRecord = {
+          ...workingRecord,
+          ...data,
+          vehicle_model: rawVehicleLabel,
+        };
+
+        if (source === "import") {
+          setSelectedImportManagement(workingRecord);
+          setImportManagementDetail(workingRecord);
+          await loadImportManagements(importSearch);
+        } else {
+          setSelectedCustomsCase(workingRecord);
+          setCustomsDetail(workingRecord);
+          await loadCustomsCases(customsSearch);
+        }
+      } catch (err) {
+        console.error("ENVELOPE VEHICLE SAVE ERROR:", err);
+        window.alert(
+          `No fue posible registrar el vehículo antes de imprimir.\n\n${err?.message || ""}`
+        );
+        return;
+      }
+    }
+
+    const vehicleLabel = safe(rawVehicleLabel).toUpperCase();
+
+    const vinValue = safe(cleanVin);
+    const templateUrl =
+      `${window.location.origin}/branding/formato-caratula-eyr.png`;
+
+    const printWindow = window.open("", "_blank", "width=920,height=1180");
+
+    if (!printWindow) {
+      window.alert(
+        "El navegador bloqueó la ventana de impresión. Permití ventanas emergentes para E&R e intentá de nuevo."
+      );
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Carátula · ${vinValue}</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;padding:0;background:#eef2f6;
+      font-family:Arial,Helvetica,sans-serif;color:#143957
+    }
+    .toolbar{
+      width:210mm;margin:16px auto 10px;
+      display:flex;align-items:center;justify-content:space-between;gap:16px
+    }
+    .toolbar strong{display:block;font-size:18px}
+    .toolbar small{display:block;margin-top:4px;color:#66798d}
+    .toolbar button{
+      border:0;border-radius:10px;background:#e7ad35;color:#082e52;
+      padding:12px 18px;font-weight:900;cursor:pointer
+    }
+    .sheet{
+      position:relative;width:210mm;height:297mm;margin:0 auto 24px;
+      background:#fff url("${templateUrl}") center/100% 100% no-repeat;
+      overflow:hidden;box-shadow:0 10px 40px rgba(9,34,58,.15)
+    }
+    .client{
+      position:absolute;z-index:2;left:17mm;right:17mm;top:88mm;
+      margin:0;text-align:center;text-transform:uppercase;
+      color:#173a5c;font-size:12.5mm;line-height:1.05;font-weight:950;
+      letter-spacing:.15mm
+    }
+    .vehicle-block{
+      position:absolute;z-index:2;left:14mm;right:14mm;top:166mm;
+      text-align:center;text-transform:uppercase;color:#f39a20
+    }
+    .vehicle{
+      margin:0;font-size:8.5mm;line-height:1.05;font-weight:950
+    }
+    .vin{
+      margin-top:4mm;font-size:8.2mm;line-height:1.05;
+      font-weight:950;letter-spacing:.12mm
+    }
+
+    @page{size:A4 portrait;margin:0}
+    @media print{
+      html,body{background:#fff}
+      .toolbar{display:none!important}
+      .sheet{margin:0;box-shadow:none}
+      body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <strong>Carátula E&amp;R · lista para imprimir</strong>
+      <small>${clientName} · ${vinValue}</small>
+    </div>
+    <button onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+
+  <main class="sheet">
+    <h1 class="client">${clientName}</h1>
+    <section class="vehicle-block">
+      <h2 class="vehicle">${vehicleLabel}</h2>
+      <div class="vin">VIN: ${vinValue}</div>
+    </section>
+  </main>
+</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.focus();
   }
 
   async function loadImportManagements(search = importSearch) {
@@ -1604,6 +1923,8 @@ function App() {
           destination_port: importManagementDetail.destination_port || null,
           shipping_line: importManagementDetail.shipping_line || null,
           container_number: importManagementDetail.container_number || null,
+          vin: importManagementDetail.vin || null,
+          vehicle_model: importManagementDetail.vehicle_model || null,
           bl: importManagementDetail.bl || null,
           estimated_sailing_date: importManagementDetail.estimated_sailing_date || null,
           estimated_arrival_date: importManagementDetail.estimated_arrival_date || null,
@@ -1815,6 +2136,48 @@ function App() {
     setCustomsMessage("");
 
     try {
+      // V37.3 · detector preventivo de expedientes duplicados.
+      const cleanManualBl = String(customsForm.bl || "")
+        .trim()
+        .toUpperCase();
+      const cleanManualContainer = String(customsForm.container_number || "")
+        .trim()
+        .toUpperCase();
+
+      if (cleanManualVin || cleanManualBl || cleanManualContainer) {
+        const { data: duplicateRows, error: duplicateError } =
+          await supabase.rpc("check_customs_case_duplicates", {
+            p_vin: cleanManualVin || null,
+            p_bl: cleanManualBl || null,
+            p_container_number: cleanManualContainer || null,
+          });
+
+        if (duplicateError) throw duplicateError;
+
+        if ((duplicateRows || []).length > 0) {
+          const duplicateText = duplicateRows
+            .slice(0, 5)
+            .map(
+              (item) =>
+                `${item.case_code} · ${item.client_name} · ${item.match_reason}`
+            )
+            .join("\n");
+
+          const continueAnyway = window.confirm(
+            `⚠️ POSIBLE GESTIÓN DUPLICADA\n\n${duplicateText}\n\n` +
+              `Si es la misma gestión, presioná CANCELAR y revisá el expediente existente.\n\n` +
+              `¿Crear una gestión nueva de todos modos?`
+          );
+
+          if (!continueAnyway) {
+            setCustomsError(
+              `No se creó la gestión. Revisá el expediente ${duplicateRows[0].case_code} antes de continuar.`
+            );
+            return;
+          }
+        }
+      }
+
       const { data: resolvedClientRows, error: clientResolveError } =
         await supabase.rpc("resolve_customer_for_work", {
           p_client_id: customsForm.client_id || null,
@@ -1847,9 +2210,8 @@ function App() {
           String(customsForm.email || "").trim().toLowerCase() ||
           resolvedClient?.email ||
           null,
-        bl: String(customsForm.bl || "").trim().toUpperCase() || null,
-        container_number:
-          String(customsForm.container_number || "").trim().toUpperCase() || null,
+        bl: cleanManualBl || null,
+        container_number: cleanManualContainer || null,
         vin: cleanManualVin || null,
         make: String(customsForm.make || "").trim() || null,
         model: String(customsForm.model || "").trim() || null,
@@ -1966,7 +2328,7 @@ function App() {
 
     try {
       const allowedKeys = [
-        "client_name", "phone", "email", "bl", "container_number",
+        "client_name", "phone", "email", "vin", "bl", "container_number",
         "shipping_line", "responsible", "priority",
         "docs_collected_at", "emptied_at", "da_at", "corroboration_at",
         "digitization_started_at", "review_started_at",
@@ -2438,6 +2800,10 @@ function App() {
   const quoteGrandTotalUsd = quoteGuatemalaUsd !== null
     ? quoteGuatemalaUsd + quoteTransportUsd
     : null;
+  const quoteGrandTotalGtq =
+    quoteGrandTotalUsd !== null && quoteExchangeRate > 0
+      ? quoteGrandTotalUsd * quoteExchangeRate
+      : null;
   const canGenerateQuote =
     result?.calculation_status === "READY" ||
     summary?.calculation_status === "READY";
@@ -2542,13 +2908,31 @@ function App() {
     ? result?.freight_options || []
     : [];
 
+  const isImporterCalculation =
+    String(
+      result?.calculation_method ||
+      summary?.calculation_method ||
+      internalQuoteMode ||
+      "SAT"
+    ).toUpperCase() === "IMPORTER";
+
+  // V37.4.1 · En IMPORTER la Tabla SAT no define la base imponible.
+  // El VIN se conserva para identificación/dimensiones/flete.
   const needsSatSelectableReview =
+    !isImporterCalculation &&
     Boolean(sat?.requires_review) &&
     !sat?.no_compatible_match &&
     satReviewOptions.length > 0;
 
   const needsSatExceptionalReview =
-    Boolean(sat?.requires_review) && Boolean(sat?.no_compatible_match);
+    !isImporterCalculation &&
+    Boolean(sat?.requires_review) &&
+    Boolean(sat?.no_compatible_match);
+
+  const needsTaxClassificationReview =
+    result?.code === "TAX_CLASSIFICATION_REVIEW" &&
+    Boolean(result?.tax_classification_review?.raw_vehicle_type) &&
+    (result?.tax_classification_review?.options || []).length > 0;
 
   const needsDimensionReview =
     Boolean(result?.freight_requires_review) &&
@@ -4103,6 +4487,62 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <label><span>Responsable</span><input value={importManagementDetail.responsible || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,responsible:e.target.value}))} placeholder="Responsable E&R" /></label>
                     </section>
 
+                    <section className="import-cover-data-card">
+                      <div className="import-cover-data-head">
+                        <div>
+                          <span className="section-label">DATOS PARA CARÁTULA</span>
+                          <h3>Vehículo y VIN</h3>
+                          <p>
+                            Son opcionales al registrar la gestión. Si los dejás vacíos,
+                            E&R los solicitará automáticamente al momento de imprimir.
+                          </p>
+                        </div>
+                        <span className="optional-badge">OPCIONAL</span>
+                      </div>
+
+                      <div className="import-cover-data-grid">
+                        <label>
+                          <span>Vehículo / línea</span>
+                          <input
+                            value={
+                              importManagementDetail.vehicle_model ||
+                              [importManagementDetail.make, importManagementDetail.model, importManagementDetail.vehicle_trim]
+                                .filter(Boolean)
+                                .join(" ")
+                            }
+                            onChange={(e) =>
+                              setImportManagementDetail((p) => ({
+                                ...p,
+                                vehicle_model: e.target.value,
+                              }))
+                            }
+                            placeholder="Ej. TOYOTA YARIS"
+                          />
+                          <small>Así aparecerá impreso en la carátula.</small>
+                        </label>
+
+                        <label>
+                          <span>VIN</span>
+                          <input
+                            value={importManagementDetail.vin || ""}
+                            onChange={(e) =>
+                              setImportManagementDetail((p) => ({
+                                ...p,
+                                vin: e.target.value.toUpperCase(),
+                              }))
+                            }
+                            maxLength="17"
+                            placeholder="17 caracteres"
+                          />
+                          <small>
+                            {String(importManagementDetail.vin || "").trim()
+                              ? `${String(importManagementDetail.vin || "").trim().length}/17 caracteres`
+                              : "Podés registrarlo ahora o antes de imprimir."}
+                          </small>
+                        </label>
+                      </div>
+                    </section>
+
                     <section className="import-logistics-grid">
                       <label><span>Lugar de recogida</span><input value={importManagementDetail.pickup_location || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,pickup_location:e.target.value}))} /></label>
                       <label><span>Puerto destino</span><input value={importManagementDetail.destination_port || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,destination_port:e.target.value}))} /></label>
@@ -4117,6 +4557,13 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
                   <div className="customs-form-actions sticky">
                     <button className="secondary-button" onClick={() => { setSelectedImportManagement(null); setImportManagementDetail(null); }}>Cerrar</button>
+                    <button
+                      className="envelope-cover-button"
+                      type="button"
+                      onClick={() => printVehicleEnvelopeCover(importManagementDetail, "import")}
+                    >
+                      🖨️ Imprimir carátula
+                    </button>
                     <button className="primary-button" onClick={saveImportManagementDetail} disabled={importManagementSaving}>{importManagementSaving ? "Guardando..." : "Guardar gestión"} <span>→</span></button>
                   </div>
                 </div>
@@ -5161,6 +5608,13 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       Cerrar
                     </button>
                     <button
+                      className="envelope-cover-button"
+                      type="button"
+                      onClick={() => printVehicleEnvelopeCover(customsDetail, "customs")}
+                    >
+                      🖨️ Imprimir carátula
+                    </button>
+                    <button
                       className="primary-button"
                       onClick={saveCustomsDetail}
                       disabled={customsDetailSaving}
@@ -5627,11 +6081,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               E&R GLOBAL LOGISTIC
             </span>
 
-            <h1>Nueva Cotización</h1>
+            <h1>Cotizador Interno</h1>
 
             <p>
-              Consulta automática de vehículo, SAT,
-              impuestos y flete.
+              Calculá por Tabla SAT o con factura de importador,
+              sin consumir consultas públicas.
             </p>
           </div>
 
@@ -5647,16 +6101,57 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
             <div>
               <span className="section-label">
-                CONSULTA INTELIGENTE
+                {internalQuoteMode === "IMPORTER"
+                  ? "IMPORTADOR CON FACTURA"
+                  : "TABLA SAT GUATEMALA"}
               </span>
 
-              <h2>¿Qué vehículo vamos a importar?</h2>
+              <h2>
+                {internalQuoteMode === "IMPORTER"
+                  ? "VIN + factura. Calculamos los impuestos."
+                  : "¿Qué vehículo vamos a importar?"}
+              </h2>
 
               <p>
-                Ingresa el VIN de 17 caracteres y E&R
-                analizará automáticamente el vehículo.
+                {internalQuoteMode === "IMPORTER"
+                  ? "Ingresá el valor real de la factura en USD y el VIN de 17 caracteres."
+                  : "Ingresá el VIN y E&R analizará automáticamente vehículo, SAT, impuestos y flete."}
               </p>
             </div>
+          </div>
+
+          <div className="internal-quote-mode">
+            <QuoteModeTabs
+              mode={internalQuoteMode}
+              disabled={loading || reviewLoading}
+              onChange={(nextMode) => {
+                setInternalQuoteMode(nextMode);
+                setResult(null);
+                setError("");
+                resetReviewState();
+                if (nextMode === "SAT") {
+                  setInternalInvoiceValueUsd("");
+                }
+              }}
+            />
+
+            {internalQuoteMode === "IMPORTER" && (
+              <ImporterQuoteFields
+                invoiceValue={internalInvoiceValueUsd}
+                onInvoiceChange={setInternalInvoiceValueUsd}
+                disabled={loading || reviewLoading}
+              />
+            )}
+
+            {internalQuoteMode === "IMPORTER" && (
+              <div className="internal-importer-note">
+                <strong>🧾 Cálculo para importador</strong>
+                <span>
+                  El motor utilizará el valor real de factura y el tipo de cambio
+                  configurado para calcular IVA, IPRIMA y costos de importación.
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="vin-search">
@@ -5688,13 +6183,17 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               disabled={
                 vin.length !== 17 ||
                 loading ||
-                reviewLoading
+                reviewLoading ||
+                (internalQuoteMode === "IMPORTER" &&
+                  Number(internalInvoiceValueUsd) <= 0)
               }
               onClick={consultarVehiculo}
             >
               {loading
                 ? "Analizando..."
-                : "Consultar vehículo"}
+                : internalQuoteMode === "IMPORTER"
+                  ? "Calcular con factura"
+                  : "Consultar Tabla SAT"}
 
               <span>{loading ? "⌛" : "→"}</span>
             </button>
@@ -5791,6 +6290,80 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 {result.calculation_status}
               </strong>
             </div>
+
+            {/* ==========================================
+                V37.4.4 · CLASIFICACIÓN TRIBUTARIA
+            ========================================== */}
+
+            {needsTaxClassificationReview && (
+              <section className="smart-review tax-classification-review">
+                <div className="smart-review-header">
+                  <div className="review-icon-large">🧾</div>
+                  <div>
+                    <span className="review-eyebrow">
+                      REVISIÓN TRIBUTARIA · NUEVA CLASIFICACIÓN
+                    </span>
+                    <h2>
+                      SAT identificó: {result.tax_classification_review.raw_vehicle_type}
+                    </h2>
+                    <p>
+                      Esta clasificación todavía no tiene una regla aprendida.
+                      Seleccioná la categoría tributaria equivalente. La decisión
+                      quedará guardada para las próximas consultas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="tax-rule-options">
+                  {(result.tax_classification_review.options || []).map((rule) => {
+                    const selected =
+                      Number(selectedTaxRuleId) === Number(rule.id);
+
+                    return (
+                      <button
+                        type="button"
+                        key={rule.id}
+                        className={`tax-rule-option ${selected ? "selected" : ""}`}
+                        onClick={() => setSelectedTaxRuleId(rule.id)}
+                      >
+                        <span className="review-radio">
+                          {selected ? "✓" : ""}
+                        </span>
+                        <div>
+                          <strong>{rule.vehicle_type}</strong>
+                          <small>
+                            IVA {Number(rule.iva_rate * 100).toFixed(0)}% ·
+                            IPRIMA {Number(rule.iprima_rate * 100).toFixed(0)}% ·
+                            Placas {moneyGTQ(rule.plate_fee_gtq)}
+                          </small>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="review-actions">
+                  <div>
+                    <strong>🧠 E&R aprenderá esta equivalencia</strong>
+                    <span>
+                      La próxima vez que SAT devuelva “{result.tax_classification_review.raw_vehicle_type}”
+                      el cálculo continuará automáticamente.
+                    </span>
+                  </div>
+
+                  <button
+                    className="confirm-review-button"
+                    disabled={!selectedTaxRuleId || taxClassSaving}
+                    onClick={confirmarClasificacionTributaria}
+                  >
+                    {taxClassSaving
+                      ? "Guardando..."
+                      : "Confirmar categoría tributaria"}
+                    <span>→</span>
+                  </button>
+                </div>
+              </section>
+            )}
 
             {/* ==========================================
                 REVISIÓN SAT
@@ -6582,6 +7155,43 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   )}
                 </div>
 
+                {isImporterCalculation && (
+                  <div className="importer-conversion-audit">
+                    <div>
+                      <span>Factura ingresada</span>
+                      <strong>
+                        {moneyUSD(
+                          Number(
+                            result?.invoice_value_usd ||
+                            summary?.invoice_value_usd ||
+                            taxes?.invoice_value_usd ||
+                            0
+                          )
+                        )}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Tipo de cambio Banguat</span>
+                      <strong>
+                        Q {Number(
+                          taxes?.invoice_exchange_rate ||
+                          taxes?.exchange_rate ||
+                          0
+                        ).toFixed(5)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Base convertida a quetzales</span>
+                      <strong>
+                        {moneyGTQ(
+                          taxes?.invoice_taxable_value_gtq ??
+                          taxes?.taxable_value_gtq
+                        )}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+
                 <div className="detail-list">
                   <div>
                     <span>
@@ -6936,7 +7546,22 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                             ? "FLETE + COSTOS GUATEMALA"
                             : "COSTOS GUATEMALA"}
                       </span>
-                      <strong>{quoteGrandTotalUsd !== null ? moneyUSD(quoteGrandTotalUsd) : `${moneyUSD(quoteTransportUsd)} + ${moneyGTQ(quoteGuatemalaTotal)}`}</strong>
+                      {quoteGrandTotalUsd !== null ? (
+                        <div className="quote-grand-total-values">
+                          {quoteGrandTotalGtq !== null && (
+                            <strong className="quote-grand-total-gtq">
+                              {moneyGTQ(quoteGrandTotalGtq)}
+                            </strong>
+                          )}
+                          <strong className="quote-grand-total-usd">
+                            {moneyUSD(quoteGrandTotalUsd)}
+                          </strong>
+                        </div>
+                      ) : (
+                        <strong>
+                          {`${moneyUSD(quoteTransportUsd)} + ${moneyGTQ(quoteGuatemalaTotal)}`}
+                        </strong>
+                      )}
                     </div>
                   </section>
 

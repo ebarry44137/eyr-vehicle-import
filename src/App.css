@@ -6351,3 +6351,213 @@ nav {
     max-height: 54px;
   }
 }
+/* E&R V37.4 · Cotizador interno SAT + Importadores */
+.internal-quote-mode{
+  margin:18px 0 22px;
+  display:grid;
+  gap:14px;
+}
+.internal-quote-mode .public-quote-mode-tabs{
+  margin:0;
+}
+.internal-importer-note{
+  display:flex;
+  gap:8px;
+  flex-direction:column;
+  padding:13px 15px;
+  border:1px solid rgba(16,55,88,.12);
+  border-radius:14px;
+  background:rgba(245,248,251,.92);
+  color:#173650;
+}
+.internal-importer-note span{
+  font-size:.88rem;
+  opacity:.78;
+  line-height:1.45;
+}
+/* E&R V37.4.2 · Auditoría USD → GTQ */
+.importer-conversion-audit{
+  margin:14px 0 16px;
+  padding:12px 14px;
+  border:1px solid #ead7ac;
+  border-radius:12px;
+  background:#fff8e9;
+  display:grid;
+  gap:8px;
+}
+.importer-conversion-audit>div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.importer-conversion-audit span{
+  color:#7c8ba0;
+  font-size:11px;
+}
+.importer-conversion-audit strong{
+  color:#0c3157;
+  font-size:12px;
+}
+/* E&R V37.4.3 · Total General en GTQ + USD */
+.quote-grand-total-values{
+  margin-left:auto;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:2px;
+  text-align:right;
+}
+.quote-grand-total-values strong{
+  display:block;
+  line-height:1.05;
+}
+.quote-grand-total-gtq{
+  font-size:20px!important;
+  font-weight:950!important;
+  color:#082d54!important;
+}
+.quote-grand-total-usd{
+  font-size:13px!important;
+  font-weight:850!important;
+  color:#173c5f!important;
+  opacity:.88;
+}
+/* E&R V37.4.4 · Clasificación tributaria inteligente */
+.tax-classification-review{
+  border-color:#f0c76d;
+}
+.tax-rule-options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin:18px 0;
+}
+.tax-rule-option{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:14px 16px;
+  border:1px solid #dbe4ee;
+  border-radius:14px;
+  background:#fff;
+  text-align:left;
+  cursor:pointer;
+}
+.tax-rule-option:hover,
+.tax-rule-option.selected{
+  border-color:#e4ad32;
+  background:#fff9ea;
+}
+.tax-rule-option>div{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.tax-rule-option strong{
+  color:#082d54;
+}
+.tax-rule-option small{
+  color:#718096;
+}
+@media(max-width:760px){
+  .tax-rule-options{grid-template-columns:1fr;}
+}
+/* =========================================================
+   E&R V37.5 · CARÁTULA DINÁMICA DE VEHÍCULO
+   ========================================================= */
+.envelope-cover-button{
+  min-height:44px;
+  padding:0 18px;
+  border:1px solid #e6ad38;
+  border-radius:10px;
+  background:#fff8e8;
+  color:#0a3154;
+  font-weight:900;
+  cursor:pointer;
+  transition:.18s ease;
+}
+.envelope-cover-button:hover{
+  transform:translateY(-1px);
+  background:#f7e3ad;
+  border-color:#d99a19;
+}
+@media(max-width:760px){
+  .customs-form-actions.sticky .envelope-cover-button{
+    width:100%;
+  }
+}
+/* =========================================================
+   E&R V37.5.3 · DATOS OPCIONALES PARA CARÁTULA EN LA GESTIÓN
+   ========================================================= */
+.import-cover-data-card{
+  margin:0 0 18px;
+  padding:18px;
+  border:1px solid #dce6ef;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fbfdff 0%,#f5f8fb 100%);
+}
+.import-cover-data-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  margin-bottom:14px;
+}
+.import-cover-data-head h3{
+  margin:4px 0 4px;
+  color:#092f52;
+  font-size:18px;
+}
+.import-cover-data-head p{
+  margin:0;
+  color:#677b8f;
+  font-size:13px;
+  line-height:1.45;
+  max-width:620px;
+}
+.optional-badge{
+  flex:0 0 auto;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#fff4d8;
+  border:1px solid #edc363;
+  color:#9b6900;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.7px;
+}
+.import-cover-data-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.import-cover-data-grid label{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.import-cover-data-grid label>span{
+  color:#123858;
+  font-size:12px;
+  font-weight:850;
+}
+.import-cover-data-grid input{
+  width:100%;
+  min-height:46px;
+  padding:0 13px;
+  border:1px solid #cfdce8;
+  border-radius:10px;
+  background:#fff;
+  color:#0b3153;
+  font-weight:750;
+}
+.import-cover-data-grid small{
+  color:#7b8b9a;
+  font-size:11px;
+}
+@media(max-width:760px){
+  .import-cover-data-grid{grid-template-columns:1fr;}
+  .import-cover-data-head{flex-direction:column;}
+}

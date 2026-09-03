@@ -56,6 +56,7 @@ function humanSatStatus(status) {
     AMBIGUOUS_VARIANT: "Variante por confirmar",
     REVIEW_REQUIRED: "Revisión requerida",
     NO_MATCH: "Sin coincidencia",
+    MANUAL: "Base definida manualmente",
   };
 
   return labels[status] || status || "—";
@@ -67,6 +68,7 @@ function humanConfidence(confidence) {
     MANUAL_RESOLUTION: "Confirmada",
     EXCEPTIONAL_RESOLUTION: "Confirmada externamente",
     MANUAL_REVIEW: "Requiere revisión",
+    MANUAL: "Confirmada por E&R",
   };
 
   return labels[confidence] || confidence || "—";
@@ -1508,29 +1510,94 @@ function App() {
 
   function calcularImpuestosManual() {
     const taxableValue = Number(manualTaxableValueGtq);
-    const rule = manualTaxRules.find((item) => Number(item.id) === Number(manualTaxRuleId));
-    if (!Number.isFinite(taxableValue) || taxableValue <= 0) {
-      setError("Ingresá un valor imponible válido en quetzales."); return;
-    }
-    if (!rule) { setError("Seleccioná la categoría tributaria del vehículo."); return; }
+    const rule = manualTaxRules.find(
+      (item) => Number(item.id) === Number(manualTaxRuleId)
+    );
 
-    const ivaRate=Number(rule.iva_rate||0), iprimaRate=Number(rule.iprima_rate||0);
-    const plates=Number(rule.plate_fee_gtq||0);
-    const iva=Math.round(taxableValue*ivaRate*100)/100;
-    const iprima=Math.round(taxableValue*iprimaRate*100)/100;
-    const total=Math.round((iva+iprima+plates)*100)/100;
+    if (!Number.isFinite(taxableValue) || taxableValue <= 0) {
+      setError("Ingresá un valor imponible válido en quetzales.");
+      return;
+    }
+
+    if (!rule) {
+      setError("Seleccioná la categoría tributaria del vehículo.");
+      return;
+    }
+
+    const ivaRate = Number(rule.iva_rate || 0);
+    const iprimaRate = Number(rule.iprima_rate || 0);
+    const plates = Number(rule.plate_fee_gtq || 0);
+
+    const iva = Math.round(taxableValue * ivaRate * 100) / 100;
+    const iprima = Math.round(taxableValue * iprimaRate * 100) / 100;
+    const total = Math.round((iva + iprima + plates) * 100) / 100;
+
+    const cleanVin =
+      String(manualVin || "").trim().toUpperCase() || null;
+
+    const cleanVehicleName =
+      String(manualVehicleName || "").trim().toUpperCase() ||
+      "CÁLCULO MANUAL";
+
+    const manualSummary = {
+      calculation_status: "READY",
+      calculation_method: "MANUAL",
+      sat_value_gtq: taxableValue,
+      sat_line: "BASE MANUAL E&R",
+      sat_match_status: "MANUAL",
+      sat_confidence: "MANUAL",
+      total_taxes_gtq: total,
+    };
 
     setError("");
     setResult({
-      success:true, calculation_method:"MANUAL", manual_calculation:true,
-      vehicle:{vin:String(manualVin||"").trim().toUpperCase()||null,
-        model:String(manualVehicleName||"").trim().toUpperCase()||"CÁLCULO MANUAL"},
-      sat:{requires_review:false,match_status:"MANUAL",selected_match:null},
-      taxes:{taxable_value_gtq:taxableValue,sat_value_gtq:taxableValue,
-        iva_rate:ivaRate,iva_gtq:iva,iprima_rate:iprimaRate,iprima_gtq:iprima,
-        plates_gtq:plates,total_gtq:total,vehicle_type:rule.vehicle_type,calculation_source:"MANUAL"},
-      dimensions:null, freight:null, freight_requires_review:false, manual_tax_rule:rule,
-      warnings:["Valor imponible establecido manualmente por E&R Solutions."]
+      success: true,
+
+      // V39.6.2 · El cálculo manual es definitivo dentro de este modo.
+      // No depende del matching VIN / Tabla SAT.
+      calculation_status: "READY",
+      calculation_method: "MANUAL",
+      manual_calculation: true,
+
+      vehicle: {
+        vin: cleanVin,
+        model: cleanVehicleName,
+      },
+
+      sat: {
+        requires_review: false,
+        match_status: "MANUAL",
+        confidence: "MANUAL",
+        selected_match: null,
+        manual_source: true,
+      },
+
+      taxes: {
+        taxable_value_gtq: taxableValue,
+        sat_value_gtq: taxableValue,
+        iva_rate: ivaRate,
+        iva_gtq: iva,
+        iprima_rate: iprimaRate,
+        iprima_gtq: iprima,
+        plates_gtq: plates,
+        total_taxes_gtq: total,
+        total_gtq: total,
+        vehicle_type: rule.vehicle_type,
+        calculation_source: "MANUAL",
+      },
+
+      // El render general usa summary para el encabezado y la tarjeta
+      // de valor imponible. En manual lo llenamos explícitamente.
+      summary: manualSummary,
+
+      dimensions: null,
+      freight: null,
+      freight_requires_review: false,
+      manual_tax_rule: rule,
+
+      warnings: [
+        "Valor imponible establecido manualmente por E&R Solutions.",
+      ],
     });
   }
 
@@ -3435,8 +3502,11 @@ async function openCustomsDetail(item) {
       ? quoteGrandTotalUsd * quoteExchangeRate
       : null;
   const canGenerateQuote =
-    result?.calculation_status === "READY" ||
-    summary?.calculation_status === "READY";
+    !result?.manual_calculation &&
+    (
+      result?.calculation_status === "READY" ||
+      summary?.calculation_status === "READY"
+    );
 
   /*
    * V13: revisión SAT compatible + resolución excepcional.
@@ -3538,24 +3608,32 @@ async function openCustomsDetail(item) {
     ? result?.freight_options || []
     : [];
 
+  const resolvedCalculationMethod = String(
+    result?.calculation_method ||
+    summary?.calculation_method ||
+    internalQuoteMode ||
+    "SAT"
+  ).toUpperCase();
+
   const isImporterCalculation =
-    String(
-      result?.calculation_method ||
-      summary?.calculation_method ||
-      internalQuoteMode ||
-      "SAT"
-    ).toUpperCase() === "IMPORTER";
+    resolvedCalculationMethod === "IMPORTER";
+
+  const isManualCalculation =
+    resolvedCalculationMethod === "MANUAL" ||
+    result?.manual_calculation === true;
 
   // V37.4.1 · En IMPORTER la Tabla SAT no define la base imponible.
   // El VIN se conserva para identificación/dimensiones/flete.
   const needsSatSelectableReview =
     !isImporterCalculation &&
+    !isManualCalculation &&
     Boolean(sat?.requires_review) &&
     !sat?.no_compatible_match &&
     satReviewOptions.length > 0;
 
   const needsSatExceptionalReview =
     !isImporterCalculation &&
+    !isManualCalculation &&
     Boolean(sat?.requires_review) &&
     Boolean(sat?.no_compatible_match);
 
@@ -8790,7 +8868,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   <span className="result-icon">🇬🇹</span>
 
                   <div>
-                    <small>SAT GUATEMALA</small>
+                    <small>
+                      {isManualCalculation ? "BASE MANUAL E&R" : "SAT GUATEMALA"}
+                    </small>
                     <h3>Valor imponible</h3>
                   </div>
                 </div>
@@ -8803,7 +8883,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   <div>
                     <span>Línea SAT</span>
                     <strong>
-                      {summary?.sat_line || "Pendiente"}
+                      {isManualCalculation
+                        ? "Definida manualmente"
+                        : summary?.sat_line || "Pendiente"}
                     </strong>
                   </div>
 
@@ -8920,6 +9002,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
               </article>
 
+              {!isManualCalculation && (
               <article className="result-card freight-result">
                 <div className="result-card-header">
                   <span className="result-icon">🚢</span>
@@ -8967,6 +9050,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   </div>
                 )}
               </article>
+              )}
             </div>
 
             {canGenerateQuote && (

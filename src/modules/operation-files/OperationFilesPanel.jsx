@@ -19,8 +19,43 @@ export default function OperationFilesPanel({
   const inputRef=useRef(null);
 
   async function invoke(body){
-    const {data,error}=await supabase.functions.invoke("operation-file-manager",{body});
-    if(error) throw error;
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError) throw sessionError;
+
+    const accessToken =
+      sessionData?.session?.access_token || "";
+
+    if (!accessToken) {
+      throw new Error("Sesión del Portal no disponible.");
+    }
+
+    const {data,error}=await supabase.functions.invoke(
+      "operation-file-manager",
+      {
+        body,
+        headers: {
+          "x-portal-access-token": accessToken,
+        },
+      }
+    );
+
+    if(error) {
+      let message = error?.message || "Error en archivos.";
+
+      // Intentar recuperar el body real de la Edge Function.
+      try {
+        const response = error?.context;
+        if (response?.clone) {
+          const payload = await response.clone().json();
+          if (payload?.error) message = payload.error;
+        }
+      } catch {}
+
+      throw new Error(message);
+    }
+
     if(!data?.success) throw new Error(data?.error||"Error en archivos.");
     return data;
   }

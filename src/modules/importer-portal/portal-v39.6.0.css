@@ -1,0 +1,37 @@
+
+/* V39.6.0 · Portal Documentos + Cotizador */
+.ip-document-operation-grid{display:grid;gap:18px}
+.ip-document-operation{background:#fff;border:1px solid #dbe5ef;border-radius:20px;padding:20px;display:grid;gap:16px}
+.ip-document-operation>div:first-child{display:grid;gap:5px}
+.ip-document-operation small,.ip-quote-page small{font-weight:900;letter-spacing:1.4px;color:#d99400}
+.ip-document-operation strong{font-size:18px;color:#082f53}
+.ip-document-operation span{color:#6c8096}
+
+.ip-quote-page{display:grid;gap:18px}
+.ip-quote-badge{align-self:center;background:#fff;border:1px solid #dbe5ef;padding:14px 18px;border-radius:16px;font-weight:900}
+.ip-quote-card{background:#fff;border:1px solid #dbe5ef;border-radius:20px;padding:22px;display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end}
+.ip-quote-card label{display:grid;gap:8px}
+.ip-quote-card label>span{font-size:11px;font-weight:900;letter-spacing:1.2px;color:#6c8096}
+.ip-quote-card input{width:100%;box-sizing:border-box;border:1px solid #ccd9e6;border-radius:12px;padding:13px 14px;font:inherit}
+.ip-quote-money-input{display:grid;grid-template-columns:auto 1fr;align-items:center;border:1px solid #ccd9e6;border-radius:12px;overflow:hidden}
+.ip-quote-money-input b{padding:0 12px;color:#0a3458}
+.ip-quote-money-input input{border:0;border-left:1px solid #ccd9e6;border-radius:0}
+.ip-quote-card button{border:0;border-radius:12px;padding:14px 20px;background:#0a3458;color:#fff;font-weight:900;cursor:pointer}
+.ip-quote-card button:disabled{opacity:.65;cursor:wait}
+.ip-quote-result{background:#fff;border:1px solid #dbe5ef;border-radius:20px;padding:22px;display:grid;gap:18px}
+.ip-quote-result>header{display:flex;justify-content:space-between;gap:20px;align-items:start}
+.ip-quote-result>header div{display:grid;gap:4px}
+.ip-quote-result>header h3{margin:0;color:#082f53;font-size:24px}
+.ip-quote-result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ip-quote-result-grid article{background:#f6f9fc;border-radius:14px;padding:16px;display:grid;gap:7px}
+.ip-quote-result-grid span{font-size:11px;font-weight:900;color:#6c8096;text-transform:uppercase}
+.ip-quote-result-grid strong{font-size:20px;color:#082f53}
+.ip-quote-freight{background:#0a3458;color:#fff;border-radius:16px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:4px 18px}
+.ip-quote-freight small{grid-column:1/-1;color:#bdd0df}
+.ip-quote-review{padding:14px;border-radius:12px;background:#fff4dc;color:#8a5b00;font-weight:800}
+
+@media(max-width:900px){
+  .ip-quote-card{grid-template-columns:1fr}
+  .ip-quote-result-grid{grid-template-columns:1fr 1fr}
+  .ip-quote-result>header{flex-direction:column}
+}

@@ -210,7 +210,48 @@ export default function OfficePortalClientsPage({
       if (functionError) throw functionError;
       if (!data?.success) throw new Error(data?.error || "No fue posible activar el Portal.");
 
-      setMessage(data.message || "Acceso al Portal activado.");
+      // V39.5.4: localizar el cliente creado/devuelto y enlazar operaciones existentes.
+      let createdClientId =
+        data?.client?.id ||
+        data?.portal_client?.id ||
+        data?.client_id ||
+        null;
+
+      if (!createdClientId) {
+        const { data: refreshedClients, error: refreshError } = await supabase.rpc(
+          "list_office_portal_clients_v3922",
+          {
+            p_search: cleanEmail,
+            p_organization_id: isSystemAdmin
+              ? activationCandidate.organization_id
+              : null,
+          }
+        );
+        if (refreshError) throw refreshError;
+
+        const match = (Array.isArray(refreshedClients) ? refreshedClients : []).find(
+          (row) =>
+            row.organization_id === activationCandidate.organization_id &&
+            String(row.email || "").trim().toLowerCase() === cleanEmail
+        );
+        createdClientId = match?.id || null;
+      }
+
+      if (createdClientId) {
+        const { error: linkError } = await supabase.rpc(
+          "link_existing_operations_to_portal_client_v3954",
+          {
+            p_organization_id: activationCandidate.organization_id,
+            p_portal_client_id: createdClientId,
+            p_contact_name: activationCandidate.contact_name || "",
+            p_email: cleanEmail,
+            p_phone: activationCandidate.phone || "",
+          }
+        );
+        if (linkError) throw linkError;
+      }
+
+      setMessage(data.message || "Acceso al Portal activado y operaciones vinculadas.");
       setActivationCandidate(null);
       setActivationEmail("");
       setActivationPassword("");
@@ -374,10 +415,10 @@ export default function OfficePortalClientsPage({
 
       setShowCreate(false);
 
-      await loadClients(
-        search,
-        organizationFilter
-      );
+      await Promise.all([
+        loadClients(search, organizationFilter),
+        loadPortalCandidates(search, organizationFilter),
+      ]);
     } catch (err) {
       console.error(
         "OFFICE PORTAL CLIENT CREATE ERROR:",
@@ -495,20 +536,29 @@ export default function OfficePortalClientsPage({
     );
   }
 
-  function copyPortalLink() {
-    const absolute =
-      `${window.location.origin}${portalUrl}`;
+  function getPortalUrlForClient(item = null) {
+    const slug = String(
+      item?.organization_slug ||
+      (!isSystemAdmin ? officeSlug : "") ||
+      selectedFilterOrganization?.slug ||
+      ""
+    ).trim();
+
+    return slug ? `/portal/${slug}` : "/portal";
+  }
+
+  function copyPortalLink(item = null) {
+    const relative = getPortalUrlForClient(item);
+    const absolute = `${window.location.origin}${relative}`;
 
     navigator.clipboard
       ?.writeText(absolute)
-      .then(() =>
-        setMessage(
-          "Enlace del portal copiado."
-        )
-      )
-      .catch(() =>
-        setMessage(`Portal: ${absolute}`)
-      );
+      .then(() => setMessage(
+        item?.organization_name
+          ? `Enlace del portal de ${item.organization_name} copiado.`
+          : "Enlace del portal copiado."
+      ))
+      .catch(() => setMessage(`Portal: ${absolute}`));
   }
 
   return (
@@ -538,7 +588,7 @@ export default function OfficePortalClientsPage({
           <button
             type="button"
             className="opc-secondary"
-            onClick={copyPortalLink}
+            onClick={() => copyPortalLink()}
           >
             🔗 Copiar enlace
           </button>
@@ -893,6 +943,16 @@ export default function OfficePortalClientsPage({
 
                     <td>
                       <div className="opc-row-actions">
+                        {isSystemAdmin && (
+                          <button
+                            type="button"
+                            className="opc-action"
+                            onClick={() => copyPortalLink(item)}
+                            title={`Copiar enlace del portal de ${item.organization_name || "esta oficina"}`}
+                          >
+                            🔗
+                          </button>
+                        )}
                         <button
                           type="button"
                           className="opc-action"

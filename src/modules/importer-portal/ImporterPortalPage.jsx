@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import "./importer-portal.css";
+import "./portal-v39.6.0.css";
 import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
 
 const DEFAULT_BRAND = {
@@ -105,6 +106,13 @@ export default function ImporterPortalPage() {
   const [login,setLogin] = useState({email:"",password:""});
   const [filters,setFilters] = useState({search:"",status:"ALL"});
 
+  // V39.6.0 · Cotizador para cliente de oficina
+  const [quoteVin,setQuoteVin] = useState("");
+  const [quoteInvoice,setQuoteInvoice] = useState("");
+  const [quoteLoading,setQuoteLoading] = useState(false);
+  const [quoteResult,setQuoteResult] = useState(null);
+  const [quoteError,setQuoteError] = useState("");
+
   const routeSlug = portalSlugFromLocation();
   const organization = context?.organization || null;
   const client = context?.client || null;
@@ -154,7 +162,7 @@ export default function ImporterPortalPage() {
     setError("");
     try {
       const {data,error} = await supabase.rpc(
-        "list_office_client_imports_v392",
+        "list_portal_operations_v3957",
         {
           p_search:String(next.search || "").trim() || null,
           p_status:next.status === "ALL" ? null : next.status,
@@ -175,8 +183,11 @@ export default function ImporterPortalPage() {
     setDetailLoading(true);
     try {
       const {data,error} = await supabase.rpc(
-        "office_client_import_detail_v392",
-        {p_import_id:item.id}
+        "portal_operation_detail_v3957",
+        {
+          p_source_type:item.source_type || "IMPORT_MANAGEMENT",
+          p_operation_id:item.id
+        }
       );
       if (error) throw error;
       setDetail(data || null);
@@ -200,7 +211,10 @@ export default function ImporterPortalPage() {
         return;
       }
 
-      const {data,error} = await supabase.rpc("office_client_portal_context_v392");
+      const {data,error} = await supabase.rpc(
+        "office_client_portal_context_v3956",
+        { p_slug: routeSlug || null }
+      );
       if (error) throw error;
 
       if (!data?.authorized) {
@@ -266,6 +280,64 @@ export default function ImporterPortalPage() {
     } finally {
       setAuthLoading(false);
     }
+  }
+
+  async function runImporterQuote(event) {
+    event?.preventDefault?.();
+
+    const cleanVin = String(quoteVin || "").trim().toUpperCase();
+    const invoice = Number(quoteInvoice || 0);
+
+    setQuoteError("");
+    setQuoteResult(null);
+
+    if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(cleanVin)) {
+      setQuoteError("Ingresá un VIN válido de 17 caracteres.");
+      return;
+    }
+
+    if (!Number.isFinite(invoice) || invoice <= 0) {
+      setQuoteError("Ingresá el valor real de la factura en USD.");
+      return;
+    }
+
+    setQuoteLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("decode-vin", {
+        body: {
+          vin: cleanVin,
+          calculation_mode: "IMPORTER",
+          invoice_value_usd: invoice,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "No fue posible calcular la cotización.");
+
+      setQuoteResult(data);
+    } catch (err) {
+      setQuoteError(err?.message || "No fue posible calcular la cotización.");
+    } finally {
+      setQuoteLoading(false);
+    }
+  }
+
+  function moneyGTQ(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    return new Intl.NumberFormat("es-GT", {
+      style: "currency",
+      currency: "GTQ",
+      minimumFractionDigits: 2,
+    }).format(Number(value || 0));
+  }
+
+  function moneyUSD(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(Number(value || 0));
   }
 
   async function logout() {
@@ -361,7 +433,8 @@ export default function ImporterPortalPage() {
         <nav>
           <button className={activeView==="dashboard"?"active":""} onClick={()=>setActiveView("dashboard")}><span>▦</span>Dashboard</button>
           <button className={activeView==="imports"?"active":""} onClick={()=>setActiveView("imports")}><span>🚢</span>Mis importaciones</button>
-          <button disabled><span>📄</span>Documentos<em>V39.3</em></button>
+          <button className={activeView==="documents"?"active":""} onClick={()=>setActiveView("documents")}><span>📄</span>Documentos</button>
+          <button className={activeView==="quote"?"active":""} onClick={()=>setActiveView("quote")}><span>🧮</span>Cotizador</button>
         </nav>
 
         <div className="ip-sidebar-footer">
@@ -381,7 +454,12 @@ export default function ImporterPortalPage() {
         <header className="ip-topbar">
           <div>
             <small>PORTAL DE CLIENTES</small>
-            <h1>{activeView==="imports"?"Mis Importaciones":"Dashboard"}</h1>
+            <h1>{
+              activeView==="imports" ? "Mis Importaciones" :
+              activeView==="documents" ? "Documentos" :
+              activeView==="quote" ? "Cotizador para Importador" :
+              "Dashboard"
+            }</h1>
           </div>
           <div className="ip-top-company">
             <strong>{client?.company_name || client?.contact_name}</strong>
@@ -428,7 +506,7 @@ export default function ImporterPortalPage() {
               )}
             </section>
           </>
-        ) : (
+        ) : activeView==="imports" ? (
           <section className="ip-imports-page">
             <div className="ip-imports-hero">
               <div>
@@ -493,7 +571,131 @@ export default function ImporterPortalPage() {
               </div>
             )}
           </section>
-        )}
+        ) : activeView==="documents" ? (
+          <section className="ip-documents-page">
+            <div className="ip-imports-hero">
+              <div>
+                <small>ARCHIVOS PUBLICADOS</small>
+                <h2>Documentos de tus gestiones</h2>
+                <p>Abrí una gestión para consultar las fotos, DUCA, BL, título, factura y demás documentos que tu oficina haya publicado para vos.</p>
+              </div>
+              <div className="ip-import-count"><small>GESTIONES</small><strong>{imports.length}</strong></div>
+            </div>
+
+            {imports.length===0 ? (
+              <div className="ip-panel ip-empty">
+                <div>📄</div>
+                <strong>No hay gestiones con acceso.</strong>
+                <p>Cuando tu oficina vincule una gestión a tu cuenta podrás consultar aquí sus archivos publicados.</p>
+              </div>
+            ) : (
+              <div className="ip-document-operation-grid">
+                {imports.map(item=>(
+                  <article className="ip-document-operation" key={`${item.source_type}-${item.id}`}>
+                    <div>
+                      <small>{item.source_type==="CUSTOMS_CASE" ? "EXPEDIENTE ADUANAL" : "GESTIÓN DE IMPORTACIÓN"}</small>
+                      <strong>{vehicleName(item)}</strong>
+                      <span>{item.reference_code} · {item.vin || "VIN pendiente"}</span>
+                    </div>
+
+                    <OperationFilesPanel
+                      supabase={supabase}
+                      sourceType={item.source_type || "IMPORT_MANAGEMENT"}
+                      sourceId={item.id}
+                      organizationId={item.organization_id}
+                      readOnly={true}
+                      title="Documentos publicados"
+                    />
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        ) : activeView==="quote" ? (
+          <section className="ip-quote-page">
+            <div className="ip-imports-hero">
+              <div>
+                <small>COTIZADOR PARA IMPORTADOR</small>
+                <h2>VIN + factura. Calculamos tus impuestos.</h2>
+                <p>Ingresá el VIN y el valor real de tu factura de compra. El sistema utilizará la modalidad de cálculo para importador.</p>
+              </div>
+              <div className="ip-quote-badge">🧾 FACTURA REAL</div>
+            </div>
+
+            <form className="ip-quote-card" onSubmit={runImporterQuote}>
+              <label>
+                <span>VIN DEL VEHÍCULO</span>
+                <input
+                  value={quoteVin}
+                  onChange={e=>setQuoteVin(e.target.value.toUpperCase())}
+                  maxLength={17}
+                  placeholder="17 caracteres"
+                />
+              </label>
+
+              <label>
+                <span>VALOR DE FACTURA</span>
+                <div className="ip-quote-money-input">
+                  <b>USD</b>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={quoteInvoice}
+                    onChange={e=>setQuoteInvoice(e.target.value)}
+                    placeholder="Ej. 8500.00"
+                  />
+                </div>
+              </label>
+
+              <button disabled={quoteLoading}>
+                {quoteLoading ? "Calculando..." : "Calcular impuestos →"}
+              </button>
+            </form>
+
+            {quoteError && <div className="ip-message error">{quoteError}</div>}
+
+            {quoteResult && (
+              <section className="ip-quote-result">
+                <header>
+                  <div>
+                    <small>RESULTADO</small>
+                    <h3>
+                      {[quoteResult?.vehicle?.model_year || quoteResult?.vehicle?.year,
+                        quoteResult?.vehicle?.make,
+                        quoteResult?.vehicle?.model,
+                        quoteResult?.vehicle?.trim].filter(Boolean).join(" ")}
+                    </h3>
+                    <span>{quoteResult?.vehicle?.vin || quoteVin}</span>
+                  </div>
+                  <div>
+                    <small>FACTURA UTILIZADA</small>
+                    <strong>{moneyUSD(quoteResult?.invoice_value_usd || quoteInvoice)}</strong>
+                  </div>
+                </header>
+
+                <div className="ip-quote-result-grid">
+                  <article><span>IVA</span><strong>{moneyGTQ(quoteResult?.taxes?.iva_gtq)}</strong></article>
+                  <article><span>IPRIMA</span><strong>{moneyGTQ(quoteResult?.taxes?.iprima_gtq)}</strong></article>
+                  <article><span>Placas</span><strong>{moneyGTQ(quoteResult?.taxes?.plates_gtq)}</strong></article>
+                  <article><span>Total tributos</span><strong>{moneyGTQ(quoteResult?.taxes?.total_taxes_gtq)}</strong></article>
+                </div>
+
+                <div className="ip-quote-freight">
+                  <span>🚢 Flete marítimo estimado</span>
+                  <strong>{moneyUSD(quoteResult?.freight?.price_usd)}</strong>
+                  <small>{quoteResult?.freight?.category || "Categoría pendiente"}</small>
+                </div>
+
+                {quoteResult?.calculation_status !== "READY" && (
+                  <div className="ip-quote-review">
+                    ⚠️ Esta cotización requiere revisión antes de iniciar una gestión.
+                  </div>
+                )}
+              </section>
+            )}
+          </section>
+        ) : null}
       </main>
 
       {selected && (
@@ -525,11 +727,13 @@ export default function ImporterPortalPage() {
 
                 <OperationFilesPanel
                   supabase={supabase}
-                  sourceType="IMPORT_MANAGEMENT"
+                  sourceType={selected.source_type || "IMPORT_MANAGEMENT"}
                   sourceId={selected.id}
                   organizationId={selected.organization_id || detail?.organization_id}
                   readOnly={true}
-                  title="Fotos y documentos publicados"
+                  title={selected.source_type === "CUSTOMS_CASE"
+                    ? "Fotos y documentos del expediente aduanal"
+                    : "Fotos y documentos publicados"}
                 />
               </>
             )}

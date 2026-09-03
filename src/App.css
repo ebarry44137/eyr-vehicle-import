@@ -6561,3 +6561,712 @@ nav {
   .import-cover-data-grid{grid-template-columns:1fr;}
   .import-cover-data-head{flex-direction:column;}
 }
+/* E&R V37.6 · Cotizador Manual */
+.manual-mode-tab{width:100%;margin-top:10px;display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid #d8e2ec;border-radius:14px;background:#fff;color:#0b3153;text-align:left;cursor:pointer}.manual-mode-tab.active,.manual-mode-tab:hover{border-color:#e2ab35;background:#fff8e7}.manual-mode-tab>span{font-size:20px}.manual-mode-tab div{display:flex;flex-direction:column}.manual-mode-tab small{font-size:10px;color:#77889a}.manual-tax-card{margin-top:14px;padding:20px;border:1px solid #e6bd61;border-radius:18px;background:linear-gradient(180deg,#fffdf8,#fff8e8)}.manual-tax-heading{display:flex;justify-content:space-between;gap:18px}.manual-tax-heading span{font-size:10px;font-weight:950;color:#a66d00;letter-spacing:1px}.manual-tax-heading h3{margin:5px 0;color:#092f52;font-size:21px}.manual-tax-heading p{margin:0;color:#667b90;font-size:12px}.manual-tax-heading>b{height:max-content;padding:7px 10px;border:1px solid #e0aa37;border-radius:999px;background:#f5d87f;font-size:10px}.manual-tax-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.manual-tax-grid label{display:flex;flex-direction:column;gap:7px}.manual-tax-grid label>span{font-size:11px;font-weight:900;color:#153b5d}.manual-tax-grid input,.manual-tax-grid select{width:100%;min-height:46px;padding:0 13px;border:1px solid #d7c38f;border-radius:10px;background:#fff}.manual-money{display:flex}.manual-money>b{display:grid;place-items:center;min-width:48px;background:#0a3458;color:#fff;border-radius:10px 0 0 10px}.manual-money input{border-radius:0 10px 10px 0}.manual-tax-action{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:18px;padding-top:15px;border-top:1px solid #ecd8a6}.manual-tax-action>span{font-size:11px;color:#7c6b43}@media(max-width:760px){.manual-tax-grid{grid-template-columns:1fr}.manual-tax-heading,.manual-tax-action{flex-direction:column;align-items:stretch}}
+/* =========================================================
+   E&R V38 · SaaS / White Label
+   ========================================================= */
+:root{--tenant-primary:#0A3458;--tenant-secondary:#E8A72D;--tenant-accent:#F5D87F}
+.tenant-sidebar-logo{max-height:58px;object-fit:contain}.tenant-sidebar-wordmark{padding:9px 4px;display:flex;flex-direction:column;color:#fff}.tenant-sidebar-wordmark strong{font-size:17px}.tenant-sidebar-wordmark span{font-size:9px;letter-spacing:1.4px;opacity:.72}.tenant-plan-pill{padding:8px 12px;border-radius:999px;background:#eef4f8;color:#24445f;font-size:10px;font-weight:900;letter-spacing:.7px}.tenant-branding-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:22px;align-items:start}.tenant-branding-form{display:flex;flex-direction:column;gap:16px}.tenant-config-card{padding:20px;border:1px solid #dfe7ee;border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(10,52,88,.05)}.tenant-card-head{display:flex;gap:12px;align-items:center;margin-bottom:18px}.tenant-card-head>span{font-size:23px}.tenant-card-head small{font-size:9px;font-weight:900;letter-spacing:1.1px;color:#8293a4}.tenant-card-head h2{margin:2px 0 0;color:#123957;font-size:18px}.tenant-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.tenant-form-grid label,.tenant-footer-field{display:flex;flex-direction:column;gap:6px}.tenant-form-grid label>span,.tenant-footer-field>span,.tenant-color-grid label>span{font-size:11px;font-weight:850;color:#294b67}.tenant-form-grid input,.tenant-footer-field textarea{width:100%;border:1px solid #d6e0e8;border-radius:10px;background:#fbfdff;padding:12px;color:#173a55}.tenant-form-grid .span-2{grid-column:1/-1}.tenant-logo-field small{font-size:9px;color:#8190a0}.tenant-color-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tenant-color-grid label{display:flex;flex-direction:column;gap:7px}.tenant-color-grid label>div{display:flex;align-items:center;gap:8px;padding:7px;border:1px solid #dce5ec;border-radius:10px}.tenant-color-grid input[type=color]{width:40px;height:35px;border:0;background:none;padding:0}.tenant-color-grid code{font-size:10px;color:#607487}.tenant-footer-field{margin-top:15px}.tenant-save-brand{align-self:flex-start}.tenant-brand-preview{position:sticky;top:18px;padding:16px;border-radius:18px;background:#f4f7fa;border:1px solid #e1e7ed}.tenant-brand-preview>small{display:block;margin:0 0 10px;font-size:9px;font-weight:900;letter-spacing:1.2px;color:#718496}.tenant-preview-sheet{overflow:hidden;border-radius:13px;background:white;box-shadow:0 12px 30px rgba(18,51,76,.12)}.tenant-preview-sheet header{display:flex;align-items:center;gap:10px;padding:16px;background:var(--preview-primary);color:#fff}.tenant-preview-sheet header>div:nth-child(2){display:flex;flex-direction:column}.tenant-preview-sheet header span{font-size:8px;letter-spacing:1px;opacity:.8}.tenant-preview-logo{display:grid!important;place-items:center;width:44px;height:44px;border-radius:9px;background:#fff;color:var(--preview-primary)}.tenant-preview-logo img{max-width:38px;max-height:38px;object-fit:contain}.tenant-preview-title{padding:17px;border-bottom:4px solid var(--preview-secondary);display:flex;flex-direction:column}.tenant-preview-title span{font-size:8px;font-weight:900;color:#82909d}.tenant-preview-title strong{color:#193b57;margin-top:3px}.tenant-preview-lines{padding:16px;display:flex;flex-direction:column;gap:9px}.tenant-preview-lines i{height:8px;border-radius:5px;background:#edf2f5}.tenant-preview-lines i:nth-child(2){width:76%}.tenant-preview-lines i:nth-child(3){width:52%}.tenant-preview-total{margin:0 16px 14px;padding:12px;border-radius:9px;background:var(--preview-accent);color:#173a55;display:flex;justify-content:space-between;align-items:center}.tenant-preview-total span{font-size:9px;font-weight:900}.tenant-preview-sheet footer{padding:11px 16px;background:#f7f9fb;color:#718394;font-size:8px}.tenant-quote-logo{overflow:hidden}.tenant-quote-logo img{width:100%;height:100%;object-fit:contain;background:#fff}.tenant-quote-preview .quote-sheet-header{border-top-color:var(--tenant-secondary)!important}.tenant-quote-preview .quote-sheet-logo{background:var(--tenant-primary)!important}.tenant-quote-preview .quote-vehicle-strip,.tenant-quote-preview .quote-grand-total{border-color:var(--tenant-secondary)!important}.tenant-quote-preview .quote-sheet-footer-brand{color:var(--tenant-primary)!important}
+@media(max-width:1050px){.tenant-branding-layout{grid-template-columns:1fr}.tenant-brand-preview{position:static}}@media(max-width:720px){.tenant-form-grid,.tenant-color-grid{grid-template-columns:1fr}.tenant-form-grid .span-2{grid-column:auto}}
+/* =========================================================
+   E&R V38.0.4 · LOGOS CON MÁS PRESENCIA
+   1) Cotización: solo logo, sin nombre/tagline.
+   2) Sidebar: logo White Label más grande.
+   ========================================================= */
+
+/* SIDEBAR */
+.brand.brand-v35.brand-full-logo {
+  min-height: 132px !important;
+  padding: 12px 10px 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.brand-full-logo-image.tenant-sidebar-logo {
+  display: block !important;
+  width: min(225px, 96%) !important;
+  height: 108px !important;
+  max-width: 225px !important;
+  max-height: 108px !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  margin: 0 auto !important;
+}
+
+/* COTIZACIÓN */
+.quote-sheet-brand.tenant-quote-brand-logo-only {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-width: 220px !important;
+}
+
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large {
+  width: 190px !important;
+  height: 90px !important;
+  max-width: 190px !important;
+  max-height: 90px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 190px !important;
+  max-height: 90px !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+  background: transparent !important;
+}
+
+/* Evita que reglas antiguas de .brand span reduzcan contenido del logo */
+.brand.brand-v35.brand-full-logo > img {
+  font-size: initial !important;
+}
+
+/* Tablet / sidebar angosto */
+@media (max-width: 900px) {
+  .brand.brand-v35.brand-full-logo {
+    min-height: 92px !important;
+    padding: 8px 5px 12px !important;
+  }
+
+  .brand-full-logo-image.tenant-sidebar-logo {
+    width: 68px !important;
+    height: 70px !important;
+    max-width: 68px !important;
+    max-height: 70px !important;
+  }
+}
+
+/* Móvil: la cotización mantiene presencia sin romper el header */
+@media (max-width: 760px) {
+  .quote-sheet-brand.tenant-quote-brand-logo-only {
+    min-width: 145px !important;
+  }
+
+  .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large {
+    width: 145px !important;
+    height: 72px !important;
+  }
+
+  .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img {
+    max-width: 145px !important;
+    max-height: 72px !important;
+  }
+}
+/* =========================================================
+   V38.0.5 · LOGOS GRANDES / MÁS PRESENCIA
+   ========================================================= */
+
+/* =========================
+   LOGO DEL SIDEBAR
+   ========================= */
+
+.brand.brand-v35.brand-full-logo {
+  width: 100% !important;
+  min-height: 165px !important;
+  padding: 10px 4px 22px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  overflow: visible !important;
+}
+
+.brand-full-logo-image.tenant-sidebar-logo {
+  display: block !important;
+
+  width: 250px !important;
+  height: 135px !important;
+
+  max-width: 100% !important;
+  max-height: 135px !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  margin: 0 auto !important;
+  padding: 0 !important;
+
+  transform: none !important;
+}
+
+
+/* =========================
+   LOGO DE LA COTIZACIÓN
+   ========================= */
+
+.quote-sheet-brand.tenant-quote-brand-logo-only {
+  width: 260px !important;
+  min-width: 260px !important;
+  height: 120px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+
+  overflow: visible !important;
+}
+
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large {
+  width: 240px !important;
+  height: 110px !important;
+
+  max-width: none !important;
+  max-height: none !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  overflow: visible !important;
+}
+
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img {
+  display: block !important;
+
+  width: 240px !important;
+  height: 110px !important;
+
+  max-width: none !important;
+  max-height: none !important;
+
+  object-fit: contain !important;
+  object-position: left center !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  background: transparent !important;
+}
+
+
+/* =========================
+   TABLET
+   ========================= */
+
+@media (max-width: 900px) {
+
+  .brand.brand-v35.brand-full-logo {
+    min-height: 110px !important;
+    padding: 8px 2px 15px !important;
+  }
+
+  .brand-full-logo-image.tenant-sidebar-logo {
+    width: 78px !important;
+    height: 82px !important;
+    max-width: 78px !important;
+    max-height: 82px !important;
+  }
+}
+
+
+/* =========================
+   COTIZACIÓN EN MÓVIL
+   ========================= */
+
+@media (max-width: 760px) {
+
+  .quote-sheet-brand.tenant-quote-brand-logo-only {
+    width: 190px !important;
+    min-width: 190px !important;
+    height: 90px !important;
+  }
+
+  .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large,
+  .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img {
+    width: 180px !important;
+    height: 82px !important;
+  }
+}
+/* =========================================================
+   V38.0.6 · LOGOS XL
+   ========================================================= */
+
+
+/* =========================================================
+   SIDEBAR — LOGO GRANDE
+   ========================================================= */
+
+.sidebar .brand.brand-v35.brand-full-logo {
+  width: 100% !important;
+  height: 210px !important;
+  min-height: 210px !important;
+  max-height: none !important;
+
+  padding: 5px 0 15px !important;
+  margin: 0 0 5px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  overflow: visible !important;
+}
+
+.sidebar .brand-full-logo-image.tenant-sidebar-logo {
+  display: block !important;
+
+  width: 280px !important;
+  height: 180px !important;
+
+  min-width: 0 !important;
+  min-height: 0 !important;
+
+  max-width: 98% !important;
+  max-height: 180px !important;
+
+  object-fit: contain !important;
+  object-position: center center !important;
+
+  padding: 0 !important;
+  margin: 0 auto !important;
+
+  transform: scale(1.18) !important;
+  transform-origin: center center !important;
+}
+
+
+/* =========================================================
+   COTIZACIÓN — LOGO XL
+   ========================================================= */
+
+.quote-sheet-header .quote-sheet-brand.tenant-quote-brand-logo-only {
+  width: 330px !important;
+  min-width: 330px !important;
+  max-width: 330px !important;
+
+  height: 145px !important;
+  min-height: 145px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+
+  overflow: visible !important;
+}
+
+
+/* Elimina límites heredados del logo anterior */
+
+.quote-sheet-header
+.quote-sheet-brand
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large {
+
+  width: 310px !important;
+  height: 135px !important;
+
+  min-width: 310px !important;
+  min-height: 135px !important;
+
+  max-width: none !important;
+  max-height: none !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  background: transparent !important;
+
+  border: 0 !important;
+  border-radius: 0 !important;
+
+  box-shadow: none !important;
+
+  overflow: visible !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+
+/* Imagen real */
+
+.quote-sheet-header
+.quote-sheet-brand
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img {
+
+  display: block !important;
+
+  width: 310px !important;
+  height: 135px !important;
+
+  min-width: 310px !important;
+  min-height: 135px !important;
+
+  max-width: none !important;
+  max-height: none !important;
+
+  object-fit: contain !important;
+  object-position: left center !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  transform: scale(1.12) !important;
+  transform-origin: left center !important;
+}
+
+
+/* =========================================================
+   HEADER DE COTIZACIÓN
+   Le damos espacio al logo grande
+   ========================================================= */
+
+.quote-sheet-header {
+  min-height: 165px !important;
+
+  grid-template-columns:
+    330px
+    minmax(300px, 1fr)
+    minmax(230px, auto) !important;
+
+  align-items: center !important;
+
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+
+  overflow: visible !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .sidebar .brand.brand-v35.brand-full-logo {
+    height: 125px !important;
+    min-height: 125px !important;
+  }
+
+  .sidebar .brand-full-logo-image.tenant-sidebar-logo {
+    width: 82px !important;
+    height: 105px !important;
+
+    max-width: 82px !important;
+    max-height: 105px !important;
+
+    transform: scale(1.08) !important;
+  }
+}
+/* =========================================================
+   E&R V38.1 · ADMINISTRACIÓN DE OFICINAS / CLIENTES
+   ========================================================= */
+
+.organizations-v381-module{padding-bottom:50px}
+.organizations-v381-topbar{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.organizations-v381-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+.organizations-v381-kpis>div{padding:17px 19px;background:#fff;border:1px solid #e0e8f0;border-radius:16px;box-shadow:0 8px 25px rgba(10,52,88,.035);display:flex;flex-direction:column}
+.organizations-v381-kpis span{font-size:9px;font-weight:950;letter-spacing:1.2px;color:#8796a6}
+.organizations-v381-kpis strong{font-size:27px;color:#0a3458;margin:4px 0}
+.organizations-v381-kpis small{font-size:10px;color:#8a98a7}
+.organizations-v381-toolbar{display:flex;gap:10px;margin-bottom:14px}
+.organizations-v381-search{flex:1;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #dce5ee;border-radius:12px;padding:0 13px}
+.organizations-v381-search input{width:100%;height:46px;border:0;outline:0;background:transparent;color:#0a3458}
+.organizations-v381-toolbar>button{min-width:105px;border:1px solid #d5e0ea;border-radius:11px;background:#fff;color:#0a3458;font-weight:850;cursor:pointer}
+.organizations-v381-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+.organizations-v381-list,.organizations-v381-detail{background:#fff;border:1px solid #dfe7ef;border-radius:18px;box-shadow:0 10px 32px rgba(10,52,88,.04)}
+.organizations-v381-list{overflow:hidden}
+.organizations-v381-list-head{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #edf1f5}
+.organizations-v381-list-head small,.organizations-v381-detail-head small,.organizations-v381-create-head small{font-size:9px;font-weight:950;letter-spacing:1.2px;color:#b27c12}
+.organizations-v381-list-head h2{margin:3px 0 0;color:#0a3458;font-size:18px}
+.organizations-v381-list-head>span{font-size:10px;color:#8594a3}
+.organizations-v381-table-wrap{overflow:auto}
+.organizations-v381-table{width:100%;border-collapse:collapse;min-width:780px}
+.organizations-v381-table th{padding:11px 14px;background:#f8fafc;text-align:left;color:#8996a4;font-size:9px;text-transform:uppercase;letter-spacing:.7px}
+.organizations-v381-table td{padding:13px 14px;border-top:1px solid #edf1f5;color:#23425d;font-size:11px;vertical-align:middle}
+.organizations-v381-table tbody tr{cursor:pointer;transition:.15s}
+.organizations-v381-table tbody tr:hover,.organizations-v381-table tbody tr.selected{background:#fff9eb}
+.organizations-v381-office{display:flex;align-items:center;gap:10px}
+.organizations-v381-office>span{width:35px;height:35px;display:grid;place-items:center;border-radius:10px;background:#0a3458;color:#fff;font-weight:950}
+.organizations-v381-office>div{display:flex;flex-direction:column;gap:2px}
+.organizations-v381-office strong{color:#0a3458}
+.organizations-v381-table td>small,.organizations-v381-office small{display:block;color:#8997a5;font-size:9px;margin-top:2px}
+.organizations-v381-plan{display:inline-flex;padding:5px 8px;border-radius:999px;background:#edf3f8;color:#0a3458;font-size:9px;font-weight:950}
+.organizations-v381-plan.plan-importer,.organizations-v381-plan.plan-importer_pro{background:#eef7ff;color:#176699}
+.organizations-v381-plan.plan-full_office{background:#fff3d5;color:#916008}
+.organizations-v381-plan.plan-platform{background:#e9f8ef;color:#21744c}
+.organizations-v381-owner{display:block;font-size:10px;color:#153a59}
+.organizations-v381-status{display:inline-flex;padding:5px 8px;border-radius:999px;background:#e9f8ef;color:#21744c;font-size:8px;font-weight:950}
+.organizations-v381-status.suspended{background:#fff0ef;color:#b7443e}
+.organizations-v381-open{border:0;background:transparent;color:#b27c12;font-size:9px;font-weight:900;cursor:pointer}
+.organizations-v381-empty{padding:55px 25px;text-align:center;color:#8795a4;display:flex;flex-direction:column;gap:4px}
+.organizations-v381-empty strong{color:#0a3458}
+.organizations-v381-detail{padding:19px;position:sticky;top:18px}
+.organizations-v381-detail-empty{min-height:300px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:#8291a0}
+.organizations-v381-detail-empty>span{font-size:36px}
+.organizations-v381-detail-empty strong{margin-top:10px;color:#0a3458}
+.organizations-v381-detail-empty p{font-size:11px;line-height:1.5;max-width:250px}
+.organizations-v381-detail-head{display:flex;align-items:center;gap:12px;padding-bottom:15px;border-bottom:1px solid #edf1f5}
+.organizations-v381-detail-logo{width:58px;height:58px;border:1px solid #e1e8ef;border-radius:13px;display:grid;place-items:center;overflow:hidden;background:#f7fafc;color:#0a3458}
+.organizations-v381-detail-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.organizations-v381-detail-head h2{margin:2px 0;color:#0a3458;font-size:17px}
+.organizations-v381-detail-head span{font-size:9px;color:#8c9aa7}
+.organizations-v381-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:13px 0}
+.organizations-v381-info-grid>div{padding:10px;border-radius:10px;background:#f8fafc;display:flex;flex-direction:column}
+.organizations-v381-info-grid span{font-size:8px;color:#8a98a5}
+.organizations-v381-info-grid strong{margin-top:3px;color:#0a3458;font-size:11px}
+.organizations-v381-detail>label{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.organizations-v381-detail>label>span{font-size:10px;font-weight:900;color:#21415e}
+.organizations-v381-detail select,.organizations-v381-detail input[type=email]{height:43px;border:1px solid #d8e2eb;border-radius:10px;padding:0 11px;background:#fff;color:#0a3458}
+.organizations-v381-detail label>small{font-size:8px;color:#8a98a5}
+.organizations-v381-active-toggle{flex-direction:row!important;align-items:center!important;padding:11px;border-radius:11px;background:#f8fafc}
+.organizations-v381-active-toggle input{width:18px;height:18px}
+.organizations-v381-active-toggle>span{display:flex;flex-direction:column;gap:2px}
+.organizations-v381-active-toggle small{font-weight:500}
+.organizations-v381-save{width:100%;margin-top:15px}
+.organizations-v381-suspend{width:100%;margin-top:8px;height:40px;border:1px solid #f0c5c2;border-radius:10px;background:#fff5f4;color:#ac4842;font-weight:900;cursor:pointer}
+.organizations-v381-suspend.activate{border-color:#bfe4cc;background:#effaf3;color:#26734a}
+.organizations-v381-create-modal{width:min(560px,94vw);padding:24px}
+.organizations-v381-create-head{display:flex;gap:13px;align-items:flex-start}
+.organizations-v381-create-head>span{font-size:30px}
+.organizations-v381-create-head h2{margin:3px 0;color:#0a3458}
+.organizations-v381-create-head p{margin:0;color:#7f8f9e;font-size:11px}
+.organizations-v381-create-form{display:grid;gap:12px;margin-top:19px}
+.organizations-v381-create-form label{display:flex;flex-direction:column;gap:6px}
+.organizations-v381-create-form label>span{font-size:10px;font-weight:900;color:#21415e}
+.organizations-v381-create-form input,.organizations-v381-create-form select{height:45px;border:1px solid #d7e1ea;border-radius:10px;padding:0 12px;background:#fff;color:#0a3458}
+.organizations-v381-create-form label>small{font-size:9px;color:#8997a4}
+.organizations-v381-create-actions{display:flex;justify-content:flex-end;gap:9px;padding-top:7px}
+.organizations-v381-create-actions>button:not(.primary-button){border:1px solid #d8e1e9;background:#fff;border-radius:10px;padding:0 17px;cursor:pointer}
+
+/* =========================================================
+   LOGOS XL APROBADOS · ESTÁNDAR PARA TODAS LAS OFICINAS
+   ========================================================= */
+.sidebar .brand.brand-v35.brand-full-logo{
+  width:100%!important;height:210px!important;min-height:210px!important;max-height:none!important;
+  padding:5px 0 15px!important;margin:0 0 5px!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;overflow:visible!important
+}
+.sidebar .brand-full-logo-image.tenant-sidebar-logo{
+  display:block!important;width:280px!important;height:180px!important;min-width:0!important;min-height:0!important;
+  max-width:98%!important;max-height:180px!important;object-fit:contain!important;object-position:center center!important;
+  padding:0!important;margin:0 auto!important;transform:scale(1.18)!important;transform-origin:center center!important
+}
+.quote-sheet-header .quote-sheet-brand.tenant-quote-brand-logo-only{
+  width:330px!important;min-width:330px!important;max-width:330px!important;height:145px!important;min-height:145px!important;
+  padding:0!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important
+}
+.quote-sheet-header .quote-sheet-brand .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large{
+  width:310px!important;height:135px!important;min-width:310px!important;min-height:135px!important;max-width:none!important;max-height:none!important;
+  padding:0!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  overflow:visible!important;display:flex!important;align-items:center!important;justify-content:flex-start!important
+}
+.quote-sheet-header .quote-sheet-brand .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  display:block!important;width:310px!important;height:135px!important;min-width:310px!important;min-height:135px!important;max-width:none!important;max-height:none!important;
+  object-fit:contain!important;object-position:left center!important;padding:0!important;margin:0!important;transform:scale(1.12)!important;transform-origin:left center!important
+}
+.quote-sheet-header{
+  min-height:165px!important;grid-template-columns:330px minmax(300px,1fr) minmax(230px,auto)!important;
+  align-items:center!important;padding-top:10px!important;padding-bottom:10px!important;overflow:visible!important
+}
+
+@media(max-width:1050px){
+  .organizations-v381-layout{grid-template-columns:1fr}
+  .organizations-v381-detail{position:static}
+}
+@media(max-width:760px){
+  .organizations-v381-kpis{grid-template-columns:1fr 1fr}
+  .organizations-v381-topbar,.organizations-v381-toolbar{flex-direction:column;align-items:stretch}
+}
+@media(max-width:900px){
+  .sidebar .brand.brand-v35.brand-full-logo{height:125px!important;min-height:125px!important}
+  .sidebar .brand-full-logo-image.tenant-sidebar-logo{
+    width:82px!important;height:105px!important;max-width:82px!important;max-height:105px!important;transform:scale(1.08)!important
+  }
+}
+
+/* =========================================================
+   E&R V38.2.1 · FULL OFFICE SaaS
+   ========================================================= */
+
+.tenant-plan-mini{
+  display:inline-flex;
+  margin-top:4px;
+  width:max-content;
+  padding:3px 7px;
+  border-radius:999px;
+  background:rgba(36,128,255,.15);
+  color:#78aeff;
+  font-size:7px!important;
+  font-weight:950;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+}
+
+/* Mantener tamaño XL aprobado para todos los tenants */
+.sidebar .brand.brand-v35.brand-full-logo{
+  width:100%!important;height:210px!important;min-height:210px!important;max-height:none!important;
+  padding:5px 0 15px!important;margin:0 0 5px!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;overflow:visible!important;
+}
+.sidebar .brand-full-logo-image.tenant-sidebar-logo{
+  display:block!important;width:280px!important;height:180px!important;
+  max-width:98%!important;max-height:180px!important;object-fit:contain!important;
+  object-position:center!important;margin:0 auto!important;padding:0!important;
+  transform:scale(1.18)!important;transform-origin:center!important;
+}
+.quote-sheet-header .quote-sheet-brand.tenant-quote-brand-logo-only{
+  width:330px!important;min-width:330px!important;max-width:330px!important;
+  height:145px!important;min-height:145px!important;overflow:visible!important;
+}
+.quote-sheet-header .quote-sheet-brand .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large,
+.quote-sheet-header .quote-sheet-brand .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  width:310px!important;height:135px!important;min-width:310px!important;min-height:135px!important;
+  max-width:none!important;max-height:none!important;object-fit:contain!important;
+}
+.quote-sheet-header .quote-sheet-brand .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  object-position:left center!important;transform:scale(1.12)!important;transform-origin:left center!important;
+}
+
+@media(max-width:900px){
+  .sidebar .brand.brand-v35.brand-full-logo{height:125px!important;min-height:125px!important}
+  .sidebar .brand-full-logo-image.tenant-sidebar-logo{
+    width:82px!important;height:105px!important;max-width:82px!important;max-height:105px!important;
+    transform:scale(1.08)!important;
+  }
+}
+/* =========================================================
+   E&R SOLUTIONS · V38.3 · LOGIN WHITE LABEL
+   Agregar al FINAL de src/App.css
+   ========================================================= */
+
+.tenant-login-v383 .auth-visual {
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--login-secondary) 22%, transparent), transparent 32%),
+    linear-gradient(145deg, color-mix(in srgb, var(--login-primary) 88%, #020817), #061529 72%);
+}
+
+.tenant-login-v383 .auth-eyebrow {
+  color: var(--login-secondary);
+}
+
+.tenant-login-v383 .auth-submit {
+  background: linear-gradient(135deg, var(--login-primary), color-mix(in srgb, var(--login-primary) 78%, #1565d8));
+}
+
+.tenant-login-v383 .auth-submit:hover {
+  filter: brightness(1.08);
+}
+
+.tenant-auth-logo-v383 {
+  width: min(470px, 88%);
+  min-height: 168px;
+  padding: 24px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(255,255,255,.075);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.tenant-auth-logo-v383 img {
+  width: auto !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 125px !important;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.tenant-auth-wordmark-v383 {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  color: #fff;
+}
+
+.tenant-auth-wordmark-v383 > span {
+  width: 74px;
+  height: 74px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: var(--login-secondary);
+  color: #07162a;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.tenant-auth-wordmark-v383 strong {
+  font-size: clamp(24px, 3vw, 40px);
+  line-height: 1;
+}
+
+.auth-powered-v383 {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #7f8da4;
+  letter-spacing: .02em;
+}
+
+.auth-powered-v383 strong {
+  color: #50647f;
+}
+
+.organizations-v381-login-link-v383 {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 14px;
+  background: #f7faff;
+  display: grid;
+  gap: 8px;
+}
+
+.organizations-v381-login-link-v383 > span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  color: #8d6a0a;
+}
+
+.organizations-v381-login-link-v383 > strong {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #0a3458;
+  overflow-wrap: anywhere;
+}
+
+.organizations-v381-login-link-v383 button {
+  justify-self: start;
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #0a3458;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .tenant-auth-logo-v383 {
+    width: 100%;
+    min-height: 110px;
+    padding: 18px;
+  }
+  .tenant-auth-logo-v383 img {
+    max-height: 88px !important;
+  }
+}

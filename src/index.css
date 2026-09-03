@@ -9,3 +9,369 @@ body,
 body {
   min-height: 100vh;
 }
+
+
+/* =========================================================
+   V39.2.3 · PORTAL DEL CLIENTE EN GESTIONES
+   ========================================================= */
+.import-portal-client-card{
+  border:1px solid #dbe5ee;
+  border-radius:14px;
+  padding:16px;
+  background:
+    linear-gradient(135deg,rgba(10,52,88,.035),rgba(232,167,45,.055)),
+    #fff;
+}
+
+.import-portal-client-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+}
+
+.import-portal-client-head h3{
+  margin:4px 0 4px;
+  color:#153d5d;
+}
+
+.import-portal-client-head p{
+  margin:0;
+  max-width:610px;
+  color:#7c8f9f;
+  font-size:11px;
+  line-height:1.5;
+}
+
+.portal-link-state{
+  flex:0 0 auto;
+  border-radius:999px;
+  padding:6px 9px;
+  background:#f0f4f7;
+  color:#718394;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.45px;
+}
+
+.portal-link-state.linked{
+  background:#e7f7ef;
+  color:#21754b;
+}
+
+.import-portal-client-field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.import-portal-client-field>span{
+  color:#36556d;
+  font-size:9px;
+  font-weight:850;
+}
+
+.import-portal-client-field select{
+  width:100%;
+  min-height:44px;
+  border:1px solid #cfdae4;
+  border-radius:10px;
+  padding:0 12px;
+  background:#fff;
+  color:#173f5f;
+  outline:none;
+}
+
+.import-portal-client-field small{
+  color:#8a9aa8;
+  font-size:8px;
+}
+
+.import-portal-client-notice{
+  display:flex;
+  gap:9px;
+  align-items:flex-start;
+  margin-top:12px;
+  border:1px solid #cae6d8;
+  border-radius:10px;
+  padding:10px 12px;
+  background:#eef9f3;
+}
+
+.import-portal-client-notice strong{
+  color:#246c49;
+  font-size:9px;
+}
+
+.import-portal-client-notice p{
+  margin:2px 0 0;
+  color:#6c8b7a;
+  font-size:8px;
+  line-height:1.45;
+}
+
+@media(max-width:700px){
+  .import-portal-client-head{
+    flex-direction:column;
+  }
+}
+
+
+/* =========================================================
+   V39.2.3.1 · PORTAL DEL CLIENTE
+   ========================================================= */
+.import-portal-client-card{
+  border:1px solid #d9e5ee;
+  border-radius:16px;
+  padding:18px;
+  background:
+    linear-gradient(135deg,rgba(10,52,88,.04),rgba(232,167,45,.07)),
+    #fff;
+}
+
+.import-portal-client-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:18px;
+  margin-bottom:15px;
+}
+
+.import-portal-client-head h3{
+  margin:4px 0 5px;
+  color:#143d5d;
+}
+
+.import-portal-client-head p{
+  margin:0;
+  max-width:620px;
+  color:#748b9d;
+  font-size:11px;
+  line-height:1.55;
+}
+
+.portal-link-state{
+  flex:0 0 auto;
+  border-radius:999px;
+  padding:6px 9px;
+  background:#edf2f6;
+  color:#75889a;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.45px;
+}
+
+.portal-link-state.linked{
+  background:#e6f7ef;
+  color:#25734c;
+}
+
+.import-portal-client-field{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.import-portal-client-field>span{
+  color:#31546d;
+  font-size:9px;
+  font-weight:900;
+}
+
+.import-portal-client-field select{
+  min-height:45px;
+  width:100%;
+  border:1px solid #cedbe5;
+  border-radius:11px;
+  padding:0 12px;
+  background:#fff;
+  color:#173f5f;
+}
+
+.import-portal-client-field small{
+  color:#899aa8;
+  font-size:8px;
+}
+
+.import-portal-client-notice{
+  display:flex;
+  gap:10px;
+  margin-top:13px;
+  padding:11px 12px;
+  border:1px solid #c9e8d8;
+  border-radius:11px;
+  background:#edf9f3;
+}
+
+.import-portal-client-notice strong{
+  color:#246f4a;
+  font-size:9px;
+}
+
+.import-portal-client-notice p{
+  margin:2px 0 0;
+  color:#6a8979;
+  font-size:8px;
+  line-height:1.45;
+}
+
+@media(max-width:700px){
+  .import-portal-client-head{
+    flex-direction:column;
+  }
+}
+
+
+/* =========================================================
+   V39.2.4 · PORTAL CLIENTE CONTROL ADUANAL
+   ========================================================= */
+.customs-portal-client-section{
+  margin:0 0 16px;
+  border:1px solid #d9e5ee;
+  border-radius:16px;
+  padding:18px;
+  background:
+    linear-gradient(135deg,rgba(10,52,88,.04),rgba(232,167,45,.07)),
+    #fff;
+}
+
+.customs-portal-client-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:18px;
+  margin-bottom:15px;
+}
+
+.customs-portal-client-head h3{
+  margin:4px 0 5px;
+  color:#143d5d;
+}
+
+.customs-portal-client-head p{
+  margin:0;
+  max-width:650px;
+  color:#748b9d;
+  font-size:11px;
+  line-height:1.55;
+}
+
+.customs-portal-client-field{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.customs-portal-client-field>span{
+  color:#31546d;
+  font-size:9px;
+  font-weight:900;
+}
+
+.customs-portal-client-field select{
+  width:100%;
+  min-height:45px;
+  border:1px solid #cedbe5;
+  border-radius:11px;
+  padding:0 12px;
+  background:#fff;
+  color:#173f5f;
+}
+
+.customs-portal-client-field small{
+  color:#899aa8;
+  font-size:8px;
+}
+
+.customs-portal-client-notice{
+  display:flex;
+  gap:10px;
+  margin-top:13px;
+  padding:11px 12px;
+  border:1px solid #c9e8d8;
+  border-radius:11px;
+  background:#edf9f3;
+}
+
+.customs-portal-client-notice strong{
+  color:#246f4a;
+  font-size:9px;
+}
+
+.customs-portal-client-notice p{
+  margin:2px 0 0;
+  color:#6a8979;
+  font-size:8px;
+  line-height:1.45;
+}
+
+@media(max-width:700px){
+  .customs-portal-client-head{
+    flex-direction:column;
+  }
+}
+
+
+/* =========================================================
+   V39.3 · IMPORTADOR EN OPERACIONES
+   ========================================================= */
+.import-importer-card,
+.customs-importer-section{
+  border:1px solid #d9e5ee;
+  border-radius:16px;
+  padding:18px;
+  background:
+    linear-gradient(135deg,rgba(10,52,88,.035),rgba(232,167,45,.055)),
+    #fff;
+}
+
+.import-importer-head,
+.customs-importer-head{
+  margin-bottom:13px;
+}
+
+.import-importer-head h3,
+.customs-importer-head h3{
+  margin:4px 0 4px;
+  color:#143d5d;
+}
+
+.import-importer-head p,
+.customs-importer-head p{
+  margin:0;
+  color:#748b9d;
+  font-size:10px;
+}
+
+.import-importer-field,
+.customs-importer-field{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.import-importer-field>span,
+.customs-importer-field>span{
+  color:#31546d;
+  font-size:9px;
+  font-weight:900;
+}
+
+.import-importer-field select,
+.customs-importer-field select{
+  width:100%;
+  min-height:45px;
+  border:1px solid #cedbe5;
+  border-radius:11px;
+  padding:0 12px;
+  background:#fff;
+  color:#173f5f;
+}
+
+.import-importer-field small,
+.customs-importer-field small{
+  color:#899aa8;
+  font-size:8px;
+}
+

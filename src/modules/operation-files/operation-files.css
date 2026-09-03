@@ -1,0 +1,66 @@
+.ofp{margin:16px 0;border:1px solid #dce6ee;border-radius:16px;background:#fff;overflow:hidden}.ofp-head{display:flex;justify-content:space-between;gap:15px;padding:16px 18px;border-bottom:1px solid #e8eef3}.ofp-head span{font-size:7px;font-weight:900;letter-spacing:.12em;color:#2b7aa7}.ofp-head h3{margin:4px 0;font-size:15px;color:#173f5e}.ofp-head p{margin:0;font-size:8px;color:#7b8e9e}.ofp-head>b{font-size:7px;color:#678095}.ofp-upload{display:flex;gap:8px;align-items:center;padding:12px 18px;background:#f8fbfd}.ofp-upload select,.ofp-upload button{border:1px solid #d6e2ea;border-radius:9px;padding:9px;background:#fff;font-size:8px}.ofp-upload button{background:#173f5e;color:#fff;font-weight:800}.ofp-upload input[type=file]{display:none}.ofp-visible{font-size:7px;color:#587083}.ofp-message,.ofp-empty{margin:12px 18px;padding:10px;border-radius:9px;background:#eef6fb;font-size:8px;color:#42677f}.ofp-block{padding:14px 18px}.ofp-block h4{margin:0 0 10px;color:#264e69;font-size:10px}.ofp-block h4 small{font-size:7px;color:#8aa0b0}.ofp-gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.ofp-photo{min-height:90px;border:1px solid #dce6ee;border-radius:11px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.ofp-photo span{font-size:22px}.ofp-photo strong{max-width:95%;overflow:hidden;text-overflow:ellipsis;font-size:6.5px;color:#506a7d}.ofp-photo em{font-size:5px;font-style:normal;color:#2f8b61}.ofp-docs{display:grid;gap:7px}.ofp-doc{display:flex;align-items:center;gap:9px;border:1px solid #e1e9ef;border-radius:10px;padding:9px}.ofp-doc>span{font-size:18px}.ofp-doc>div{flex:1}.ofp-doc strong,.ofp-doc small{display:block}.ofp-doc strong{font-size:8px;color:#254e69}.ofp-doc small{font-size:6.5px;color:#8093a2}.ofp-doc>b{font-size:5.5px;background:#f4eee8;color:#936c42;padding:4px 6px;border-radius:99px}.ofp-doc>b.client{background:#e7f7ef;color:#27724e}.ofp-doc button{border:0;border-radius:7px;padding:6px 8px;font-size:7px}.ofp-doc button.danger{color:#b74444}@media(max-width:700px){.ofp-upload{flex-wrap:wrap}.ofp-gallery{grid-template-columns:repeat(2,1fr)}}
+
+/* V39.5.2 · CARGA MASIVA */
+.ofp-bulk-progress{
+  margin:10px 18px 0;
+  padding:11px 12px;
+  border:1px solid #dbe6ed;
+  border-radius:10px;
+  background:#f8fbfd;
+}
+.ofp-bulk-progress-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:7px;
+  font-size:7px;
+  color:#315873;
+}
+.ofp-bulk-progress-head strong{
+  font-size:8px;
+}
+.ofp-bulk-bar{
+  height:7px;
+  border-radius:999px;
+  background:#e5edf2;
+  overflow:hidden;
+}
+.ofp-bulk-bar i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:currentColor;
+  color:#2b7aa7;
+  transition:width .2s ease;
+}
+.ofp-bulk-progress small{
+  display:block;
+  margin-top:7px;
+  font-size:6.5px;
+  color:#6f8494;
+}
+.ofp-bulk-errors{
+  margin:10px 18px;
+  display:grid;
+  gap:6px;
+}
+.ofp-bulk-errors>div{
+  padding:8px 10px;
+  border-radius:8px;
+  background:#fff3f3;
+  border:1px solid #f0d6d6;
+}
+.ofp-bulk-errors strong,
+.ofp-bulk-errors span{
+  display:block;
+}
+.ofp-bulk-errors strong{
+  font-size:7px;
+  color:#943e3e;
+}
+.ofp-bulk-errors span{
+  margin-top:2px;
+  font-size:6px;
+  color:#a86464;
+}

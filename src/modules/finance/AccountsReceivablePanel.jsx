@@ -30,7 +30,12 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-export default function AccountsReceivablePanel({ supabase, onChanged }) {
+export default function AccountsReceivablePanel({
+  supabase,
+  onChanged,
+  officeName = "E&R Solutions",
+  isWhiteLabelClient = false,
+}) {
   const [accounts, setAccounts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -175,15 +180,27 @@ export default function AccountsReceivablePanel({ supabase, onChanged }) {
     const win = window.open("", "_blank", "width=1100,height=800");
     if (!win) return setError("El navegador bloqueó la ventana de impresión.");
 
+    const statementBrand =
+  isWhiteLabelClient
+    ? officeName || "Oficina Aduanal"
+    : "E&R Solutions";
+
     win.document.write(`<!doctype html><html><head><meta charset="UTF-8"><title>Estado de Cuenta - ${escapeHtml(selected.client_name)}</title>
       <style>
         body{font-family:Arial,sans-serif;color:#0b335b;margin:34px} .head{display:flex;justify-content:space-between;border-bottom:3px solid #0b335b;padding-bottom:18px;margin-bottom:22px}.brand{font-size:24px;font-weight:900}.brand span{display:block;font-size:11px;letter-spacing:2px;color:#a46c12;margin-top:5px}.right{text-align:right}.right h1{margin:0;font-size:24px}.right p{margin:5px 0;color:#66798c;font-size:12px}.client{padding:15px;background:#f5f8fb;border-radius:10px;margin-bottom:18px}.client strong{font-size:17px}.client span{display:block;color:#6f8296;font-size:11px;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:10px}th{background:#0b335b;color:#fff;padding:8px;text-align:left}td{padding:8px;border-bottom:1px solid #dfe6ed}.num{text-align:right;white-space:nowrap}.strong{font-weight:800}.totals{margin-left:auto;margin-top:18px;width:330px}.totals div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #dfe6ed}.totals .grand{font-size:16px;font-weight:900;color:#a46c12}.note{margin-top:28px;color:#718397;font-size:10px;border-top:1px solid #dfe6ed;padding-top:12px}@media print{button{display:none}body{margin:18px}}
       </style></head><body>
-      <div class="head"><div class="brand">E&amp;R Solutions<span>AGENCIA ADUANAL</span></div><div class="right"><h1>ESTADO DE CUENTA</h1><p>${escapeHtml(period.from)} al ${escapeHtml(period.to)}</p></div></div>
+      <div class="head"><div class="brand">
+  ${escapeHtml(statementBrand)}
+  <span>AGENCIA ADUANAL</span>
+</div><div class="right"><h1>ESTADO DE CUENTA</h1><p>${escapeHtml(period.from)} al ${escapeHtml(period.to)}</p></div></div>
       <div class="client"><strong>${escapeHtml(selected.client_name)}</strong><span>${escapeHtml(selected.nit ? `NIT ${selected.nit}` : selected.email || selected.phone || "Cliente E&R")}</span></div>
       <table><thead><tr><th>Fecha</th><th>Documento</th><th>Correlativo DUCA</th><th>Cliente DUCA</th><th>Servicio</th><th>Cobro</th><th>Pagado</th><th>Saldo</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No hay movimientos en este período.</td></tr>'}</tbody></table>
       <div class="totals"><div><span>Total trabajado</span><strong>${escapeHtml(money(totals.billed_gtq))}</strong></div><div><span>Pagado</span><strong>${escapeHtml(money(totals.paid_gtq))}</strong></div><div class="grand"><span>Saldo del período</span><strong>${escapeHtml(money(totals.pending_gtq))}</strong></div></div>
-      <div class="note">Documento generado por E&amp;R Solutions. Para guardar como PDF seleccioná “Guardar como PDF” en la ventana de impresión.</div>
+      <div class="note">
+  Documento generado por ${escapeHtml(statementBrand)}.
+  Para guardar como PDF seleccioná “Guardar como PDF”
+  en la ventana de impresión.
+</div>
       <script>window.onload=()=>{window.print();}</script></body></html>`);
     win.document.close();
   }
@@ -191,7 +208,10 @@ export default function AccountsReceivablePanel({ supabase, onChanged }) {
   return (
     <section className="receivable-panel">
       <div className="receivable-head">
-        <div><span>CUENTAS POR COBRAR</span><h2>Clientes de facturación</h2><p>Gestiones y declaraciones agrupadas por quien realmente paga a E&R.</p></div>
+        <div><span>CUENTAS POR COBRAR</span><h2>Clientes de facturación</h2><p>
+  Gestiones y declaraciones agrupadas por quien realmente paga a{" "}
+  {isWhiteLabelClient ? officeName : "E&R"}.
+</p></div>
         <div className="receivable-total"><small>TOTAL PENDIENTE</small><strong>{money(totals.pending)}</strong></div>
       </div>
 
@@ -225,7 +245,9 @@ export default function AccountsReceivablePanel({ supabase, onChanged }) {
         <div className="receivable-detail">
           {!selected ? <div className="receivable-empty">Seleccioná un cliente para ver su estado de cuenta.</div> : detailLoading ? <div className="receivable-empty">Cargando estado de cuenta...</div> : <>
             <header className="receivable-detail-head">
-              <div><span>ESTADO DE CUENTA</span><h3>{selected.client_name}</h3><p>{selected.email || selected.phone || "Cliente E&R"}</p></div>
+              <div><span>ESTADO DE CUENTA</span><h3>{selected.client_name}</h3><p>{selected.email ||
+selected.phone ||
+`Cliente ${isWhiteLabelClient ? officeName : "E&R"}`}</p></div>
               <div><small>SALDO TOTAL</small><strong>{money(selected.pending_gtq)}</strong></div>
             </header>
 

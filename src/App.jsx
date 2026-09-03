@@ -9,6 +9,7 @@ import AdminNotificationBell from "./modules/notifications/AdminNotificationBell
 import ProspectList from "./modules/prospects/ProspectList";
 import ProspectDetailDrawer from "./modules/prospects/ProspectDetailDrawer";
 import InternalUsersPage from "./modules/internal-users/InternalUsersPage";
+import OfficeUsersPage from "./modules/office-users/OfficeUsersPage";
 import FinanceDashboard from "./modules/finance/FinanceDashboard";
 import CustomsCaseFinance from "./modules/finance/CustomsCaseFinance";
 import DeclarationsPage from "./modules/declarations/DeclarationsPage";
@@ -22,6 +23,10 @@ import "./modules/customs/manual-customs.css";
 import "./modules/branding/branding-v35.css";
 import "./modules/branding/branding-sidebar-fix-v35.1.css";
 import "./App.css";
+import { buildQuoteCode } from "./utils/quoteCode";
+import OfficePortalClientsPage from "./modules/office-portal-clients/OfficePortalClientsPage.jsx";
+import ImportersPage from "./modules/importers/ImportersPage.jsx";
+import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
 
 function moneyGTQ(value) {
   if (value === null || value === undefined || value === "") return "—";
@@ -274,9 +279,24 @@ function App() {
   // V22 · Landing pública + cotizador para clientes + sistema interno
   const routeFromPath = () => {
     const path = window.location.pathname.replace(/\/+$/, "") || "/";
-    if (path === "/app" || path.startsWith("/app/")) return "internal";
+    if (
+      path === "/app" ||
+      path.startsWith("/app/") ||
+      path.startsWith("/o/")
+    ) return "internal";
     if (path === "/cotizador" || path.startsWith("/cotizador/")) return "public";
     return "landing";
+  };
+
+  // V38.3 · El tenant del login se resuelve ANTES de autenticar al usuario.
+  // /app conserva E&R. /o/:slug presenta la marca de la oficina cliente.
+  const loginOfficeSlugFromLocation = () => {
+    const path = window.location.pathname.replace(/\/+$/, "") || "/";
+    const match = path.match(/^\/o\/([a-z0-9-]+)$/i);
+    if (match?.[1]) return match[1].toLowerCase();
+
+    const querySlug = new URLSearchParams(window.location.search).get("office");
+    return String(querySlug || "").trim().toLowerCase();
   };
 
   const [siteMode, setSiteMode] = useState(routeFromPath);
@@ -323,10 +343,62 @@ function App() {
     password: "",
   });
 
+  // V38 · SaaS / White Label por organización
+  const [tenantContext, setTenantContext] = useState(null);
+  const [publicLoginBranding, setPublicLoginBranding] = useState(null);
+  const [publicLoginBrandingLoading, setPublicLoginBrandingLoading] = useState(false);
+  const [publicLoginBrandingError, setPublicLoginBrandingError] = useState("");
+  const [brandingLoading, setBrandingLoading] = useState(false);
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [brandingMessage, setBrandingMessage] = useState("");
+  const [brandingError, setBrandingError] = useState("");
+  const [brandingLogoFile, setBrandingLogoFile] = useState(null);
+  const [brandingForm, setBrandingForm] = useState({
+    office_name: "",
+    tagline: "",
+    primary_color: "#0A3458",
+    secondary_color: "#E8A72D",
+    accent_color: "#F5D87F",
+    phone: "",
+    whatsapp: "",
+    email: "",
+    address: "",
+    quote_footer: "",
+    logo_url: "",
+  });
+
+  // V38.1 · Administración SaaS de Oficinas / Clientes
+  const [organizations, setOrganizations] = useState([]);
+  const [organizationsLoading, setOrganizationsLoading] = useState(false);
+  const [organizationsError, setOrganizationsError] = useState("");
+  const [organizationsMessage, setOrganizationsMessage] = useState("");
+  const [organizationSearch, setOrganizationSearch] = useState("");
+  const [selectedOrganization, setSelectedOrganization] = useState(null);
+  const [organizationSaving, setOrganizationSaving] = useState(false);
+  const [showOrganizationForm, setShowOrganizationForm] = useState(false);
+  const [organizationForm, setOrganizationForm] = useState({
+    name: "",
+    slug: "",
+    plan_code: "QUOTER",
+    owner_email: "",
+  });
+  const [organizationEditForm, setOrganizationEditForm] = useState({
+    plan_code: "QUOTER",
+    subscription_status: "ACTIVE",
+    active: true,
+    owner_email: "",
+  });
+
   const [vin, setVin] = useState("");
   // V37.4 · Cotizador interno SAT + Importadores
   const [internalQuoteMode, setInternalQuoteMode] = useState("SAT");
   const [internalInvoiceValueUsd, setInternalInvoiceValueUsd] = useState("");
+  // V37.6 · Cotizador manual de impuestos
+  const [manualTaxableValueGtq, setManualTaxableValueGtq] = useState("");
+  const [manualTaxRuleId, setManualTaxRuleId] = useState("");
+  const [manualTaxRules, setManualTaxRules] = useState([]);
+  const [manualVehicleName, setManualVehicleName] = useState("");
+  const [manualVin, setManualVin] = useState("");
   // V37.4.4 · clasificación tributaria aprendible
   const [selectedTaxRuleId, setSelectedTaxRuleId] = useState(null);
   const [taxClassSaving, setTaxClassSaving] = useState(false);
@@ -403,6 +475,13 @@ function App() {
   const [customsDetail, setCustomsDetail] = useState(null);
   const [customsDetailSaving, setCustomsDetailSaving] = useState(false);
   const [customsMessage, setCustomsMessage] = useState("");
+  const [customsPortalCandidate, setCustomsPortalCandidate] = useState(null);
+  const [customsPortalCandidateLoading, setCustomsPortalCandidateLoading] = useState(false);
+
+
+  // V39.2.4 · Portal del Cliente en Control Aduanal
+  const [customsPortalAssignmentClients, setCustomsPortalAssignmentClients] = useState([]);
+  const [customsPortalAssignmentLoading, setCustomsPortalAssignmentLoading] = useState(false);
 
   // V24 · Gestiones de Importación
   const [importSearch, setImportSearch] = useState("");
@@ -412,7 +491,15 @@ function App() {
   const [selectedImportManagement, setSelectedImportManagement] = useState(null);
   const [importManagementDetail, setImportManagementDetail] = useState(null);
   const [importManagementSaving, setImportManagementSaving] = useState(false);
+  // V39.3 · Selector maestro de Importadores
+  const [operationImporters, setOperationImporters] = useState([]);
+  const [operationImportersLoading, setOperationImportersLoading] = useState(false);
+
   const [importManagementMessage, setImportManagementMessage] = useState("");
+
+  // V39.2.3 · Cliente del Portal vinculado a la gestión
+  const [portalAssignmentClients, setPortalAssignmentClients] = useState([]);
+  const [portalAssignmentLoading, setPortalAssignmentLoading] = useState(false);
   const [convertingQueryId, setConvertingQueryId] = useState(null);
 
   const [selectedSatId, setSelectedSatId] = useState(null);
@@ -448,10 +535,269 @@ function App() {
     notes: "",
   });
 
+  async function loadTenantContext() {
+    try {
+      setBrandingLoading(true);
+      const { data, error: tenantError } = await supabase.rpc("my_organization_context_v38");
+      if (tenantError) throw tenantError;
+      const context = data || null;
+      setTenantContext(context);
+      const b = context?.branding || {};
+      const o = context?.organization || {};
+      setBrandingForm({
+        office_name: b.office_name || o.name || "",
+        tagline: b.tagline || "",
+        primary_color: b.primary_color || "#0A3458",
+        secondary_color: b.secondary_color || "#E8A72D",
+        accent_color: b.accent_color || "#F5D87F",
+        phone: b.phone || "",
+        whatsapp: b.whatsapp || "",
+        email: b.email || "",
+        address: b.address || "",
+        quote_footer: b.quote_footer || "",
+        logo_url: b.logo_url || "",
+      });
+      return context;
+    } catch (err) {
+      console.error("V38 TENANT CONTEXT ERROR:", err);
+      setTenantContext(null);
+      return null;
+    } finally {
+      setBrandingLoading(false);
+    }
+  }
+
+  async function loadOrganizationsV381(search = organizationSearch) {
+    if (!isSystemAdmin) return;
+    setOrganizationsLoading(true);
+    setOrganizationsError("");
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "admin_list_organizations_v381",
+        { p_search: String(search || "").trim() || null }
+      );
+      if (rpcError) throw rpcError;
+      setOrganizations(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("V38.1 ORGANIZATIONS LIST ERROR:", err);
+      setOrganizationsError(
+        err?.message || "No fue posible cargar las oficinas."
+      );
+    } finally {
+      setOrganizationsLoading(false);
+    }
+  }
+
+  async function openOrganizationsView() {
+    setActiveView("organizations");
+    setOrganizationsMessage("");
+    setOrganizationsError("");
+    setSelectedOrganization(null);
+    await loadOrganizationsV381("");
+  }
+
+  function resetOrganizationFormV381() {
+    setOrganizationForm({
+      name: "",
+      slug: "",
+      plan_code: "QUOTER",
+      owner_email: "",
+    });
+  }
+
+  async function createOrganizationV381(event) {
+    event?.preventDefault?.();
+    setOrganizationSaving(true);
+    setOrganizationsError("");
+    setOrganizationsMessage("");
+    try {
+      const { data, error: rpcError } = await supabase.rpc(
+        "admin_create_organization_v381",
+        {
+          p_name: organizationForm.name.trim(),
+          p_slug: organizationForm.slug.trim(),
+          p_plan_code: organizationForm.plan_code,
+          p_owner_email:
+            organizationForm.owner_email.trim() || null,
+        }
+      );
+      if (rpcError) throw rpcError;
+
+      setOrganizationsMessage(
+        data?.owner_linked
+          ? "Oficina creada y usuario propietario asignado."
+          : data?.owner_email
+            ? "Oficina creada. El correo indicado todavía no existe como usuario; podés asignarlo después."
+            : "Oficina creada correctamente."
+      );
+      setShowOrganizationForm(false);
+      resetOrganizationFormV381();
+      await loadOrganizationsV381("");
+    } catch (err) {
+      console.error("V38.1 CREATE ORGANIZATION ERROR:", err);
+      setOrganizationsError(
+        err?.message || "No fue posible crear la oficina."
+      );
+    } finally {
+      setOrganizationSaving(false);
+    }
+  }
+
+  function selectOrganizationV381(organization) {
+    setSelectedOrganization(organization);
+    setOrganizationEditForm({
+      plan_code: organization?.plan_code || "QUOTER",
+      subscription_status:
+        organization?.subscription_status || "ACTIVE",
+      active: organization?.active !== false,
+      owner_email: organization?.owner_email || "",
+    });
+    setOrganizationsError("");
+    setOrganizationsMessage("");
+  }
+
+  async function saveOrganizationV381() {
+    if (!selectedOrganization?.id) return;
+    setOrganizationSaving(true);
+    setOrganizationsError("");
+    setOrganizationsMessage("");
+    try {
+      const { data, error: updateError } = await supabase.rpc(
+        "admin_update_organization_v381",
+        {
+          p_organization_id: selectedOrganization.id,
+          p_plan_code: organizationEditForm.plan_code,
+          p_subscription_status:
+            organizationEditForm.subscription_status,
+          p_active: Boolean(organizationEditForm.active),
+        }
+      );
+      if (updateError) throw updateError;
+
+      const requestedOwner =
+        String(organizationEditForm.owner_email || "")
+          .trim()
+          .toLowerCase();
+      const currentOwner =
+        String(selectedOrganization?.owner_email || "")
+          .trim()
+          .toLowerCase();
+
+      if (requestedOwner && requestedOwner !== currentOwner) {
+        const { error: ownerError } = await supabase.rpc(
+          "admin_assign_organization_owner_v381",
+          {
+            p_organization_id: selectedOrganization.id,
+            p_owner_email: requestedOwner,
+          }
+        );
+        if (ownerError) throw ownerError;
+      }
+
+      setOrganizationsMessage(
+        "Cambios guardados correctamente."
+      );
+      await loadOrganizationsV381(organizationSearch);
+      if (data?.organization_id) {
+        const refreshed = (Array.isArray(organizations) ? organizations : [])
+          .find((item) => item.id === data.organization_id);
+        if (refreshed) setSelectedOrganization(refreshed);
+      }
+    } catch (err) {
+      console.error("V38.1 UPDATE ORGANIZATION ERROR:", err);
+      setOrganizationsError(
+        err?.message || "No fue posible guardar los cambios."
+      );
+    } finally {
+      setOrganizationSaving(false);
+    }
+  }
+
+  async function toggleOrganizationV381(organization) {
+    if (!organization?.id) return;
+    setOrganizationSaving(true);
+    setOrganizationsError("");
+    setOrganizationsMessage("");
+    try {
+      const willActivate = organization.active === false;
+      const { error: rpcError } = await supabase.rpc(
+        "admin_update_organization_v381",
+        {
+          p_organization_id: organization.id,
+          p_plan_code: organization.plan_code,
+          p_subscription_status: willActivate ? "ACTIVE" : "SUSPENDED",
+          p_active: willActivate,
+        }
+      );
+      if (rpcError) throw rpcError;
+      setOrganizationsMessage(
+        willActivate
+          ? "Oficina activada."
+          : "Oficina suspendida. Sus datos se conservan."
+      );
+      await loadOrganizationsV381(organizationSearch);
+    } catch (err) {
+      console.error("V38.1 TOGGLE ORGANIZATION ERROR:", err);
+      setOrganizationsError(
+        err?.message || "No fue posible cambiar el estado."
+      );
+    } finally {
+      setOrganizationSaving(false);
+    }
+  }
+
+  async function uploadTenantLogo() {
+    if (!brandingLogoFile) return brandingForm.logo_url || "";
+    const organizationId = tenantContext?.organization?.id;
+    if (!organizationId) throw new Error("La organización todavía no está configurada.");
+
+    const ext = String(brandingLogoFile.name || "logo.png").split(".").pop().toLowerCase();
+    const safeExt = ["png", "jpg", "jpeg", "webp", "svg"].includes(ext) ? ext : "png";
+    const path = `${organizationId}/logo-${Date.now()}.${safeExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("organization-logos")
+      .upload(path, brandingLogoFile, { upsert: true, cacheControl: "3600" });
+    if (uploadError) throw uploadError;
+    const { data } = supabase.storage.from("organization-logos").getPublicUrl(path);
+    return data?.publicUrl || "";
+  }
+
+  async function saveTenantBranding(event) {
+    event?.preventDefault?.();
+    setBrandingSaving(true);
+    setBrandingMessage("");
+    setBrandingError("");
+    try {
+      const logoUrl = await uploadTenantLogo();
+      const { data, error: saveError } = await supabase.rpc("save_organization_branding_v38", {
+        p_office_name: brandingForm.office_name.trim(),
+        p_tagline: brandingForm.tagline.trim(),
+        p_primary_color: brandingForm.primary_color,
+        p_secondary_color: brandingForm.secondary_color,
+        p_accent_color: brandingForm.accent_color,
+        p_phone: brandingForm.phone.trim(),
+        p_whatsapp: brandingForm.whatsapp.trim(),
+        p_email: brandingForm.email.trim(),
+        p_address: brandingForm.address.trim(),
+        p_quote_footer: brandingForm.quote_footer.trim(),
+        p_logo_url: logoUrl || brandingForm.logo_url || null,
+      });
+      if (saveError) throw saveError;
+      setBrandingLogoFile(null);
+      await loadTenantContext();
+      setBrandingMessage("Marca actualizada. Las nuevas cotizaciones usarán esta identidad visual.");
+      return data;
+    } catch (err) {
+      setBrandingError(err?.message || "No fue posible guardar la marca.");
+    } finally {
+      setBrandingSaving(false);
+    }
+  }
+
   async function loadInternalProfile(userId) {
     const { data, error: profileError } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, role, job_title, active, free_quotes_used, subscription_status, subscription_expires_at")
+      .select("id, full_name, email, phone, role, job_title, active, free_quotes_used, subscription_status, subscription_expires_at, organization_id")
       .eq("id", userId)
       .single();
 
@@ -460,6 +806,7 @@ function App() {
     }
 
     setProfile(data);
+    await loadTenantContext();
     return data;
   }
 
@@ -481,6 +828,7 @@ function App() {
           await loadInternalProfile(currentSession.user.id);
         } else {
           setProfile(null);
+          setTenantContext(null);
         }
       } catch (err) {
         if (mounted) {
@@ -513,6 +861,7 @@ function App() {
           }
         } else {
           setProfile(null);
+          setTenantContext(null);
         }
 
         if (mounted) setAuthLoading(false);
@@ -533,12 +882,52 @@ function App() {
 
   useEffect(() => { loadAppSettings(); }, []);
 
+  async function loadPublicLoginBrandingV383() {
+    const slug = loginOfficeSlugFromLocation();
+
+    if (!slug) {
+      setPublicLoginBranding(null);
+      setPublicLoginBrandingError("");
+      return null;
+    }
+
+    setPublicLoginBrandingLoading(true);
+    setPublicLoginBrandingError("");
+
+    try {
+      const { data, error } = await supabase.rpc("public_login_branding_v383", {
+        p_slug: slug,
+      });
+      if (error) throw error;
+      if (!data?.organization_id) {
+        throw new Error("No encontramos una oficina activa con este enlace.");
+      }
+      setPublicLoginBranding(data);
+      return data;
+    } catch (err) {
+      console.error("V38.3 PUBLIC LOGIN BRANDING ERROR:", err);
+      setPublicLoginBranding(null);
+      setPublicLoginBrandingError(
+        err?.message || "No fue posible cargar la identidad de esta oficina."
+      );
+      return null;
+    } finally {
+      setPublicLoginBrandingLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (siteMode === "internal" && !session) {
+      loadPublicLoginBrandingV383();
+    }
+  }, [siteMode, session]);
+
   function navigateSite(path) {
     if (window.location.pathname !== path) {
       window.history.pushState({}, "", path);
     }
     setSiteMode(
-      path.startsWith("/app")
+      (path.startsWith("/app") || path.startsWith("/o/"))
         ? "internal"
         : path.startsWith("/cotizador")
           ? "public"
@@ -979,10 +1368,27 @@ function App() {
         throw new Error("Tu usuario está desactivado. Contactá al administrador.");
       }
 
-      if (!["ADMIN", "OPERADOR"].includes(role)) {
+      const tenant = await loadTenantContext();
+      const hasOfficeMembership = Boolean(tenant?.membership?.active);
+      const requestedOfficeSlug = loginOfficeSlugFromLocation();
+      const authenticatedOfficeSlug = String(tenant?.organization?.slug || "").toLowerCase();
+
+      // En un enlace white-label, una cuenta externa solo puede entrar a la
+      // organización representada por ese enlace. ADMIN/OPERADOR E&R conservan
+      // acceso de soporte por /app.
+      if (
+        requestedOfficeSlug &&
+        !["ADMIN", "OPERADOR"].includes(role) &&
+        authenticatedOfficeSlug !== requestedOfficeSlug
+      ) {
+        await supabase.auth.signOut();
+        throw new Error("Esta cuenta no pertenece a la oficina de este enlace.");
+      }
+
+      if (!["ADMIN", "OPERADOR"].includes(role) && !hasOfficeMembership) {
         await supabase.auth.signOut();
         throw new Error(
-          "Esta cuenta no tiene acceso al sistema interno de E&R."
+          "Esta cuenta no tiene acceso a una organización activa en la plataforma."
         );
       }
 
@@ -1083,6 +1489,49 @@ function App() {
     resetReviewState();
 
     return data;
+  }
+
+  async function loadManualTaxRules() {
+    if (manualTaxRules.length) return manualTaxRules;
+    try {
+      const { data, error: rulesError } = await supabase.rpc("list_tax_vehicle_rules_v3744");
+      if (rulesError) throw rulesError;
+      const rows = Array.isArray(data) ? data : [];
+      setManualTaxRules(rows);
+      return rows;
+    } catch (err) {
+      console.error("MANUAL TAX RULES ERROR:", err);
+      setError(err?.message || "No fue posible cargar las reglas tributarias.");
+      return [];
+    }
+  }
+
+  function calcularImpuestosManual() {
+    const taxableValue = Number(manualTaxableValueGtq);
+    const rule = manualTaxRules.find((item) => Number(item.id) === Number(manualTaxRuleId));
+    if (!Number.isFinite(taxableValue) || taxableValue <= 0) {
+      setError("Ingresá un valor imponible válido en quetzales."); return;
+    }
+    if (!rule) { setError("Seleccioná la categoría tributaria del vehículo."); return; }
+
+    const ivaRate=Number(rule.iva_rate||0), iprimaRate=Number(rule.iprima_rate||0);
+    const plates=Number(rule.plate_fee_gtq||0);
+    const iva=Math.round(taxableValue*ivaRate*100)/100;
+    const iprima=Math.round(taxableValue*iprimaRate*100)/100;
+    const total=Math.round((iva+iprima+plates)*100)/100;
+
+    setError("");
+    setResult({
+      success:true, calculation_method:"MANUAL", manual_calculation:true,
+      vehicle:{vin:String(manualVin||"").trim().toUpperCase()||null,
+        model:String(manualVehicleName||"").trim().toUpperCase()||"CÁLCULO MANUAL"},
+      sat:{requires_review:false,match_status:"MANUAL",selected_match:null},
+      taxes:{taxable_value_gtq:taxableValue,sat_value_gtq:taxableValue,
+        iva_rate:ivaRate,iva_gtq:iva,iprima_rate:iprimaRate,iprima_gtq:iprima,
+        plates_gtq:plates,total_gtq:total,vehicle_type:rule.vehicle_type,calculation_source:"MANUAL"},
+      dimensions:null, freight:null, freight_requires_review:false, manual_tax_rule:rule,
+      warnings:["Valor imponible establecido manualmente por E&R Solutions."]
+    });
   }
 
   async function consultarVehiculo() {
@@ -1451,17 +1900,26 @@ function App() {
     }
   }
 
-  function makeQuoteCode(vinOverride = null) {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    const ss = String(now.getSeconds()).padStart(2, "0");
-    const codeVin = vinOverride || vehicle?.vin || "VIN";
-    return `ER-${y}${m}${d}-${hh}${mm}${ss}-${codeVin.slice(-6)}`;
-  }
+ function makeQuoteCode(vinOverride = null) {
+  return buildQuoteCode({
+    vin: vinOverride || vehicle?.vin || "VIN",
+
+    isWhiteLabelClient,
+
+    officeName:
+      tenantBranding?.office_name ||
+      tenantOrganization?.name ||
+      tenantBrandName ||
+      "",
+
+    // Preparado para cuando agreguemos este campo
+    // configurable por oficina.
+    explicitPrefix:
+      tenantBranding?.quote_prefix ||
+      tenantOrganization?.quote_prefix ||
+      "",
+  });
+}
 
   function openQuoteModal() {
     const freightReady =
@@ -1899,11 +2357,69 @@ function App() {
     }
   }
 
-  function openImportManagementDetail(item) {
+  async function loadPortalClientsForManagement(managementId) {
+    if (!managementId) {
+      setPortalAssignmentClients([]);
+      return [];
+    }
+
+    setPortalAssignmentLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "list_portal_clients_for_management_v3923",
+        { p_management_id: managementId }
+      );
+
+      if (error) throw error;
+
+      const rows = Array.isArray(data) ? data : [];
+      setPortalAssignmentClients(rows);
+      return rows;
+    } catch (err) {
+      console.error("PORTAL CLIENTS FOR MANAGEMENT ERROR:", err);
+      setPortalAssignmentClients([]);
+      setImportManagementsError(
+        err?.message || "No fue posible cargar los clientes disponibles para el portal."
+      );
+      return [];
+    } finally {
+      setPortalAssignmentLoading(false);
+    }
+  }
+
+  async function loadImportersForOperation(organizationId = null) {
+    setOperationImportersLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "list_importers_for_operation_v393",
+        {
+          p_organization_id: organizationId || null,
+        }
+      );
+
+      if (error) throw error;
+
+      const rows = Array.isArray(data) ? data : [];
+      setOperationImporters(rows);
+      return rows;
+    } catch (err) {
+      console.error("OPERATION IMPORTERS ERROR:", err);
+      setOperationImporters([]);
+      return [];
+    } finally {
+      setOperationImportersLoading(false);
+    }
+  }
+
+  async function openImportManagementDetail(item) {
     setSelectedImportManagement(item);
     setImportManagementDetail({ ...item });
     setImportManagementMessage("");
     setImportManagementsError("");
+    await loadPortalClientsForManagement(item.id);
+      await loadImportersForOperation(item.organization_id || null);
   }
 
   async function saveImportManagementDetail() {
@@ -1914,6 +2430,27 @@ function App() {
     setImportManagementMessage("");
 
     try {
+
+      const { error: importerAssignmentError } = await supabase.rpc(
+        "assign_import_management_importer_v393",
+        {
+          p_management_id: importManagementDetail.id,
+          p_importer_id: importManagementDetail.importer_id || null,
+        }
+      );
+
+      if (importerAssignmentError) throw importerAssignmentError;
+
+      const { data: portalAssignment, error: portalAssignmentError } = await supabase.rpc(
+        "assign_import_management_portal_client_v3923",
+        {
+          p_management_id: importManagementDetail.id,
+          p_portal_client_id: importManagementDetail.office_portal_client_id || null,
+        }
+      );
+
+      if (portalAssignmentError) throw portalAssignmentError;
+
       const { data, error } = await supabase
         .from("import_managements")
         .update({
@@ -2312,11 +2849,65 @@ function App() {
     }
   }
 
-  function openCustomsDetail(item) {
+  async function loadPortalClientsForCustomsCase(customsCaseId) {
+    if (!customsCaseId) {
+      setCustomsPortalAssignmentClients([]);
+      return [];
+    }
+
+    setCustomsPortalAssignmentLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc(
+        "list_portal_clients_for_customs_case_v3924",
+        { p_customs_case_id: customsCaseId }
+      );
+
+      if (error) throw error;
+
+      const rows = Array.isArray(data) ? data : [];
+      setCustomsPortalAssignmentClients(rows);
+      return rows;
+    } catch (err) {
+      console.error("CUSTOMS PORTAL CLIENTS ERROR:", err);
+      setCustomsPortalAssignmentClients([]);
+      setCustomsError(
+        err?.message || "No fue posible cargar los clientes disponibles para el portal."
+      );
+      return [];
+    } finally {
+      setCustomsPortalAssignmentLoading(false);
+    }
+  }
+
+  async function loadCustomsPortalCandidate(customsCaseId) {
+    setCustomsPortalCandidateLoading(true);
+    try {
+      const { data, error } = await supabase.rpc(
+        "customs_case_portal_candidate_v3951",
+        { p_customs_case_id: customsCaseId }
+      );
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      setCustomsPortalCandidate(row || null);
+      return row || null;
+    } catch (err) {
+      console.error("CUSTOMS PORTAL CANDIDATE ERROR:", err);
+      setCustomsPortalCandidate(null);
+      return null;
+    } finally {
+      setCustomsPortalCandidateLoading(false);
+    }
+  }
+
+async function openCustomsDetail(item) {
     setSelectedCustomsCase(item);
     setCustomsDetail({ ...item });
     setCustomsMessage("");
     setCustomsError("");
+      await loadPortalClientsForCustomsCase(item.id);
+      await loadImportersForOperation(item.organization_id || null);
+      await loadCustomsPortalCandidate(item.id);
   }
 
   async function saveCustomsDetail() {
@@ -2327,6 +2918,31 @@ function App() {
     setCustomsMessage("");
 
     try {
+
+      const { error: customsImporterAssignmentError } = await supabase.rpc(
+        "assign_customs_case_importer_v393",
+        {
+          p_customs_case_id: customsDetail.id,
+          p_importer_id: customsDetail.importer_id || null,
+        }
+      );
+
+      if (customsImporterAssignmentError) throw customsImporterAssignmentError;
+
+
+      const { error: customsPortalAssignmentError } = await supabase.rpc(
+        "assign_customs_case_portal_client_v3924",
+        {
+          p_customs_case_id: customsDetail.id,
+          p_portal_client_id:
+            customsDetail.office_portal_client_id || null,
+        }
+      );
+
+      if (customsPortalAssignmentError) {
+        throw customsPortalAssignmentError;
+      }
+
       const allowedKeys = [
         "client_name", "phone", "email", "vin", "bl", "container_number",
         "shipping_line", "responsible", "priority",
@@ -2538,11 +3154,25 @@ function App() {
           };
 
       setCommercialQuoteContext({
-        query: { ...query },
-        prospect: prospectSnapshot,
-        result: data,
-        quoteCode: makeQuoteCode(query.vin),
-      });
+  query: { ...query },
+  prospect: prospectSnapshot,
+  result: data,
+
+  quoteCode: makeQuoteCode(query.vin),
+
+  isWhiteLabelClient,
+
+  officeName:
+    tenantBranding?.office_name ||
+    tenantOrganization?.name ||
+    tenantBrandName ||
+    "",
+
+  quotePrefix:
+    tenantBranding?.quote_prefix ||
+    tenantOrganization?.quote_prefix ||
+    "",
+});
 
       setSelectedProspect(null);
       setActiveView("commercial-quote");
@@ -2948,12 +3578,52 @@ function App() {
   const internalRole = String(profile?.role || "").toUpperCase();
   const internalJobTitle = String(profile?.job_title || "").toUpperCase();
   const isSystemAdmin = internalRole === "ADMIN";
+  const tenantMembershipRole = String(tenantContext?.membership?.member_role || "").toUpperCase();
+  const isTenantMember = Boolean(tenantContext?.membership?.active);
+  const isTenantAdmin = ["OWNER", "ADMIN"].includes(tenantMembershipRole);
+  const isWhiteLabelClient = isTenantMember && !["ADMIN", "OPERADOR"].includes(internalRole);
+  const tenantOrganization = tenantContext?.organization || null;
+  const tenantBranding = tenantContext?.branding || null;
+  const tenantBrandName = tenantBranding?.office_name || tenantOrganization?.name || "E&R VEHICLE IMPORT";
+  const tenantTagline = tenantBranding?.tagline || (isWhiteLabelClient ? "COTIZADOR VEHICULAR" : "GLOBAL LOGISTIC");
+  const tenantLogoUrl = tenantBranding?.logo_url || (isWhiteLabelClient ? "" : "/branding/eyr-logo-horizontal.png");
+
+  // V38.2 · Permisos por plan SaaS
+  const tenantPlanCode = String(tenantOrganization?.plan_code || "").toUpperCase();
+  const isFullOfficePlan = tenantPlanCode === "FULL_OFFICE";
+  const isImporterPlan = ["IMPORTER", "IMPORTER_PRO", "FULL_OFFICE"].includes(tenantPlanCode);
+  const canUseOfficeOperations = !isWhiteLabelClient || isFullOfficePlan;
+  const canUseTenantImports = !isWhiteLabelClient || isImporterPlan;
+  const canUseTenantDuca =
+    isSystemAdmin || (isWhiteLabelClient && isFullOfficePlan && isTenantAdmin);
+  const canUseTenantFinance =
+    isSystemAdmin ||
+    (isWhiteLabelClient && isFullOfficePlan &&
+      (isTenantAdmin || internalJobTitle === "FINANZAS"));
+
+  const canManageOfficeUsers =
+    isWhiteLabelClient &&
+    isFullOfficePlan &&
+    isTenantAdmin;
+
+  const canManageImporters =
+    isSystemAdmin ||
+    (isWhiteLabelClient && isFullOfficePlan && isTenantAdmin);
+
+  const canManagePortalClients =
+    isSystemAdmin ||
+    (isWhiteLabelClient && isFullOfficePlan && isTenantAdmin);
+  const tenantEyebrow = isWhiteLabelClient
+    ? tenantBrandName.toUpperCase()
+    : "E&R GLOBAL LOGISTIC";
   const internalRoleLabel =
     isSystemAdmin
       ? "ADMIN"
       : internalJobTitle === "DIGITADOR"
         ? "DIGITADOR"
-        : internalRole;
+        : isWhiteLabelClient
+          ? `OFICINA · ${tenantMembershipRole || "USUARIO"}`
+          : internalRole;
   const customerRole = internalRole === "CUSTOMER";
   const subscriptionStatus = String(profile?.subscription_status || "FREE").toUpperCase();
   const subscriptionActive =
@@ -2983,9 +3653,16 @@ function App() {
   const hasInternalAccess =
     Boolean(session) &&
     Boolean(profile?.active) &&
-    ["ADMIN", "OPERADOR"].includes(internalRole);
+    (["ADMIN", "OPERADOR"].includes(internalRole) || isTenantMember);
 
   const isAnonymousCustomer = Boolean(session?.user?.is_anonymous);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--tenant-primary", tenantBranding?.primary_color || "#0A3458");
+    root.style.setProperty("--tenant-secondary", tenantBranding?.secondary_color || "#E8A72D");
+    root.style.setProperty("--tenant-accent", tenantBranding?.accent_color || "#F5D87F");
+  }, [tenantBranding?.primary_color, tenantBranding?.secondary_color, tenantBranding?.accent_color]);
 
 
   if (siteMode === "landing") {
@@ -3783,18 +4460,34 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
     );
   }
 
-  if (authLoading) {
+  const loginIsWhiteLabel = Boolean(loginOfficeSlugFromLocation());
+  const loginBrandName =
+    publicLoginBranding?.office_name ||
+    publicLoginBranding?.organization_name ||
+    "Tu oficina";
+  const loginTagline = publicLoginBranding?.tagline || "Gestión aduanal inteligente";
+  const loginLogoUrl = loginIsWhiteLabel
+    ? String(publicLoginBranding?.logo_url || "")
+    : eyrSolutionsLogo;
+  const loginPrimary = loginIsWhiteLabel
+    ? publicLoginBranding?.primary_color || "#0A3458"
+    : "#0A3458";
+  const loginSecondary = loginIsWhiteLabel
+    ? publicLoginBranding?.secondary_color || "#E8A72D"
+    : "#E8A72D";
+
+  if (authLoading || (siteMode === "internal" && loginIsWhiteLabel && publicLoginBrandingLoading)) {
     return (
       <div className="auth-shell">
         <div className="auth-loading-card">
           <img
             className="auth-loading-logo"
-            src={eyrSolutionsLogo}
-            alt="E&R Solutions Agencia Aduanal"
+            src={loginLogoUrl || eyrSolutionsLogo}
+            alt={loginIsWhiteLabel ? loginBrandName : "E&R Solutions Agencia Aduanal"}
           />
           <div className="auth-spinner"></div>
           <h2>Validando acceso</h2>
-          <p>Conectando con E&amp;R Solutions...</p>
+          <p>{loginIsWhiteLabel ? `Conectando con ${loginBrandName}...` : "Conectando con E&R Solutions..."}</p>
         </div>
       </div>
     );
@@ -3802,21 +4495,38 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
   if (!hasInternalAccess) {
     return (
-      <div className="auth-shell">
+      <div
+        className={`auth-shell ${loginIsWhiteLabel ? "tenant-login-v383" : "eyr-login-v383"}`}
+        style={{
+          "--login-primary": loginPrimary,
+          "--login-secondary": loginSecondary,
+        }}
+      >
         <div className="auth-layout">
           <section className="auth-visual">
             <div className="auth-visual-overlay"></div>
             <div className="auth-visual-content">
-              <div className="auth-logo-lockup auth-logo-lockup-v35">
-                <img
-                  src={eyrSolutionsLogo}
-                  alt="E&R Solutions Agencia Aduanal"
-                />
+              <div className={`auth-logo-lockup auth-logo-lockup-v35 ${loginIsWhiteLabel ? "tenant-auth-logo-v383" : ""}`}>
+                {loginLogoUrl ? (
+                  <img
+                    src={loginLogoUrl}
+                    alt={loginIsWhiteLabel ? loginBrandName : "E&R Solutions Agencia Aduanal"}
+                  />
+                ) : (
+                  <div className="tenant-auth-wordmark-v383">
+                    <span>{loginBrandName.charAt(0).toUpperCase()}</span>
+                    <strong>{loginBrandName}</strong>
+                  </div>
+                )}
               </div>
               <div className="auth-copy">
-                <span className="auth-eyebrow">PLATAFORMA INTERNA</span>
-                <h1>Control inteligente para cada importación.</h1>
-                <p>VIN, SAT, impuestos, flete, revisiones y cotizaciones en un solo lugar.</p>
+                <span className="auth-eyebrow">{loginIsWhiteLabel ? "PLATAFORMA DE TU OFICINA" : "PLATAFORMA INTERNA"}</span>
+                <h1>{loginIsWhiteLabel ? "Tu operación aduanal, en un solo lugar." : "Control inteligente para cada importación."}</h1>
+                <p>
+                  {loginIsWhiteLabel
+                    ? loginTagline
+                    : "VIN, SAT, impuestos, flete, revisiones y cotizaciones en un solo lugar."}
+                </p>
               </div>
               <div className="auth-feature-row">
                 <span>VIN Intelligence</span>
@@ -3829,7 +4539,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           <section className="auth-panel">
             <div className="auth-panel-inner">
               <span className="auth-eyebrow">ACCESO SEGURO</span>
-              <h2>Bienvenido a E&amp;R</h2>
+              <h2>{loginIsWhiteLabel ? `Bienvenido a ${loginBrandName}` : "Bienvenido a E&R"}</h2>
               <p className="auth-subtitle">Ingresá con tu cuenta autorizada para continuar.</p>
 
               <form className="auth-form" onSubmit={handleLogin}>
@@ -3838,7 +4548,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   <input
                     type="email"
                     autoComplete="email"
-                    placeholder="usuario@eyr.com"
+                    placeholder={loginIsWhiteLabel ? "usuario@tuoficina.com" : "usuario@eyr.com"}
                     value={loginForm.email}
                     onChange={(e) =>
                       setLoginForm((prev) => ({ ...prev, email: e.target.value }))
@@ -3878,10 +4588,29 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </button>
               </form>
 
+              {publicLoginBrandingError && loginIsWhiteLabel && (
+                <div className="auth-error">
+                  <strong>Enlace de oficina no disponible</strong>
+                  <span>{publicLoginBrandingError}</span>
+                </div>
+              )}
+
               <div className="auth-security-note">
                 <span>🔐</span>
-                <p><strong>Acceso interno E&amp;R</strong>Solo usuarios ADMIN u OPERADOR autorizados.</p>
+                <p>
+                  <strong>Acceso seguro</strong>
+                  {loginIsWhiteLabel
+                    ? `Usuarios autorizados de ${loginBrandName}.`
+                    : "Usuarios E&R y oficinas autorizadas."}
+                </p>
               </div>
+
+              {loginIsWhiteLabel && (
+                <div className="auth-powered-v383">
+                  Tecnología respaldada por <strong>E&amp;R Solutions</strong>
+                </div>
+              )}
+
               <button className="auth-back-public" type="button" onClick={() => navigateSite("/")}>
                 ← Volver al sitio público
               </button>
@@ -3896,11 +4625,18 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
     <div className="app">
       <aside className="sidebar">
         <div className="brand brand-v35 brand-full-logo">
-          <img
-            src="/branding/eyr-logo-horizontal.png"
-            alt="E&R Solutions Agencia Aduanal"
-            className="brand-full-logo-image"
-          />
+          {tenantLogoUrl ? (
+            <img
+              src={tenantLogoUrl}
+              alt={tenantBrandName}
+              className="brand-full-logo-image tenant-sidebar-logo"
+            />
+          ) : (
+            <div className="tenant-sidebar-wordmark">
+              <strong>{tenantBrandName}</strong>
+              <span>{tenantTagline}</span>
+            </div>
+          )}
         </div>
 
         <AdminNotificationBell
@@ -3930,6 +4666,26 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Cotizaciones
           </button>
 
+          {(isSystemAdmin || isTenantAdmin) && (
+            <button
+              className={`nav-item ${activeView === "branding" ? "active" : ""}`}
+              onClick={() => setActiveView("branding")}
+            >
+              <span>🎨</span>
+              Mi Marca
+            </button>
+          )}
+
+          {isSystemAdmin && (
+            <button
+              className={`nav-item ${activeView === "organizations" ? "active" : ""}`}
+              onClick={openOrganizationsView}
+            >
+              <span>🏢</span>
+              Oficinas / Clientes
+            </button>
+          )}
+
           {isSystemAdmin && (
             <button
               className={`nav-item ${activeView === "subscriptions" ? "active" : ""}`}
@@ -3950,6 +4706,37 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             </button>
           )}
 
+          {canManageOfficeUsers && (
+            <button
+              className={`nav-item ${activeView === "office-users" ? "active" : ""}`}
+              onClick={() => setActiveView("office-users")}
+            >
+              <span>👥</span>
+              Usuarios de Oficina
+            </button>
+          )}
+
+          {canManagePortalClients && (
+            <button
+              className={`nav-item ${activeView === "portal-clients" ? "active" : ""}`}
+              onClick={() => setActiveView("portal-clients")}
+            >
+              <span>👥</span>
+              Clientes del Portal
+            </button>
+          )}
+
+          {canManageImporters && (
+            <button
+              className={`nav-item ${activeView === "importers" ? "active" : ""}`}
+              onClick={() => setActiveView("importers")}
+            >
+              <span>🚢</span>
+              Importadores
+            </button>
+          )}
+
+          {!isWhiteLabelClient && (
           <button
             className={`nav-item ${activeView === "prospects" ? "active" : ""}`}
             onClick={openProspectsView}
@@ -3957,7 +4744,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <span>◎</span>
             Prospectos
           </button>
+          )}
 
+          {canUseTenantImports && (
           <button
             className={`nav-item ${activeView === "imports" ? "active" : ""}`}
             onClick={openImportManagementsView}
@@ -3965,7 +4754,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <span>🚢</span>
             Gestiones de Importación
           </button>
+          )}
 
+          {canUseOfficeOperations && (
           <button
             className={`nav-item ${activeView === "customs" ? "active" : ""}`}
             onClick={openCustomsView}
@@ -3973,7 +4764,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <span>▣</span>
             Control Aduanal
           </button>
+          )}
 
+          {canUseOfficeOperations && (
           <button
             className={`nav-item ${activeView === "declarations" ? "active" : ""}`}
             onClick={() => setActiveView("declarations")}
@@ -3981,8 +4774,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <span>📄</span>
             Declaraciones
           </button>
+          )}
 
-          {isSystemAdmin && (
+          {canUseTenantDuca && (
             <button
               className={`nav-item ${activeView === "correlatives" ? "active" : ""}`}
               onClick={() => setActiveView("correlatives")}
@@ -3992,12 +4786,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             </button>
           )}
 
-          <button className="nav-item">
-            <span>⚠</span>
-            Revisiones
-          </button>
+          {canUseOfficeOperations && (
+            <button className="nav-item">
+              <span>⚠</span>
+              Revisiones
+            </button>
+          )}
 
-          {isSystemAdmin && (
+          {canUseTenantFinance && (
             <button
               className={`nav-item ${activeView === "finance" ? "active" : ""}`}
               onClick={() => setActiveView("finance")}
@@ -4049,7 +4845,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Sistema operativo
           </div>
 
-          <small>E&R Solutions · Vehicle Import</small>
+          <small>{isWhiteLabelClient ? `${tenantBrandName} · Powered by E&R` : "E&R Solutions · Vehicle Import"}</small>
         </div>
       </aside>
 
@@ -4077,13 +4873,42 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           />
         ) : activeView === "admin-center" && isSystemAdmin ? (
           <AdminCenterPage supabase={supabase} />
-        ) : activeView === "declarations" ? (
-          <DeclarationsPage supabase={supabase} isAdmin={isSystemAdmin} />
-        ) : activeView === "correlatives" && isSystemAdmin ? (
+        ) : activeView === "portal-clients" && canManagePortalClients ? (
+          <OfficePortalClientsPage
+            supabase={supabase}
+            invokeFunction={invokeFunction}
+            officeName={tenantBrandName}
+            officeSlug={tenantOrganization?.slug || ""}
+            isSystemAdmin={isSystemAdmin}
+          />
+        ) : activeView === "importers" && canManageImporters ? (
+          <ImportersPage
+            supabase={supabase}
+            isSystemAdmin={isSystemAdmin}
+            canEdit={canManageImporters}
+            tenantOrganizationId={tenantOrganization?.id || ""}
+            tenantBrandName={tenantBrandName}
+          />
+        ) : activeView === "declarations" && canUseOfficeOperations ? (
+          <DeclarationsPage
+            supabase={supabase}
+            isAdmin={isSystemAdmin || (isWhiteLabelClient && isFullOfficePlan && isTenantAdmin)}
+          />
+        ) : activeView === "correlatives" && canUseTenantDuca ? (
           <DucaCorrelativesPage supabase={supabase} />
-        ) : activeView === "finance" && isSystemAdmin ? (
-          <FinanceDashboard supabase={supabase} />
-        ) : activeView === "internal-users" ? (
+        ) : activeView === "finance" && canUseTenantFinance ? (
+          <FinanceDashboard
+  supabase={supabase}
+  officeName={tenantBrandName}
+  isWhiteLabelClient={isWhiteLabelClient}
+/>
+        ) : activeView === "office-users" && canManageOfficeUsers ? (
+          <OfficeUsersPage
+            invokeFunction={invokeFunction}
+            currentUserId={session?.user?.id || null}
+            officeName={tenantBrandName}
+          />
+        ) : activeView === "internal-users" && isSystemAdmin ? (
           <InternalUsersPage
             invokeFunction={invokeFunction}
             currentUserId={session?.user?.id || null}
@@ -4485,6 +5310,122 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         <option value="CANCELADO">Cancelado</option>
                       </select>
                       <label><span>Responsable</span><input value={importManagementDetail.responsible || ""} onChange={(e) => setImportManagementDetail((p) => ({...p,responsible:e.target.value}))} placeholder="Responsable E&R" /></label>
+                    </section>
+
+                                        <section className="import-importer-card">
+                      <div className="import-importer-head">
+                        <div>
+                          <span className="section-label">IMPORTADOR · V39.3</span>
+                          <h3>Importador responsable</h3>
+                          <p>Seleccioná un registro del Directorio de Importadores.</p>
+                        </div>
+                      </div>
+
+                      <label className="import-importer-field">
+                        <span>Importador</span>
+                        <select
+                          value={importManagementDetail.importer_id || ""}
+                          disabled={operationImportersLoading}
+                          onChange={(e) =>
+                            setImportManagementDetail((prev) => ({
+                              ...prev,
+                              importer_id: e.target.value || null,
+                            }))
+                          }
+                        >
+                          <option value="">
+                            {operationImportersLoading
+                              ? "Cargando importadores..."
+                              : "— Sin importador asignado —"}
+                          </option>
+                          {operationImporters.map((importer) => (
+                            <option key={importer.id} value={importer.id}>
+                              {[
+                                importer.display_name,
+                                importer.nit ? `NIT ${importer.nit}` : "",
+                                importer.organization_name,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </option>
+                          ))}
+                        </select>
+                        <small>
+                          El mismo importador se sincronizará con Control Aduanal si ambos expedientes están relacionados.
+                        </small>
+                      </label>
+                    </section>
+
+<OperationFilesPanel
+                      supabase={supabase}
+                      sourceType="IMPORT_MANAGEMENT"
+                      sourceId={importManagementDetail.id}
+                      organizationId={importManagementDetail.organization_id}
+                      title="Archivos de esta gestión"
+                    />
+
+<section className="import-portal-client-card">
+                      <div className="import-portal-client-head">
+                        <div>
+                          <span className="section-label">PORTAL DEL CLIENTE · V39.2.3</span>
+                          <h3>¿Quién puede ver esta gestión?</h3>
+                          <p>
+                            Vinculá la gestión a un cliente del portal. Solo ese cliente podrá verla
+                            cuando ingrese al portal de su oficina.
+                          </p>
+                        </div>
+                        <span className={`portal-link-state ${importManagementDetail.office_portal_client_id ? "linked" : ""}`}>
+                          {importManagementDetail.office_portal_client_id ? "VINCULADA" : "SIN VINCULAR"}
+                        </span>
+                      </div>
+
+                      <label className="import-portal-client-field">
+                        <span>Cliente del Portal</span>
+                        <select
+                          value={importManagementDetail.office_portal_client_id || ""}
+                          disabled={portalAssignmentLoading}
+                          onChange={(e) =>
+                            setImportManagementDetail((prev) => ({
+                              ...prev,
+                              office_portal_client_id: e.target.value || null,
+                            }))
+                          }
+                        >
+                          <option value="">
+                            {portalAssignmentLoading
+                              ? "Cargando clientes..."
+                              : "— No mostrar esta gestión en ningún portal —"}
+                          </option>
+
+                          {portalAssignmentClients.map((client) => (
+                            <option key={client.id} value={client.id}>
+                              {[
+                                client.company_name || client.contact_name,
+                                client.company_name ? client.contact_name : "",
+                                client.organization_name,
+                              ].filter(Boolean).join(" · ")}
+                              {!client.active ? " · INACTIVO" : ""}
+                            </option>
+                          ))}
+                        </select>
+
+                        <small>
+                          Al guardar la gestión, la asignación se actualizará automáticamente.
+                        </small>
+                      </label>
+
+                      {importManagementDetail.office_portal_client_id && (
+                        <div className="import-portal-client-notice">
+                          <span>🔐</span>
+                          <div>
+                            <strong>Acceso privado</strong>
+                            <p>
+                              Este vínculo no convierte al cliente en usuario interno de la oficina.
+                              Únicamente habilita esta gestión dentro de su Portal de Clientes.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </section>
 
                     <section className="import-cover-data-card">
@@ -5408,7 +6349,160 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     </article>
                   </div>
 
-                  <section className="customs-detail-section">
+                                                      <section className="customs-importer-section">
+                    <div className="customs-importer-head">
+                      <div>
+                        <span className="section-label">CLIENTE / IMPORTADOR · V39.5.1</span>
+                        <h3>{customsPortalCandidate?.contact_name || customsDetail.client_name || "Cliente del expediente"}</h3>
+                        <p>
+                          {[customsPortalCandidate?.email || customsDetail.email, customsPortalCandidate?.phone || customsDetail.phone]
+                            .filter(Boolean).join(" · ") || "Datos tomados directamente del expediente aduanal."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="customs-importer-field">
+                      <small>
+                        ✅ Este cliente se toma de Control Aduanal. No necesitás volver a registrarlo en un catálogo de importadores.
+                      </small>
+                    </div>
+                  </section>
+
+<OperationFilesPanel
+                    supabase={supabase}
+                    sourceType="CUSTOMS_CASE"
+                    sourceId={customsDetail.id}
+                    organizationId={customsDetail.organization_id}
+                    title="Archivos del expediente aduanal"
+                  />
+
+<section className="customs-portal-access-v3951">
+                    <div>
+                      <span className="section-label">ACCESO AL PORTAL · V39.5.1</span>
+                      <h3>
+                        {customsPortalCandidateLoading
+                          ? "Verificando acceso..."
+                          : customsPortalCandidate?.portal_user_id
+                          ? "🟢 Portal activo"
+                          : "⚪ Sin acceso al Portal"}
+                      </h3>
+                      <p>
+                        {customsPortalCandidate?.portal_user_id
+                          ? `Usuario: ${customsPortalCandidate.email || "registrado"}`
+                          : "Este cliente existe por su expediente, pero todavía no tiene usuario del Portal."}
+                      </p>
+                    </div>
+
+                    {!customsPortalCandidateLoading && customsPortalCandidate && !customsPortalCandidate.portal_user_id && (
+                      <button
+                        type="button"
+                        className="primary-btn"
+                        onClick={() => {
+                          setActiveView("portal-clients");
+                          setSelectedCustomsCase(null);
+                          setCustomsDetail(null);
+                        }}
+                      >
+                        🔐 Ir a crear acceso al Portal
+                      </button>
+                    )}
+
+                    {!customsPortalCandidateLoading && customsPortalCandidate?.portal_client_id && (
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() =>
+                          setCustomsDetail((prev) => ({
+                            ...prev,
+                            office_portal_client_id: customsPortalCandidate.portal_client_id,
+                          }))
+                        }
+                      >
+                        Vincular este expediente
+                      </button>
+                    )}
+                  </section>
+
+                  <section className="customs-portal-client-section">
+                    <div className="customs-portal-client-head">
+                      <div>
+                        <span className="section-label">PORTAL DEL CLIENTE · V39.2.4</span>
+                        <h3>¿Quién puede ver este expediente?</h3>
+                        <p>
+                          Elegí el cliente que podrá consultar el avance aduanal desde
+                          el Portal de Clientes de su oficina.
+                        </p>
+                      </div>
+
+                      <span
+                        className={`portal-link-state ${
+                          customsDetail.office_portal_client_id
+                            ? "linked"
+                            : ""
+                        }`}
+                      >
+                        {customsDetail.office_portal_client_id
+                          ? "VINCULADO"
+                          : "SIN VINCULAR"}
+                      </span>
+                    </div>
+
+                    <label className="customs-portal-client-field">
+                      <span>Cliente del Portal</span>
+
+                      <select
+                        value={customsDetail.office_portal_client_id || ""}
+                        disabled={customsPortalAssignmentLoading}
+                        onChange={(e) =>
+                          setCustomsDetail((prev) => ({
+                            ...prev,
+                            office_portal_client_id:
+                              e.target.value || null,
+                          }))
+                        }
+                      >
+                        <option value="">
+                          {customsPortalAssignmentLoading
+                            ? "Cargando clientes..."
+                            : "— Ningún cliente puede ver este expediente —"}
+                        </option>
+
+                        {customsPortalAssignmentClients.map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {[
+                              client.company_name || client.contact_name,
+                              client.company_name
+                                ? client.contact_name
+                                : "",
+                              client.organization_name,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                            {!client.active ? " · INACTIVO" : ""}
+                          </option>
+                        ))}
+                      </select>
+
+                      <small>
+                        Si este expediente proviene de una Gestión de Importación,
+                        el cliente se sincroniza automáticamente en ambos módulos.
+                      </small>
+                    </label>
+
+                    {customsDetail.office_portal_client_id && (
+                      <div className="customs-portal-client-notice">
+                        <span>🔐</span>
+                        <div>
+                          <strong>Acceso privado</strong>
+                          <p>
+                            El cliente solamente verá el seguimiento de sus propias
+                            gestiones. No obtiene acceso al sistema interno.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+
+<section className="customs-detail-section">
                     <div className="customs-section-title">
                       <span>01</span>
                       <div>
@@ -5739,6 +6833,569 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               moneyUSD={moneyUSD}
             />
           </section>
+        ) : activeView === "organizations" && isSystemAdmin ? (
+          <section className="organizations-v381-module">
+            <header className="topbar organizations-v381-topbar">
+              <div>
+                <span className="eyebrow">SAAS · V38.1</span>
+                <h1>Oficinas / Clientes</h1>
+                <p>
+                  Creá, administrá y suspendé las oficinas que compren acceso al sistema.
+                </p>
+              </div>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => {
+                  resetOrganizationFormV381();
+                  setShowOrganizationForm(true);
+                  setOrganizationsError("");
+                  setOrganizationsMessage("");
+                }}
+              >
+                + Nueva oficina
+              </button>
+            </header>
+
+            <section className="organizations-v381-kpis">
+              <div>
+                <span>OFICINAS</span>
+                <strong>{organizations.length}</strong>
+                <small>registradas</small>
+              </div>
+              <div>
+                <span>ACTIVAS</span>
+                <strong>
+                  {organizations.filter((item) => item.active !== false).length}
+                </strong>
+                <small>con acceso</small>
+              </div>
+              <div>
+                <span>SUSPENDIDAS</span>
+                <strong>
+                  {organizations.filter((item) => item.active === false).length}
+                </strong>
+                <small>sin acceso</small>
+              </div>
+              <div>
+                <span>USUARIOS</span>
+                <strong>
+                  {organizations.reduce(
+                    (sum, item) => sum + Number(item.member_count || 0),
+                    0
+                  )}
+                </strong>
+                <small>miembros SaaS</small>
+              </div>
+            </section>
+
+            <section className="organizations-v381-toolbar">
+              <div className="organizations-v381-search">
+                <span>⌕</span>
+                <input
+                  value={organizationSearch}
+                  onChange={(e) => setOrganizationSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      loadOrganizationsV381(organizationSearch);
+                    }
+                  }}
+                  placeholder="Buscar oficina, plan o propietario..."
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => loadOrganizationsV381(organizationSearch)}
+                disabled={organizationsLoading}
+              >
+                {organizationsLoading ? "Cargando..." : "Buscar"}
+              </button>
+            </section>
+
+            {organizationsError && (
+              <div className="customer-message error">{organizationsError}</div>
+            )}
+            {organizationsMessage && (
+              <div className="customer-message success">{organizationsMessage}</div>
+            )}
+
+            <div className="organizations-v381-layout">
+              <section className="organizations-v381-list">
+                <div className="organizations-v381-list-head">
+                  <div>
+                    <small>PORTAFOLIO SAAS</small>
+                    <h2>Clientes del sistema</h2>
+                  </div>
+                  <span>{organizations.length} oficina(s)</span>
+                </div>
+
+                {organizationsLoading ? (
+                  <div className="organizations-v381-empty">
+                    Cargando oficinas...
+                  </div>
+                ) : organizations.length === 0 ? (
+                  <div className="organizations-v381-empty">
+                    <strong>No hay oficinas todavía.</strong>
+                    <span>Creá el primer cliente White Label.</span>
+                  </div>
+                ) : (
+                  <div className="organizations-v381-table-wrap">
+                    <table className="organizations-v381-table">
+                      <thead>
+                        <tr>
+                          <th>Oficina</th>
+                          <th>Plan</th>
+                          <th>Propietario</th>
+                          <th>Usuarios</th>
+                          <th>Estado</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {organizations.map((organization) => (
+                          <tr
+                            key={organization.id}
+                            className={
+                              selectedOrganization?.id === organization.id
+                                ? "selected"
+                                : ""
+                            }
+                            onClick={() => selectOrganizationV381(organization)}
+                          >
+                            <td>
+                              <div className="organizations-v381-office">
+                                <span>
+                                  {(organization.office_name ||
+                                    organization.name ||
+                                    "O")
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                </span>
+                                <div>
+                                  <strong>
+                                    {organization.office_name ||
+                                      organization.name}
+                                  </strong>
+                                  <small>/{organization.slug}</small>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`organizations-v381-plan plan-${String(
+                                organization.plan_code || "QUOTER"
+                              ).toLowerCase()}`}>
+                                {organization.plan_code || "QUOTER"}
+                              </span>
+                            </td>
+                            <td>
+                              <strong className="organizations-v381-owner">
+                                {organization.owner_name || "Sin propietario"}
+                              </strong>
+                              <small>{organization.owner_email || "—"}</small>
+                            </td>
+                            <td>{organization.member_count || 0}</td>
+                            <td>
+                              <span
+                                className={`organizations-v381-status ${
+                                  organization.active === false
+                                    ? "suspended"
+                                    : "active"
+                                }`}
+                              >
+                                {organization.active === false
+                                  ? "SUSPENDIDA"
+                                  : organization.subscription_status || "ACTIVE"}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="organizations-v381-open"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectOrganizationV381(organization);
+                                }}
+                              >
+                                Administrar →
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              <aside className="organizations-v381-detail">
+                {!selectedOrganization ? (
+                  <div className="organizations-v381-detail-empty">
+                    <span>🏢</span>
+                    <strong>Seleccioná una oficina</strong>
+                    <p>
+                      Desde aquí vas a cambiar su plan, asignar propietario y
+                      suspender o reactivar el acceso.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="organizations-v381-detail-head">
+                      <div className="organizations-v381-detail-logo">
+                        {selectedOrganization.logo_url ? (
+                          <img
+                            src={selectedOrganization.logo_url}
+                            alt={selectedOrganization.office_name || selectedOrganization.name}
+                          />
+                        ) : (
+                          <strong>
+                            {(selectedOrganization.office_name ||
+                              selectedOrganization.name ||
+                              "O")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </strong>
+                        )}
+                      </div>
+                      <div>
+                        <small>ORGANIZACIÓN</small>
+                        <h2>
+                          {selectedOrganization.office_name ||
+                            selectedOrganization.name}
+                        </h2>
+                        <span>/{selectedOrganization.slug}</span>
+                      </div>
+                    </div>
+
+                    <div className="organizations-v381-login-link-v383">
+                      <span>ENLACE WHITE LABEL</span>
+                      <strong>{`${window.location.origin}/o/${selectedOrganization.slug}`}</strong>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(
+                              `${window.location.origin}/o/${selectedOrganization.slug}`
+                            );
+                            setOrganizationsMessage("Enlace de acceso copiado.");
+                          } catch (err) {
+                            console.error("COPY WHITE LABEL LINK ERROR:", err);
+                            setOrganizationsError("No fue posible copiar el enlace automáticamente.");
+                          }
+                        }}
+                      >
+                        📋 Copiar enlace de acceso
+                      </button>
+                    </div>
+
+                    <div className="organizations-v381-info-grid">
+                      <div>
+                        <span>Creada</span>
+                        <strong>
+                          {selectedOrganization.created_at
+                            ? new Date(
+                                selectedOrganization.created_at
+                              ).toLocaleDateString("es-GT")
+                            : "—"}
+                        </strong>
+                      </div>
+                      <div>
+                        <span>Usuarios</span>
+                        <strong>{selectedOrganization.member_count || 0}</strong>
+                      </div>
+                    </div>
+
+                    <label>
+                      <span>Plan contratado</span>
+                      <select
+                        value={organizationEditForm.plan_code}
+                        onChange={(e) =>
+                          setOrganizationEditForm((prev) => ({
+                            ...prev,
+                            plan_code: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="QUOTER">Cotizador</option>
+                        <option value="IMPORTER">Importador</option>
+                        <option value="IMPORTER_PRO">Importador Pro</option>
+                        <option value="FULL_OFFICE">Full Office</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Estado de suscripción</span>
+                      <select
+                        value={organizationEditForm.subscription_status}
+                        onChange={(e) =>
+                          setOrganizationEditForm((prev) => ({
+                            ...prev,
+                            subscription_status: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="ACTIVE">Activa</option>
+                        <option value="TRIAL">Prueba</option>
+                        <option value="PAST_DUE">Pago pendiente</option>
+                        <option value="SUSPENDED">Suspendida</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Correo del propietario</span>
+                      <input
+                        type="email"
+                        value={organizationEditForm.owner_email}
+                        onChange={(e) =>
+                          setOrganizationEditForm((prev) => ({
+                            ...prev,
+                            owner_email: e.target.value,
+                          }))
+                        }
+                        placeholder="cliente@oficina.com"
+                      />
+                      <small>
+                        El usuario debe existir en E&amp;R para poder asignarlo.
+                      </small>
+                    </label>
+
+                    <label className="organizations-v381-active-toggle">
+                      <input
+                        type="checkbox"
+                        checked={organizationEditForm.active}
+                        onChange={(e) =>
+                          setOrganizationEditForm((prev) => ({
+                            ...prev,
+                            active: e.target.checked,
+                          }))
+                        }
+                      />
+                      <span>
+                        <strong>Acceso habilitado</strong>
+                        <small>
+                          Al desactivarlo conservamos toda la información.
+                        </small>
+                      </span>
+                    </label>
+
+                    <button
+                      className="primary-button organizations-v381-save"
+                      type="button"
+                      disabled={organizationSaving}
+                      onClick={saveOrganizationV381}
+                    >
+                      {organizationSaving ? "Guardando..." : "Guardar cambios →"}
+                    </button>
+
+                    <button
+                      className={`organizations-v381-suspend ${
+                        selectedOrganization.active === false ? "activate" : ""
+                      }`}
+                      type="button"
+                      disabled={organizationSaving}
+                      onClick={() =>
+                        toggleOrganizationV381(selectedOrganization)
+                      }
+                    >
+                      {selectedOrganization.active === false
+                        ? "✓ Reactivar oficina"
+                        : "⏸ Suspender oficina"}
+                    </button>
+                  </>
+                )}
+              </aside>
+            </div>
+
+            {showOrganizationForm && (
+              <div
+                className="modal-overlay"
+                onMouseDown={() => {
+                  if (!organizationSaving) setShowOrganizationForm(false);
+                }}
+              >
+                <div
+                  className="modal-card organizations-v381-create-modal"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="modal-close"
+                    type="button"
+                    onClick={() => setShowOrganizationForm(false)}
+                  >
+                    ×
+                  </button>
+
+                  <div className="organizations-v381-create-head">
+                    <span>🏢</span>
+                    <div>
+                      <small>NUEVO CLIENTE SAAS</small>
+                      <h2>Crear oficina</h2>
+                      <p>
+                        Esta oficina tendrá su propia marca, usuarios y plan.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form
+                    className="organizations-v381-create-form"
+                    onSubmit={createOrganizationV381}
+                  >
+                    <label>
+                      <span>Nombre comercial</span>
+                      <input
+                        required
+                        value={organizationForm.name}
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          setOrganizationForm((prev) => ({
+                            ...prev,
+                            name,
+                            slug:
+                              prev.slug ||
+                              name
+                                .toLowerCase()
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .replace(/[^a-z0-9]+/g, "-")
+                                .replace(/(^-|-$)/g, ""),
+                          }));
+                        }}
+                        placeholder="Ej. Importadora del Caribe"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Identificador / slug</span>
+                      <input
+                        required
+                        value={organizationForm.slug}
+                        onChange={(e) =>
+                          setOrganizationForm((prev) => ({
+                            ...prev,
+                            slug: e.target.value
+                              .toLowerCase()
+                              .replace(/[^a-z0-9-]/g, ""),
+                          }))
+                        }
+                        placeholder="importadora-del-caribe"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Plan inicial</span>
+                      <select
+                        value={organizationForm.plan_code}
+                        onChange={(e) =>
+                          setOrganizationForm((prev) => ({
+                            ...prev,
+                            plan_code: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="QUOTER">Cotizador</option>
+                        <option value="IMPORTER">Importador</option>
+                        <option value="IMPORTER_PRO">Importador Pro</option>
+                        <option value="FULL_OFFICE">Full Office</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Correo del propietario · opcional</span>
+                      <input
+                        type="email"
+                        value={organizationForm.owner_email}
+                        onChange={(e) =>
+                          setOrganizationForm((prev) => ({
+                            ...prev,
+                            owner_email: e.target.value,
+                          }))
+                        }
+                        placeholder="cliente@oficina.com"
+                      />
+                      <small>
+                        Si ya existe como usuario, queda vinculado de una vez.
+                      </small>
+                    </label>
+
+                    <div className="organizations-v381-create-actions">
+                      <button
+                        type="button"
+                        onClick={() => setShowOrganizationForm(false)}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        className="primary-button"
+                        type="submit"
+                        disabled={organizationSaving}
+                      >
+                        {organizationSaving
+                          ? "Creando..."
+                          : "Crear oficina →"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : activeView === "branding" ? (
+          <section className="tenant-branding-module">
+            <header className="topbar tenant-branding-topbar">
+              <div>
+                <span className="eyebrow">WHITE LABEL · V38</span>
+                <h1>Mi Marca</h1>
+                <p>Personalizá cómo verá tu cliente las cotizaciones generadas por esta oficina.</p>
+              </div>
+              <span className="tenant-plan-pill">{tenantOrganization?.plan_code || "SIN PLAN"}</span>
+            </header>
+
+            <div className="tenant-branding-layout">
+              <form className="tenant-branding-form" onSubmit={saveTenantBranding}>
+                <section className="tenant-config-card">
+                  <div className="tenant-card-head"><span>🏢</span><div><small>IDENTIDAD</small><h2>Datos de la oficina</h2></div></div>
+                  <div className="tenant-form-grid">
+                    <label><span>Nombre comercial</span><input value={brandingForm.office_name} onChange={(e)=>setBrandingForm(p=>({...p,office_name:e.target.value}))} placeholder="Ej. Aduana Rivera" required /></label>
+                    <label><span>Eslogan / línea secundaria</span><input value={brandingForm.tagline} onChange={(e)=>setBrandingForm(p=>({...p,tagline:e.target.value}))} placeholder="Ej. Importaciones y Aduanas" /></label>
+                    <label className="tenant-logo-field"><span>Logo</span><input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(e)=>setBrandingLogoFile(e.target.files?.[0] || null)} /><small>PNG transparente recomendado.</small></label>
+                    <label><span>Correo comercial</span><input type="email" value={brandingForm.email} onChange={(e)=>setBrandingForm(p=>({...p,email:e.target.value}))} placeholder="ventas@oficina.com" /></label>
+                    <label><span>Teléfono</span><input value={brandingForm.phone} onChange={(e)=>setBrandingForm(p=>({...p,phone:e.target.value}))} /></label>
+                    <label><span>WhatsApp</span><input value={brandingForm.whatsapp} onChange={(e)=>setBrandingForm(p=>({...p,whatsapp:e.target.value}))} placeholder="502..." /></label>
+                    <label className="span-2"><span>Dirección</span><input value={brandingForm.address} onChange={(e)=>setBrandingForm(p=>({...p,address:e.target.value}))} /></label>
+                  </div>
+                </section>
+
+                <section className="tenant-config-card">
+                  <div className="tenant-card-head"><span>🎨</span><div><small>COLORES</small><h2>Identidad visual</h2></div></div>
+                  <div className="tenant-color-grid">
+                    <label><span>Principal</span><div><input type="color" value={brandingForm.primary_color} onChange={(e)=>setBrandingForm(p=>({...p,primary_color:e.target.value}))}/><code>{brandingForm.primary_color}</code></div></label>
+                    <label><span>Secundario</span><div><input type="color" value={brandingForm.secondary_color} onChange={(e)=>setBrandingForm(p=>({...p,secondary_color:e.target.value}))}/><code>{brandingForm.secondary_color}</code></div></label>
+                    <label><span>Acento</span><div><input type="color" value={brandingForm.accent_color} onChange={(e)=>setBrandingForm(p=>({...p,accent_color:e.target.value}))}/><code>{brandingForm.accent_color}</code></div></label>
+                  </div>
+                  <label className="tenant-footer-field"><span>Pie de cotización</span><textarea rows="3" value={brandingForm.quote_footer} onChange={(e)=>setBrandingForm(p=>({...p,quote_footer:e.target.value}))} placeholder="Condiciones, teléfonos o mensaje comercial..." /></label>
+                </section>
+
+                {brandingError && <div className="customer-message error">{brandingError}</div>}
+                {brandingMessage && <div className="customer-message success">{brandingMessage}</div>}
+                <button className="primary-button tenant-save-brand" type="submit" disabled={brandingSaving || brandingLoading}>{brandingSaving ? "Guardando..." : "Guardar mi marca"} <span>→</span></button>
+              </form>
+
+              <aside className="tenant-brand-preview" style={{"--preview-primary": brandingForm.primary_color, "--preview-secondary": brandingForm.secondary_color, "--preview-accent": brandingForm.accent_color}}>
+                <small>VISTA PREVIA DE COTIZACIÓN</small>
+                <div className="tenant-preview-sheet">
+                  <header>
+                    <div className="tenant-preview-logo">
+                      {brandingForm.logo_url ? <img src={brandingForm.logo_url} alt="Logo"/> : <strong>{(brandingForm.office_name || "MI OFICINA").slice(0,2).toUpperCase()}</strong>}
+                    </div>
+                    <div><strong>{brandingForm.office_name || "MI OFICINA"}</strong><span>{brandingForm.tagline || "COTIZADOR VEHICULAR"}</span></div>
+                  </header>
+                  <div className="tenant-preview-title"><span>COTIZACIÓN</span><strong>TOYOTA YARIS 2020</strong></div>
+                  <div className="tenant-preview-lines"><i></i><i></i><i></i></div>
+                  <div className="tenant-preview-total"><span>TOTAL GENERAL</span><strong>Q 00,000.00</strong></div>
+                  <footer>{brandingForm.quote_footer || brandingForm.phone || brandingForm.email || "Tu información comercial aparecerá aquí."}</footer>
+                </div>
+              </aside>
+            </div>
+          </section>
         ) : activeView === "settings" ? (
           <section className="settings-module">
             <header className="topbar settings-topbar">
@@ -5836,7 +7493,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           <section className="quotations-module">
             <header className="topbar quotations-topbar">
               <div>
-                <span className="eyebrow">E&R GLOBAL LOGISTIC</span>
+                <span className="eyebrow">{isWhiteLabelClient ? tenantBrandName.toUpperCase() : "E&R GLOBAL LOGISTIC"}</span>
                 <h1>Cotizaciones</h1>
                 <p>
                   {["ADMIN", "OPERADOR"].includes(String(profile?.role || "").toUpperCase())
@@ -6078,14 +7735,15 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
         <header className="topbar">
           <div>
             <span className="eyebrow">
-              E&R GLOBAL LOGISTIC
+              {tenantEyebrow}
             </span>
 
             <h1>Cotizador Interno</h1>
 
             <p>
-              Calculá por Tabla SAT o con factura de importador,
-              sin consumir consultas públicas.
+              {isWhiteLabelClient
+                ? "Calculá por Tabla SAT, factura de importador o cálculo manual desde tu propia oficina."
+                : "Calculá por Tabla SAT o con factura de importador, sin consumir consultas públicas."}
             </p>
           </div>
 
@@ -6101,21 +7759,27 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
             <div>
               <span className="section-label">
-                {internalQuoteMode === "IMPORTER"
-                  ? "IMPORTADOR CON FACTURA"
-                  : "TABLA SAT GUATEMALA"}
+                {internalQuoteMode === "MANUAL"
+                  ? "CÁLCULO MANUAL"
+                  : internalQuoteMode === "IMPORTER"
+                    ? "IMPORTADOR CON FACTURA"
+                    : "TABLA SAT GUATEMALA"}
               </span>
 
               <h2>
-                {internalQuoteMode === "IMPORTER"
-                  ? "VIN + factura. Calculamos los impuestos."
-                  : "¿Qué vehículo vamos a importar?"}
+                {internalQuoteMode === "MANUAL"
+                  ? "Valor definido por E&R. Cálculos automáticos."
+                  : internalQuoteMode === "IMPORTER"
+                    ? "VIN + factura. Calculamos los impuestos."
+                    : "¿Qué vehículo vamos a importar?"}
               </h2>
 
               <p>
-                {internalQuoteMode === "IMPORTER"
-                  ? "Ingresá el valor real de la factura en USD y el VIN de 17 caracteres."
-                  : "Ingresá el VIN y E&R analizará automáticamente vehículo, SAT, impuestos y flete."}
+                {internalQuoteMode === "MANUAL"
+                  ? "Ingresá el valor imponible ya determinado y la categoría tributaria."
+                  : internalQuoteMode === "IMPORTER"
+                    ? "Ingresá el valor real de la factura en USD y el VIN de 17 caracteres."
+                    : "Ingresá el VIN y E&R analizará automáticamente vehículo, SAT, impuestos y flete."}
               </p>
             </div>
           </div>
@@ -6134,6 +7798,21 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 }
               }}
             />
+
+            <button
+              type="button"
+              className={`manual-mode-tab ${internalQuoteMode === "MANUAL" ? "active" : ""}`}
+              onClick={async () => {
+                setInternalQuoteMode("MANUAL");
+                setResult(null);
+                setError("");
+                resetReviewState();
+                await loadManualTaxRules();
+              }}
+            >
+              <span>🧮</span>
+              <div><strong>Cálculo Manual</strong><small>Valor imponible definido por E&amp;R</small></div>
+            </button>
 
             {internalQuoteMode === "IMPORTER" && (
               <ImporterQuoteFields
@@ -6154,6 +7833,25 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             )}
           </div>
 
+          {internalQuoteMode === "MANUAL" && (
+            <section className="manual-tax-card">
+              <div className="manual-tax-heading">
+                <div><span>🧮 RESPALDO OPERATIVO</span><h3>Cotización manual de impuestos</h3>
+                  <p>Ingresá el valor imponible que ya determinaste. E&amp;R seguirá calculando automáticamente IVA, IPRIMA, placas y total.</p></div>
+                <b>MANUAL</b>
+              </div>
+              <div className="manual-tax-grid">
+                <label><span>Valor imponible · GTQ</span><div className="manual-money"><b>Q</b><input type="number" min="0" step="0.01" value={manualTaxableValueGtq} onChange={(e)=>setManualTaxableValueGtq(e.target.value)} placeholder="0.00"/></div></label>
+                <label><span>Categoría tributaria</span><select value={manualTaxRuleId} onFocus={loadManualTaxRules} onChange={(e)=>setManualTaxRuleId(e.target.value)}><option value="">Seleccionar...</option>{manualTaxRules.map((r)=><option key={r.id} value={r.id}>{r.vehicle_type} · IPRIMA {Number(r.iprima_rate*100).toFixed(0)}%</option>)}</select></label>
+                <label><span>Vehículo / línea · opcional</span><input value={manualVehicleName} onChange={(e)=>setManualVehicleName(e.target.value)} placeholder="Ej. TOYOTA YARIS"/></label>
+                <label><span>VIN · opcional</span><input value={manualVin} maxLength={17} onChange={(e)=>setManualVin(e.target.value.toUpperCase())} placeholder="17 caracteres"/></label>
+              </div>
+              <div className="manual-tax-action"><span>Este modo no depende del Motor VIN / SAT.</span><button className="search-button" type="button" onClick={calcularImpuestosManual}>Calcular impuestos <span>→</span></button></div>
+            </section>
+          )}
+
+          {internalQuoteMode !== "MANUAL" && (
+            <>
           <div className="vin-search">
             <div className="vin-input-wrapper">
               <label>VIN DEL VEHÍCULO</label>
@@ -6210,6 +7908,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <i></i>
             <span>Flete</span>
           </div>
+            </>
+          )}
         </section>
 
         {error && (
@@ -7421,11 +9121,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               </div>
 
               <div className="quote-preview-wrap">
-                <div className="quote-preview" ref={quoteRef}>
+                <div className="quote-preview tenant-quote-preview" ref={quoteRef} style={{"--tenant-primary": tenantBranding?.primary_color || "#0A3458", "--tenant-secondary": tenantBranding?.secondary_color || "#E8A72D", "--tenant-accent": tenantBranding?.accent_color || "#F5D87F"}}>
                   <header className="quote-sheet-header">
-                    <div className="quote-sheet-brand">
-                      <div className="quote-sheet-logo">E&amp;R</div>
-                      <div><strong>E&amp;R VEHICLE IMPORT</strong><span>GLOBAL LOGISTIC</span></div>
+                    <div className="quote-sheet-brand tenant-quote-brand-logo-only">
+                      <div className="quote-sheet-logo tenant-quote-logo tenant-quote-logo-large">
+                        {tenantLogoUrl ? (
+                          <img src={tenantLogoUrl} alt={tenantBrandName} />
+                        ) : (
+                          tenantBrandName.slice(0, 2).toUpperCase()
+                        )}
+                      </div>
                     </div>
                     <div className="quote-sheet-title">
                       <h2>
@@ -7566,8 +9271,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   </section>
 
                   <footer className="quote-sheet-footer">
-                    <div><strong>Notas importantes</strong><span>Cotización sujeta a validación final. Valores pueden variar por actualizaciones de SAT, naviera o gastos operativos.</span></div>
-                    <div className="quote-sheet-footer-brand">E&amp;R GLOBAL LOGISTIC</div>
+                    <div><strong>Notas importantes</strong><span>{tenantBranding?.quote_footer || "Cotización sujeta a validación final. Valores pueden variar por actualizaciones de SAT, naviera o gastos operativos."}</span></div>
+                    <div className="quote-sheet-footer-brand">{tenantBrandName}</div>
                   </footer>
                 </div>
               </div>

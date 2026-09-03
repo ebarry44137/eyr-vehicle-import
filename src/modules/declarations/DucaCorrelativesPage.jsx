@@ -87,12 +87,12 @@ export default function DucaCorrelativesPage({ supabase }) {
 
       if (payableError) throw payableError;
 
-      const { data: numberRows, error: numberError } = await supabase.rpc(
-  "list_duca_inventory_admin",
-  {
-    p_limit: 300,
-  }
-);
+      const { data: numberRows, error: numberError } = await supabase
+        .from("duca_correlative_inventory")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(300);
+
       if (numberError) throw numberError;
 
       const { data: summaryRows, error: summaryError } = await supabase.rpc(
@@ -136,23 +136,6 @@ export default function DucaCorrelativesPage({ supabase }) {
       : Number(form.initial_payment_gtq || 0);
   const pendingAtStart = Math.max(0, totalPurchase - initialPayment);
 
-  function loadInitialBalance() {
-    setForm((prev) => ({
-      ...prev,
-      purchased_quantity: 50,
-      available_first_number: "389-202600001789",
-      available_last_number: "389-202600001824",
-      unit_cost_gtq: 80,
-      payment_condition: "CREDITO",
-      initial_payment_gtq: 0,
-      note:
-        "Carga inicial: compra original de 50 correlativos; 14 fueron utilizados antes de implementar el control en E&R.",
-    }));
-    setMessage(
-      "Datos del inventario inicial cargados. Solo falta confirmar fecha y Agente de Aduanas."
-    );
-    setError("");
-  }
 
   async function registerBatch(event) {
     event.preventDefault();
@@ -244,18 +227,11 @@ export default function DucaCorrelativesPage({ supabase }) {
           <span className="section-label">INVENTARIO DUCA</span>
           <h1>Correlativos</h1>
           <p>
-            Inventario central para Gestiones Aduanales y Declaraciones,
+            Inventario DUCA de esta oficina para Gestiones Aduanales y Declaraciones,
             con control de compras a crédito.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="initial-balance-button"
-          onClick={loadInitialBalance}
-        >
-          ⚡ Cargar saldo inicial actual
-        </button>
       </header>
 
       <section className="correlative-kpis">
@@ -374,7 +350,7 @@ export default function DucaCorrelativesPage({ supabase }) {
                       .replace(/\s/g, ""),
                   }))
                 }
-                placeholder="389-202600001789"
+                placeholder="389-20261789"
               />
             </label>
 
@@ -390,7 +366,7 @@ export default function DucaCorrelativesPage({ supabase }) {
                       .replace(/\s/g, ""),
                   }))
                 }
-                placeholder="389-202600001824"
+                placeholder="389-20261824"
               />
             </label>
 

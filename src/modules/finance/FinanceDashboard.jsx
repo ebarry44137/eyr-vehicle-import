@@ -17,7 +17,11 @@ function monthStart() {
     .slice(0, 10);
 }
 
-export default function FinanceDashboard({ supabase }) {
+export default function FinanceDashboard({
+  supabase,
+  officeName = "E&R Solutions",
+  isWhiteLabelClient = false,
+}) {
   const [summary, setSummary] = useState(null);
   const [cases, setCases] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -328,9 +332,11 @@ export default function FinanceDashboard({ supabase }) {
       </section>
 
       <AccountsReceivablePanel
-        supabase={supabase}
-        onChanged={load}
-      />
+  supabase={supabase}
+  onChanged={load}
+  officeName={officeName}
+  isWhiteLabelClient={isWhiteLabelClient}
+/>
 
       <AccountsPayablePanel
         supabase={supabase}

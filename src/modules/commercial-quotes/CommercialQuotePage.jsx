@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas";
+import { buildQuoteCode } from "../../utils/quoteCode";
 import "./commercial-quote.css";
 
 function n(v) {
@@ -43,10 +44,18 @@ export default function CommercialQuotePage({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [quoteCode, setQuoteCode] = useState(
-    context?.quoteCode ||
-      `ER-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${String(query?.vin || "EYR").slice(-6)}`
-  );
+  const [quoteCode, setQuoteCode] = useState(() => {
+  if (context?.quoteCode) {
+    return context.quoteCode;
+  }
+
+  return buildQuoteCode({
+    vin: query?.vin || vehicle?.vin || "VIN",
+    isWhiteLabelClient: Boolean(context?.isWhiteLabelClient),
+    officeName: context?.officeName || "",
+    explicitPrefix: context?.quotePrefix || "",
+  });
+});
 
   const [form, setForm] = useState({
     include_freight:

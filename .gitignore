@@ -33,3 +33,7 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Local patch backups
+*.backup-*
+tools/

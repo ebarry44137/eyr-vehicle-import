@@ -5,26 +5,401 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>E&amp;R Solutions | Gestión Aduanal</title>
+
     <meta
       name="description"
-      content="Cotizador inteligente y plataforma de gestión aduanal de E&R Solutions."
+      content="Cotizador inteligente y plataforma de gestión aduanal."
     />
     <meta name="theme-color" content="#082f57" />
 
-    <link rel="icon" type="image/png" sizes="32x32" href="/branding/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/branding/favicon-48.png" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/branding/apple-touch-icon.png" />
+    <link
+      id="app-favicon"
+      rel="icon"
+      type="image/png"
+      href="/branding/favicon-32.png"
+    />
+    <link
+      id="app-shortcut-icon"
+      rel="shortcut icon"
+      href="/favicon.ico"
+    />
+    <link
+      id="app-apple-touch-icon"
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/branding/apple-touch-icon.png"
+    />
+
     <link rel="manifest" href="/site.webmanifest" />
+
     <meta property="og:title" content="E&R Solutions | Gestión Aduanal" />
     <meta
       property="og:description"
-      content="Cotizador inteligente de vehículos y gestión aduanal en Guatemala."
+      content="Cotizador inteligente y plataforma de gestión aduanal."
     />
     <meta property="og:type" content="website" />
   </head>
+
   <body>
     <div id="root"></div>
+
+    <script>
+      (() => {
+        const EYR_TITLE = "E&R Solutions | Gestión Aduanal";
+        const EYR_FAVICON = "/branding/favicon-32.png";
+        const EYR_SHORTCUT = "/favicon.ico";
+        const EYR_APPLE = "/branding/apple-touch-icon.png";
+
+        let lastSignature = "";
+
+        function clean(value) {
+          return String(value || "")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function isEyrName(name) {
+          const value = clean(name).toUpperCase();
+
+          return (
+            !value ||
+            value === "E&R" ||
+            value.startsWith("E&R ") ||
+            value.startsWith("E & R") ||
+            value.includes("E&R SOLUTIONS") ||
+            value.includes("E&R VEHICLE IMPORT")
+          );
+        }
+
+        function getRouteType() {
+          const path = window.location.pathname || "/";
+
+          if (path.startsWith("/portal")) {
+            return "portal";
+          }
+
+          if (path.startsWith("/o/")) {
+            return "office";
+          }
+
+          return "app";
+        }
+
+        function getBrandFromOfficeLogin() {
+          /*
+           * White Label antes del login.
+           * La pantalla contiene:
+           *   "Bienvenido a Trámites Shaddai"
+           */
+          const headings = Array.from(
+            document.querySelectorAll("h1, h2, h3")
+          );
+
+          for (const heading of headings) {
+            const text = clean(heading.textContent);
+            const match = text.match(/^Bienvenido a\s+(.+)$/i);
+
+            if (match?.[1]) {
+              return clean(match[1]);
+            }
+          }
+
+          return "";
+        }
+
+        function getBrandFromAuthenticatedSidebar() {
+          const tenantLogo = document.querySelector(
+            ".tenant-sidebar-logo[alt]"
+          );
+
+          if (tenantLogo) {
+            const alt = clean(tenantLogo.getAttribute("alt"));
+            if (alt) return alt;
+          }
+
+          const wordmark = document.querySelector(
+            ".tenant-sidebar-wordmark strong"
+          );
+
+          if (wordmark) {
+            const name = clean(wordmark.textContent);
+            if (name) return name;
+          }
+
+          const sidebarCandidates = Array.from(
+            document.querySelectorAll(
+              ".brand strong, .sidebar strong, aside strong"
+            )
+          );
+
+          for (const node of sidebarCandidates) {
+            const text = clean(node.textContent);
+
+            if (
+              text &&
+              text.length > 2 &&
+              text.length < 80 &&
+              !/^(dashboard|usuario|admin|owner|operador)$/i.test(text)
+            ) {
+              return text;
+            }
+          }
+
+          return "";
+        }
+
+        function getBrandFromPortal() {
+          const candidates = [
+            ".ip-company-brand strong",
+            ".ip-auth-company strong",
+            ".ip-login-card h2",
+          ];
+
+          for (const selector of candidates) {
+            const node = document.querySelector(selector);
+            if (!node) continue;
+
+            let text = clean(node.textContent);
+
+            if (/^Ingresar al portal$/i.test(text)) {
+              continue;
+            }
+
+            if (text) return text;
+          }
+
+          return "";
+        }
+
+        function getCurrentBrandName() {
+          const route = getRouteType();
+
+          if (route === "portal") {
+            return (
+              getBrandFromPortal() ||
+              getBrandFromOfficeLogin() ||
+              getBrandFromAuthenticatedSidebar()
+            );
+          }
+
+          if (route === "office") {
+            return (
+              getBrandFromOfficeLogin() ||
+              getBrandFromAuthenticatedSidebar()
+            );
+          }
+
+          return getBrandFromAuthenticatedSidebar();
+        }
+
+        function findWhiteLabelLogo(brandName) {
+          const images = Array.from(document.querySelectorAll("img"));
+
+          const visibleImages = images.filter((img) => {
+            const src = clean(img.getAttribute("src"));
+            if (!src) return false;
+
+            const rect = img.getBoundingClientRect();
+
+            return (
+              rect.width > 20 &&
+              rect.height > 20 &&
+              img.offsetParent !== null
+            );
+          });
+
+          /*
+           * 1. Preferimos una imagen cuyo ALT coincida con la marca.
+           */
+          const normalizedBrand = clean(brandName).toLowerCase();
+
+          if (normalizedBrand) {
+            const byAlt = visibleImages.find((img) => {
+              const alt = clean(img.getAttribute("alt")).toLowerCase();
+
+              return (
+                alt &&
+                (alt.includes(normalizedBrand) ||
+                  normalizedBrand.includes(alt))
+              );
+            });
+
+            if (byAlt) {
+              return clean(byAlt.getAttribute("src"));
+            }
+          }
+
+          /*
+           * 2. Logo del sidebar autenticado.
+           */
+          const sidebarLogo = document.querySelector(
+            ".tenant-sidebar-logo[src]"
+          );
+
+          if (sidebarLogo) {
+            return clean(sidebarLogo.getAttribute("src"));
+          }
+
+          /*
+           * 3. Login White Label:
+           * buscamos imágenes dentro de las zonas de autenticación.
+           */
+          const authLogo = document.querySelector(
+            [
+              ".auth-shell img[src]",
+              ".auth-layout img[src]",
+              ".auth-brand img[src]",
+              ".auth-visual img[src]",
+              ".login-shell img[src]",
+              ".login-brand img[src]",
+              ".ip-auth-brand img[src]",
+              ".ip-login-brand img[src]",
+            ].join(",")
+          );
+
+          if (authLogo) {
+            return clean(authLogo.getAttribute("src"));
+          }
+
+          /*
+           * 4. Último fallback:
+           * primera imagen visible del login, pero únicamente en /o/ o /portal.
+           */
+          if (["office", "portal"].includes(getRouteType())) {
+            const nonEyrImage = visibleImages.find((img) => {
+              const src = clean(img.getAttribute("src")).toLowerCase();
+
+              return (
+                !src.includes("eyr-logo") &&
+                !src.includes("favicon")
+              );
+            });
+
+            if (nonEyrImage) {
+              return clean(nonEyrImage.getAttribute("src"));
+            }
+          }
+
+          return "";
+        }
+
+        function setLinkHref(id, href) {
+          const node = document.getElementById(id);
+          if (node && href) {
+            node.href = href;
+          }
+        }
+
+        function restoreEyrIcons() {
+          setLinkHref("app-favicon", EYR_FAVICON);
+          setLinkHref("app-shortcut-icon", EYR_SHORTCUT);
+          setLinkHref("app-apple-touch-icon", EYR_APPLE);
+        }
+
+        function setWhiteLabelIcons(logoUrl) {
+          if (!logoUrl) return;
+
+          setLinkHref("app-favicon", logoUrl);
+          setLinkHref("app-shortcut-icon", logoUrl);
+          setLinkHref("app-apple-touch-icon", logoUrl);
+        }
+
+        function updateBrowserBrand() {
+          const route = getRouteType();
+          const brandName = getCurrentBrandName();
+
+          /*
+           * En la página pública/general mantenemos E&R.
+           */
+          if (!brandName || isEyrName(brandName)) {
+            if (route !== "portal") {
+              document.title = EYR_TITLE;
+              restoreEyrIcons();
+            }
+
+            lastSignature = `${route}|EYR`;
+            return;
+          }
+
+          const logoUrl = findWhiteLabelLogo(brandName);
+
+          const suffix =
+            route === "portal"
+              ? "Portal de Clientes"
+              : "Gestión Aduanal";
+
+          const signature =
+            `${route}|${brandName}|${logoUrl}`;
+
+          if (signature === lastSignature) {
+            return;
+          }
+
+          lastSignature = signature;
+
+          document.title = `${brandName} | ${suffix}`;
+
+          if (logoUrl) {
+            setWhiteLabelIcons(logoUrl);
+          }
+        }
+
+        function scheduleRefresh() {
+          window.requestAnimationFrame(() => {
+            updateBrowserBrand();
+          });
+        }
+
+        const observer = new MutationObserver(() => {
+          scheduleRefresh();
+        });
+
+        window.addEventListener("DOMContentLoaded", () => {
+          updateBrowserBrand();
+
+          const root = document.getElementById("root");
+
+          if (root) {
+            observer.observe(root, {
+              childList: true,
+              subtree: true,
+              characterData: true,
+              attributes: true,
+              attributeFilter: [
+                "alt",
+                "src",
+                "class",
+              ],
+            });
+          }
+
+          /*
+           * React/Supabase puede pintar el branding después del primer render.
+           */
+          [100, 300, 700, 1200, 2000].forEach((delay) => {
+            window.setTimeout(updateBrowserBrand, delay);
+          });
+        });
+
+        /*
+         * También reaccionamos a navegación SPA.
+         */
+        window.addEventListener("popstate", scheduleRefresh);
+
+        const originalPushState = history.pushState;
+        history.pushState = function (...args) {
+          originalPushState.apply(this, args);
+          scheduleRefresh();
+        };
+
+        const originalReplaceState = history.replaceState;
+        history.replaceState = function (...args) {
+          originalReplaceState.apply(this, args);
+          scheduleRefresh();
+        };
+      })();
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./finance.css";
 import AccountsPayablePanel from "./AccountsPayablePanel";
-import AccountsReceivablePanel from "./AccountsReceivablePanel";
 
 function q(value) {
   const number = Number(value || 0);
@@ -17,11 +16,7 @@ function monthStart() {
     .slice(0, 10);
 }
 
-export default function FinanceDashboard({
-  supabase,
-  officeName = "E&R Solutions",
-  isWhiteLabelClient = false,
-}) {
+export default function FinanceDashboard({ supabase }) {
   const [summary, setSummary] = useState(null);
   const [cases, setCases] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -231,6 +226,7 @@ export default function FinanceDashboard({
         <article><span>Costos directos</span><strong>{q(s.direct_costs_gtq)}</strong><small>Gestiones / terceros</small></article>
         <article className="profit"><span>Utilidad bruta</span><strong>{q(s.gross_profit_gtq)}</strong><small>Facturado - costos directos</small></article>
         <article><span>Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong><small>Personal, renta, servicios...</small></article>
+        <article className={Number(s.net_result_gtq || 0) >= 0 ? "profit" : "danger"}><span>Utilidad neta</span><strong>{q(s.net_result_gtq)}</strong><small>Utilidad bruta - gastos generales</small></article>
         <article><span>Pagos a proveedores</span><strong>{q(s.supplier_payments_gtq || 0)}</strong><small>Salidas reales por cuentas a pagar</small></article>
         <article className={Number(s.cash_result_gtq ?? s.net_result_gtq) >= 0 ? "profit" : "danger"}><span>Flujo de caja</span><strong>{q(s.cash_result_gtq ?? s.net_result_gtq)}</strong><small>Cobrado - salidas reales - gastos</small></article>
       </section>
@@ -330,13 +326,6 @@ export default function FinanceDashboard({
           </table>
         </div>
       </section>
-
-      <AccountsReceivablePanel
-  supabase={supabase}
-  onChanged={load}
-  officeName={officeName}
-  isWhiteLabelClient={isWhiteLabelClient}
-/>
 
       <AccountsPayablePanel
         supabase={supabase}

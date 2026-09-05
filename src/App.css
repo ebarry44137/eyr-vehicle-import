@@ -7270,3 +7270,1813 @@ nav {
     max-height: 88px !important;
   }
 }
+
+
+/* =========================================================
+   E&R V39.6.6 · COTIZACIÓN PRO 2026
+   Diseño vertical comercial + logo sin deformación
+   ========================================================= */
+
+.quote-preview.tenant-quote-preview{
+  width:1040px!important;
+  min-height:1420px!important;
+  background:#f4f7fb!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+}
+
+/* HEADER */
+.quote-sheet-header.quote-pro-header{
+  min-height:165px!important;
+  display:grid!important;
+  grid-template-columns:310px minmax(320px,1fr) 265px!important;
+  align-items:center!important;
+  gap:22px!important;
+  padding:22px 32px!important;
+  background:var(--tenant-primary,#08284f)!important;
+  overflow:hidden!important;
+}
+
+.quote-pro-header .quote-sheet-brand.tenant-quote-brand-logo-only{
+  width:290px!important;
+  min-width:0!important;
+  max-width:290px!important;
+  height:105px!important;
+  min-height:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  overflow:hidden!important;
+}
+
+.quote-pro-header .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large{
+  width:290px!important;
+  min-width:0!important;
+  max-width:290px!important;
+  height:105px!important;
+  min-height:0!important;
+  max-height:105px!important;
+  padding:0!important;
+  margin:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  transform:none!important;
+}
+
+.quote-pro-header .quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  padding:0!important;
+  margin:0!important;
+  transform:none!important;
+  background:transparent!important;
+}
+
+.quote-pro-header .quote-sheet-title h2{
+  max-width:360px;
+  margin:0 auto!important;
+  font-size:31px!important;
+  line-height:1.03!important;
+  letter-spacing:-.7px!important;
+}
+
+.quote-pro-header .quote-sheet-title span{
+  margin-top:11px!important;
+  color:#f2c23f!important;
+  font-size:12px!important;
+  letter-spacing:.15em!important;
+}
+
+.quote-pro-meta{
+  grid-template-columns:auto 1fr!important;
+  gap:6px 13px!important;
+  font-size:11px!important;
+  align-items:center!important;
+}
+
+.quote-pro-meta strong{
+  color:#fff!important;
+}
+
+/* VEHÍCULO */
+.quote-vehicle-strip.quote-pro-vehicle-strip{
+  margin:14px 24px 0!important;
+  padding:18px 22px!important;
+  min-height:120px!important;
+  display:grid!important;
+  grid-template-columns:1.08fr 1.7fr 125px!important;
+  gap:18px!important;
+  align-items:center!important;
+  border:1.5px solid var(--tenant-secondary,#e8a72d)!important;
+  border-radius:20px!important;
+  background:#fff!important;
+}
+
+.quote-pro-vehicle-main h3{
+  margin:6px 0 1px!important;
+  font-size:22px!important;
+  line-height:1.05!important;
+}
+
+.quote-pro-vehicle-main>strong{
+  font-size:16px!important;
+}
+
+.quote-pro-make-badge{
+  height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-left:1px solid #edf1f5;
+}
+
+.quote-pro-make-badge span{
+  min-width:76px;
+  padding:12px 9px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#f3f6f8,#dfe5e9);
+  color:#66727d;
+  text-align:center;
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:1px;
+  box-shadow:inset 0 0 0 1px #d7dee4;
+}
+
+/* COSTOS */
+.quote-sheet-grid.quote-pro-cost-grid{
+  grid-template-columns:1.38fr .9fr!important;
+  gap:14px!important;
+  margin:14px 24px!important;
+}
+
+.quote-pro-cost-card,
+.quote-pro-freight-card{
+  border-radius:20px!important;
+  padding:20px 22px!important;
+}
+
+.quote-pro-cost-card>small,
+.quote-pro-freight-card>small{
+  font-size:14px!important;
+  color:#b37a10!important;
+}
+
+.quote-pro-cost-card>div,
+.quote-pro-freight-card>div{
+  padding:9px 0!important;
+  font-size:12.5px!important;
+}
+
+.quote-pro-cost-card .quote-sheet-subtotal{
+  margin:8px -22px -20px!important;
+  padding:15px 22px!important;
+  background:#0d7e3d!important;
+}
+
+.quote-pro-freight-price{
+  margin:10px 0 0!important;
+  padding:18px!important;
+  min-height:105px;
+  display:flex!important;
+  flex-direction:column;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:6px!important;
+  border:0!important;
+  border-radius:17px!important;
+  background:#f8f0df!important;
+}
+
+.quote-pro-freight-price span{
+  color:#9a6912!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+
+.quote-pro-freight-price strong{
+  color:#0d7e3d!important;
+  font-size:31px!important;
+  line-height:1!important;
+}
+
+/* RESUMEN */
+.quote-grand-summary.quote-pro-summary{
+  margin:0 24px 14px!important;
+  padding:10px 22px 0!important;
+  border-radius:20px!important;
+  background:var(--tenant-primary,#08284f)!important;
+}
+
+.quote-pro-summary>div{
+  padding:9px 0!important;
+  font-size:12.5px!important;
+}
+
+.quote-pro-grand-total{
+  margin:7px -22px 0!important;
+  padding:18px 22px!important;
+  min-height:62px;
+  background:linear-gradient(90deg,#e8b229,#f5d168)!important;
+  color:#08284f!important;
+  font-size:18px!important;
+}
+
+.quote-pro-grand-total>strong{
+  font-size:21px!important;
+}
+
+/* BLOQUES COMERCIALES */
+.quote-pro-info-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin:0 24px 14px;
+}
+
+.quote-pro-service-card,
+.quote-pro-start-card,
+.quote-pro-important-card{
+  border:1px solid #dbe4ed;
+  border-radius:20px;
+  background:#fff;
+}
+
+.quote-pro-service-card{
+  padding:18px 20px;
+}
+
+.quote-pro-card-title{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin-bottom:12px;
+}
+
+.quote-pro-card-title h3,
+.quote-pro-important-card h3,
+.quote-pro-assurance h3{
+  margin:0;
+  color:#08284f;
+  font-size:13px;
+  font-weight:950;
+}
+
+.quote-pro-round-icon{
+  width:40px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#ffc928;
+  color:#08284f;
+  font-size:22px;
+  font-weight:950;
+}
+
+.quote-pro-service-card ul{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:grid;
+  gap:6px;
+}
+
+.quote-pro-service-card li{
+  position:relative;
+  padding-left:29px;
+  color:#536b82;
+  font-size:10.5px;
+  line-height:1.35;
+}
+
+.quote-pro-service-card li::before{
+  content:"✓";
+  position:absolute;
+  left:0;
+  top:-1px;
+  width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  border-radius:4px;
+  background:#08284f;
+  color:#fff;
+  font-size:11px;
+  font-weight:950;
+}
+
+.quote-pro-side-stack{
+  display:grid;
+  gap:10px;
+}
+
+.quote-pro-start-card{
+  padding:15px 17px 13px;
+}
+
+.quote-pro-rocket{
+  font-size:30px;
+}
+
+.quote-pro-steps{
+  display:grid;
+  grid-template-columns:repeat(9,auto);
+  align-items:start;
+  justify-content:space-between;
+  gap:3px;
+}
+
+.quote-pro-steps>div{
+  width:67px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  text-align:center;
+}
+
+.quote-pro-steps b{
+  width:27px;
+  height:27px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#08284f;
+  color:#fff;
+  font-size:11px;
+}
+
+.quote-pro-steps span{
+  color:#536b82;
+  font-size:8.2px;
+  line-height:1.25;
+}
+
+.quote-pro-steps i{
+  padding-top:8px;
+  color:#7d93a8;
+  font-style:normal;
+  font-size:10px;
+}
+
+.quote-pro-important-card{
+  padding:15px 17px;
+  display:grid;
+  grid-template-columns:50px 1fr;
+  gap:12px;
+  background:#fbf3e2;
+  border-color:#f0dfb9;
+}
+
+.quote-pro-important-icon{
+  width:44px;
+  height:50px;
+  display:grid;
+  place-items:center;
+  border:3px solid #08284f;
+  border-radius:7px;
+  color:#08284f;
+  font-size:24px;
+}
+
+.quote-pro-important-card h3{
+  color:#b57910;
+  margin-bottom:5px;
+}
+
+.quote-pro-important-card ul{
+  margin:0;
+  padding-left:17px;
+  color:#38516a;
+  font-size:9px;
+  line-height:1.35;
+}
+
+/* VIGENCIA / SERVICIO */
+.quote-pro-assurance{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  margin:0 24px 14px;
+  border:1px solid #e1e8ef;
+  border-radius:20px;
+  overflow:hidden;
+  background:#fff;
+}
+
+.quote-pro-assurance article{
+  min-height:104px;
+  display:grid;
+  grid-template-columns:58px 1fr;
+  gap:12px;
+  align-items:center;
+  padding:17px 21px;
+}
+
+.quote-pro-assurance article+article{
+  border-left:1px solid #e8edf2;
+}
+
+.quote-pro-assurance-icon{
+  font-size:34px;
+  color:#08284f;
+  text-align:center;
+}
+
+.quote-pro-assurance strong{
+  display:block;
+  margin-top:5px;
+  color:#08284f;
+  font-size:15px;
+}
+
+.quote-pro-assurance p{
+  margin:4px 0 0;
+  color:#71869a;
+  font-size:9px;
+}
+
+.quote-pro-assurance small{
+  display:block;
+  margin-top:3px;
+  color:#b77b0d;
+  font-size:9px;
+  font-weight:850;
+}
+
+/* FOOTER */
+.quote-sheet-footer.quote-pro-footer{
+  min-height:82px;
+  margin:0!important;
+  padding:16px 28px!important;
+  display:grid!important;
+  grid-template-columns:1.25fr 1fr 1.25fr .9fr!important;
+  align-items:center!important;
+  gap:15px!important;
+  background:var(--tenant-primary,#08284f)!important;
+  color:#fff!important;
+}
+
+.quote-pro-footer-slogan{
+  color:#fff;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:17px;
+  font-style:italic;
+  line-height:1.2;
+}
+
+.quote-pro-footer-contact,
+.quote-pro-footer-location{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-height:40px;
+  padding-left:13px;
+  border-left:1px solid rgba(255,255,255,.2);
+}
+
+.quote-pro-footer-icon{
+  color:#fff;
+  font-size:22px;
+}
+
+.quote-pro-footer-contact strong,
+.quote-pro-footer-location strong{
+  color:#fff!important;
+  font-size:9.5px!important;
+  font-weight:700!important;
+  line-height:1.3;
+}
+
+.quote-pro-footer-brand{
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding-left:13px;
+  border-left:1px solid rgba(255,255,255,.2);
+}
+
+.quote-pro-footer-brand strong{
+  color:#fff!important;
+  font-size:11px!important;
+  text-align:center;
+}
+
+/* Mantener todo dentro de la imagen html2canvas */
+.quote-preview.tenant-quote-preview,
+.quote-preview.tenant-quote-preview *{
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+
+
+/* =========================================================
+   E&R V39.6.7 · AJUSTES FINALES COTIZACIÓN PRO
+   Marca real · contacto desde Configuraciones · centrado
+   ========================================================= */
+
+/* Logo real de la marca del vehículo */
+.quote-pro-make-badge{
+  height:78px!important;
+  padding:7px 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-left:1px solid #edf1f5!important;
+  background:transparent!important;
+}
+
+.quote-pro-make-badge img{
+  display:block;
+  width:auto!important;
+  height:auto!important;
+  max-width:108px!important;
+  max-height:62px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:auto!important;
+}
+
+.quote-pro-make-fallback{
+  display:none;
+  max-width:110px;
+  color:#5f6e7b!important;
+  font-size:13px!important;
+  font-weight:900!important;
+  line-height:1.1!important;
+  text-align:center!important;
+  letter-spacing:.5px!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  padding:0!important;
+}
+
+.quote-pro-make-fallback.visible{
+  display:block!important;
+}
+
+/* El total amarillo queda realmente centrado vertical y horizontalmente */
+.quote-pro-grand-total{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:center!important;
+  min-height:76px!important;
+  padding:16px 28px!important;
+}
+
+.quote-pro-grand-total>span{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1.15!important;
+  text-align:left!important;
+}
+
+.quote-pro-grand-total>strong{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1.15!important;
+  text-align:right!important;
+  white-space:nowrap!important;
+}
+
+/* Más aire lateral en los bloques inferiores */
+.quote-pro-info-grid,
+.quote-pro-assurance{
+  margin-left:34px!important;
+  margin-right:34px!important;
+}
+
+.quote-pro-service-card,
+.quote-pro-start-card,
+.quote-pro-important-card{
+  overflow:hidden!important;
+}
+
+.quote-pro-service-card{
+  padding:20px 24px!important;
+}
+
+.quote-pro-start-card,
+.quote-pro-important-card{
+  padding-left:22px!important;
+  padding-right:22px!important;
+}
+
+.quote-pro-assurance article{
+  padding-left:26px!important;
+  padding-right:26px!important;
+}
+
+/* Footer: nada pegado a las orillas */
+.quote-sheet-footer.quote-pro-footer{
+  padding:18px 38px!important;
+  grid-template-columns:1.3fr .95fr 1.25fr .85fr!important;
+  column-gap:22px!important;
+}
+
+.quote-pro-footer-slogan{
+  padding-right:12px!important;
+}
+
+.quote-pro-footer-contact,
+.quote-pro-footer-location,
+.quote-pro-footer-brand{
+  padding-left:18px!important;
+  padding-right:8px!important;
+}
+
+/* Contacto legible y centrado dentro de su columna */
+.quote-pro-footer-contact{
+  justify-content:center!important;
+}
+
+.quote-pro-footer-contact strong{
+  text-align:center!important;
+  letter-spacing:.15px!important;
+}
+
+/* Ajuste fino en la tarjeta de flete */
+.quote-pro-freight-price{
+  padding:19px 22px!important;
+}
+
+.quote-pro-freight-price strong{
+  width:100%!important;
+  text-align:left!important;
+}
+
+/* En la captura/PNG no se deforma ningún logo */
+.quote-pro-header .tenant-quote-logo-large img,
+.quote-pro-make-badge img{
+  transform:none!important;
+}
+
+
+/* =========================================================
+   E&R V39.6.8 · PNG FINAL — AJUSTES DE COMPOSICIÓN
+   ========================================================= */
+
+/* 1) HEADER: logo E&R completo, sin recorte */
+.quote-preview.tenant-quote-preview .quote-sheet-header.quote-pro-header{
+  grid-template-columns:340px minmax(290px,1fr) 250px!important;
+  gap:20px!important;
+  padding:22px 28px!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-brand.tenant-quote-brand-logo-only{
+  width:330px!important;
+  max-width:330px!important;
+  height:112px!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large{
+  width:330px!important;
+  max-width:330px!important;
+  height:112px!important;
+  max-height:112px!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  width:100%!important;
+  height:100%!important;
+  max-width:330px!important;
+  max-height:112px!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  overflow:visible!important;
+}
+
+/* 2) LOGO DEL FABRICANTE: SVG embebido y centrado */
+.quote-preview.tenant-quote-preview .quote-pro-make-badge{
+  width:125px!important;
+  height:82px!important;
+  padding:4px 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:visible!important;
+  border-left:1px solid #e8edf2!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-make-badge img{
+  display:block!important;
+  width:112px!important;
+  height:72px!important;
+  max-width:112px!important;
+  max-height:72px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:auto!important;
+}
+
+/* 3) FLETE MARÍTIMO: centrado real */
+.quote-preview.tenant-quote-preview .quote-pro-freight-price{
+  min-height:116px!important;
+  padding:18px 20px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  text-align:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-freight-price span{
+  width:100%!important;
+  margin:0!important;
+  text-align:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-freight-price strong{
+  width:100%!important;
+  margin:0!important;
+  text-align:center!important;
+  line-height:1!important;
+}
+
+/* 4) TOTAL DORADO: texto con aire */
+.quote-preview.tenant-quote-preview
+.quote-grand-summary.quote-pro-summary
+.quote-grand-total.quote-pro-grand-total{
+  min-height:78px!important;
+  margin:8px -22px 0!important;
+  padding:18px 30px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  column-gap:24px!important;
+  overflow:hidden!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-grand-total.quote-pro-grand-total>span{
+  padding-left:0!important;
+  margin-left:0!important;
+  justify-content:flex-start!important;
+  text-align:left!important;
+  line-height:1.1!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-grand-total.quote-pro-grand-total>strong{
+  padding-right:0!important;
+  margin-right:0!important;
+  justify-content:flex-end!important;
+  text-align:right!important;
+  line-height:1.1!important;
+  white-space:nowrap!important;
+}
+
+/* 5) Espaciado consistente en bloques inferiores */
+.quote-preview.tenant-quote-preview .quote-pro-info-grid,
+.quote-preview.tenant-quote-preview .quote-pro-assurance{
+  margin-left:32px!important;
+  margin-right:32px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-service-card{
+  padding:20px 24px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-start-card,
+.quote-preview.tenant-quote-preview .quote-pro-important-card{
+  padding-left:22px!important;
+  padding-right:22px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-assurance article{
+  padding-left:26px!important;
+  padding-right:26px!important;
+}
+
+/* 6) Footer con aire lateral real */
+.quote-preview.tenant-quote-preview .quote-sheet-footer.quote-pro-footer{
+  padding:18px 34px!important;
+  grid-template-columns:1.22fr .95fr 1.28fr .85fr!important;
+  column-gap:18px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-slogan{
+  padding-right:10px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location,
+.quote-preview.tenant-quote-preview .quote-pro-footer-brand{
+  padding-left:16px!important;
+  padding-right:10px!important;
+}
+
+/* 7) Evita clips heredados en PNG */
+.quote-preview.tenant-quote-preview,
+.quote-preview.tenant-quote-preview .quote-sheet-header,
+.quote-preview.tenant-quote-preview .quote-pro-vehicle-strip{
+  overflow:visible!important;
+}
+
+
+/* =========================================================
+   E&R V39.6.9 · COTIZACIÓN FINAL AJUSTADA
+   Logos sin deformación + marca inline + footer referencia
+   ========================================================= */
+
+/* HEADER GENERAL */
+.quote-preview.tenant-quote-preview .quote-sheet-header.quote-pro-header{
+  grid-template-columns:300px minmax(330px,1fr) 250px!important;
+  gap:28px!important;
+  min-height:155px!important;
+  padding:22px 30px!important;
+  overflow:hidden!important;
+}
+
+/* LOGO E&R: jamás forzar proporción */
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-brand.tenant-quote-brand-logo-only{
+  width:285px!important;
+  min-width:285px!important;
+  max-width:285px!important;
+  height:92px!important;
+  min-height:92px!important;
+  max-height:92px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large{
+  width:285px!important;
+  min-width:0!important;
+  max-width:285px!important;
+  height:92px!important;
+  min-height:0!important;
+  max-height:92px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  overflow:visible!important;
+  background:transparent!important;
+  transform:none!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:285px!important;
+  max-height:92px!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  margin:0!important;
+  transform:none!important;
+}
+
+/* MARCA DEL VEHÍCULO — INLINE SVG, visible también en PNG */
+.quote-preview.tenant-quote-preview .quote-pro-vehicle-strip{
+  grid-template-columns:1.08fr 1.7fr 145px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-make-badge{
+  width:145px!important;
+  height:86px!important;
+  min-width:145px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:2px 10px!important;
+  border-left:1px solid #dde6ed!important;
+  overflow:visible!important;
+  background:#fff!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-svg{
+  display:block!important;
+  width:125px!important;
+  height:76px!important;
+  max-width:125px!important;
+  max-height:76px!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-text-fallback{
+  max-width:125px!important;
+  color:#536372!important;
+  font-size:13px!important;
+  font-weight:950!important;
+  text-align:center!important;
+  line-height:1.1!important;
+}
+
+/* FLETE MARÍTIMO PERFECTAMENTE CENTRADO */
+.quote-preview.tenant-quote-preview .quote-pro-freight-price{
+  min-height:118px!important;
+  padding:20px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  gap:10px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-freight-price span,
+.quote-preview.tenant-quote-preview .quote-pro-freight-price strong{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  text-align:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-freight-price strong{
+  font-size:34px!important;
+}
+
+/* TOTAL DORADO: espacio idéntico a una pieza editorial */
+.quote-preview.tenant-quote-preview
+.quote-grand-summary.quote-pro-summary
+.quote-grand-total.quote-pro-grand-total{
+  min-height:78px!important;
+  margin:8px -22px 0!important;
+  padding:18px 28px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  column-gap:30px!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-grand-total.quote-pro-grand-total>span{
+  padding-left:0!important;
+  text-align:left!important;
+  justify-content:flex-start!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-grand-total.quote-pro-grand-total>strong{
+  padding-right:0!important;
+  text-align:right!important;
+  justify-content:flex-end!important;
+  white-space:nowrap!important;
+}
+
+/* BLOQUES INFERIORES */
+.quote-preview.tenant-quote-preview .quote-pro-info-grid,
+.quote-preview.tenant-quote-preview .quote-pro-assurance{
+  margin-left:26px!important;
+  margin-right:26px!important;
+}
+
+/* FOOTER COMO REFERENCIA APROBADA */
+.quote-preview.tenant-quote-preview .quote-sheet-footer.quote-pro-footer{
+  min-height:118px!important;
+  padding:18px 36px!important;
+  display:grid!important;
+  grid-template-columns:1.45fr 1fr 1.35fr 1fr!important;
+  align-items:center!important;
+  gap:0!important;
+  background:var(--tenant-primary,#08284f)!important;
+  color:#fff!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-slogan{
+  padding-right:22px!important;
+  color:#fff!important;
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:19px!important;
+  line-height:1.15!important;
+  font-style:italic!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location,
+.quote-preview.tenant-quote-preview .quote-pro-footer-social{
+  min-height:62px!important;
+  padding:0 20px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:12px!important;
+  border-left:1px solid rgba(255,255,255,.22)!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact strong,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location strong,
+.quote-preview.tenant-quote-preview .quote-pro-footer-social strong{
+  color:#fff!important;
+  font-size:10px!important;
+  line-height:1.35!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-footer-whatsapp{
+  width:40px!important;
+  height:40px!important;
+  flex:0 0 40px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#25d366!important;
+  color:#fff!important;
+  font-size:21px!important;
+  font-weight:900!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-footer-pin{
+  position:relative!important;
+  width:34px!important;
+  height:42px!important;
+  flex:0 0 34px!important;
+  color:#fff!important;
+  font-size:0!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-footer-pin::before{
+  content:""!important;
+  position:absolute!important;
+  left:5px!important;
+  top:3px!important;
+  width:24px!important;
+  height:31px!important;
+  border-radius:50% 50% 50% 0!important;
+  background:#fff!important;
+  transform:rotate(-45deg)!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-footer-pin::after{
+  content:""!important;
+  position:absolute!important;
+  left:13px!important;
+  top:11px!important;
+  width:9px!important;
+  height:9px!important;
+  border-radius:50%!important;
+  background:var(--tenant-primary,#08284f)!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-social{
+  flex-direction:column!important;
+  gap:8px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons{
+  display:flex!important;
+  gap:8px!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons span{
+  width:31px!important;
+  height:31px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  color:var(--tenant-primary,#08284f)!important;
+  font-size:18px!important;
+  font-weight:950!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-social strong{
+  text-align:center!important;
+}
+
+/* html2canvas */
+.quote-preview.tenant-quote-preview svg{
+  overflow:visible!important;
+}
+
+
+/* =========================================================
+   E&R V39.6.10 · AJUSTE DEFINITIVO DE LOGOS E ICONOS
+   ========================================================= */
+
+/* LOGO DE LA OFICINA: grande pero SIN deformar */
+.quote-preview.tenant-quote-preview .quote-sheet-header.quote-pro-header{
+  grid-template-columns:365px minmax(300px,1fr) 245px!important;
+  gap:18px!important;
+  padding:18px 28px!important;
+  min-height:158px!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-brand.tenant-quote-brand-logo-only{
+  width:350px!important;
+  min-width:350px!important;
+  max-width:350px!important;
+  height:116px!important;
+  min-height:116px!important;
+  max-height:116px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large{
+  width:350px!important;
+  max-width:350px!important;
+  height:116px!important;
+  max-height:116px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  overflow:visible!important;
+  background:transparent!important;
+}
+
+.quote-preview.tenant-quote-preview
+.quote-pro-header
+.quote-sheet-logo.tenant-quote-logo.tenant-quote-logo-large img{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:350px!important;
+  max-height:116px!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  transform:scale(1.38)!important;
+  transform-origin:left center!important;
+  margin:0!important;
+}
+
+/* CHEVROLET: imagen aprobada embebida, no depende de internet */
+.quote-preview.tenant-quote-preview .quote-pro-make-badge{
+  width:150px!important;
+  min-width:150px!important;
+  height:92px!important;
+  padding:5px 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#fff!important;
+  border-left:1px solid #dde6ed!important;
+  overflow:hidden!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-raster-logo{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:132px!important;
+  max-height:82px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:auto!important;
+}
+
+/* Otros logos SVG */
+.quote-preview.tenant-quote-preview .quote-make-svg{
+  width:128px!important;
+  height:78px!important;
+  max-width:128px!important;
+  max-height:78px!important;
+}
+
+/* FOOTER COMO LA REFERENCIA */
+.quote-preview.tenant-quote-preview .quote-sheet-footer.quote-pro-footer{
+  min-height:122px!important;
+  padding:18px 36px!important;
+  display:grid!important;
+  grid-template-columns:1.35fr 1fr 1.25fr .95fr!important;
+  align-items:center!important;
+  gap:0!important;
+  background:var(--tenant-primary,#0A3458)!important;
+  color:#fff!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-slogan{
+  padding-right:24px!important;
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:19px!important;
+  line-height:1.22!important;
+  font-style:italic!important;
+  color:#fff!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location,
+.quote-preview.tenant-quote-preview .quote-pro-footer-social{
+  min-height:70px!important;
+  padding:0 20px!important;
+  border-left:1px solid rgba(255,255,255,.25)!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:13px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon{
+  display:block!important;
+  flex:0 0 auto!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon.whatsapp{
+  width:43px!important;
+  height:43px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon.location{
+  width:42px!important;
+  height:48px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon svg{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  overflow:visible!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact strong,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location strong{
+  color:#fff!important;
+  font-size:10px!important;
+  line-height:1.35!important;
+  font-weight:800!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-social{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons>span{
+  display:block!important;
+  width:35px!important;
+  height:35px!important;
+  background:transparent!important;
+  border-radius:0!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons svg{
+  display:block!important;
+  width:35px!important;
+  height:35px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-social strong{
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  text-align:center!important;
+}
+
+/* Mantener el flete y total como ya quedaron aprobados */
+.quote-preview.tenant-quote-preview .quote-pro-freight-price{
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-freight-price span,
+.quote-preview.tenant-quote-preview .quote-pro-freight-price strong{
+  text-align:center!important;
+}
+
+/* html2canvas: conservar SVGs e imágenes inline */
+.quote-preview.tenant-quote-preview svg,
+.quote-preview.tenant-quote-preview img{
+  -webkit-print-color-adjust:exact!important;
+  print-color-adjust:exact!important;
+}
+
+
+/* =========================================================
+   E&R V39.6.11 · FOOTER FINAL APROBADO
+   WhatsApp / Ubicación / Facebook / Instagram / TikTok
+   ========================================================= */
+
+.quote-preview.tenant-quote-preview .quote-sheet-footer.quote-pro-footer{
+  min-height:116px!important;
+  padding:18px 34px!important;
+  grid-template-columns:1.45fr 1fr 1.28fr .95fr!important;
+  align-items:center!important;
+  background:var(--tenant-primary,#0A3458)!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-slogan{
+  padding:0 25px 0 0!important;
+  font-family:"Segoe Script","Brush Script MT",Georgia,serif!important;
+  font-size:19px!important;
+  line-height:1.15!important;
+  font-style:italic!important;
+  color:#fff!important;
+  white-space:normal!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location,
+.quote-preview.tenant-quote-preview .quote-pro-footer-social{
+  min-height:64px!important;
+  padding:0 18px!important;
+  border-left:1px solid rgba(255,255,255,.22)!important;
+}
+
+/* WHATSAPP OFICIAL */
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon.whatsapp{
+  width:42px!important;
+  height:42px!important;
+  flex:0 0 42px!important;
+  display:block!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon.whatsapp svg{
+  display:block!important;
+  width:42px!important;
+  height:42px!important;
+}
+
+/* PIN DE UBICACIÓN */
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon.location{
+  width:34px!important;
+  height:45px!important;
+  flex:0 0 34px!important;
+  display:block!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-svg-icon.location svg{
+  display:block!important;
+  width:34px!important;
+  height:45px!important;
+}
+
+/* REDES SOCIALES: círculos blancos + logos oficiales */
+.quote-preview.tenant-quote-preview .quote-pro-footer-social{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:9px!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons>span{
+  width:36px!important;
+  height:36px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  padding:7px!important;
+  overflow:hidden!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-social-icons svg{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-pro-footer-contact strong,
+.quote-preview.tenant-quote-preview .quote-pro-footer-location strong,
+.quote-preview.tenant-quote-preview .quote-pro-footer-social strong{
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  line-height:1.3!important;
+}
+
+/* Garantiza captura idéntica en PNG */
+.quote-preview.tenant-quote-preview .quote-pro-footer svg{
+  overflow:visible!important;
+}
+
+
+/* =========================================================
+   E&R V39.6.12 · LOGOS OFICIALES DE FABRICANTES
+   Los SVG se cargan desde la colección de logos reales,
+   se convierten a data URL y html2canvas los captura.
+   ========================================================= */
+
+.quote-preview.tenant-quote-preview .quote-pro-make-badge{
+  width:150px!important;
+  min-width:150px!important;
+  height:92px!important;
+  padding:7px 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  background:#fff!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-official-logo{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:132px!important;
+  max-height:78px!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:auto!important;
+  transform:none!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-logo-loading{
+  width:125px!important;
+  min-height:44px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  color:#8a98a5!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  text-align:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-logo-loading.error{
+  color:#536372!important;
+  font-size:12px!important;
+  font-weight:950!important;
+}
+
+
+
+/* =========================================================
+   E&R V39.6.16 · LOGO FABRICANTE RASTERIZADO PARA PNG
+   ========================================================= */
+
+.quote-preview.tenant-quote-preview .quote-make-official-logo{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:132px!important;
+  max-height:80px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:auto!important;
+  transform:none!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-logo-loading{
+  width:125px!important;
+  min-height:44px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  color:#8a98a5!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  text-align:center!important;
+}
+
+.quote-preview.tenant-quote-preview .quote-make-logo-loading.error{
+  color:#536372!important;
+  font-size:12px!important;
+  font-weight:950!important;
+}
+
+
+
+/* =========================================================
+   E&R V39.6.17 · PROPORCIÓN REAL DE LOGOS
+   Evita que marcas anchas/altas se vean estiradas
+   ========================================================= */
+
+.quote-preview.tenant-quote-preview .quote-make-official-logo{
+  width:auto!important;
+  height:auto!important;
+  max-width:124px!important;
+  max-height:72px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
+
+/* Wordmarks naturalmente muy anchos */
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-toyota,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-nissan,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-hyundai,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-volkswagen,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-mercedes-benz{
+  max-width:116px!important;
+  max-height:64px!important;
+}
+
+/* Emblemas más cuadrados */
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-honda,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-chevrolet,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-bmw,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-audi,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-ram,
+.quote-preview.tenant-quote-preview .quote-make-official-logo.brand-jeep{
+  max-width:110px!important;
+  max-height:74px!important;
+}
+
+
+
+/* =========================================================
+   E&R V39.6.18 · TARIFAS DE FLETE EDITABLES
+   ========================================================= */
+
+.settings-module{
+  display:grid;
+  gap:22px;
+}
+
+.freight-settings-card{
+  margin-top:0!important;
+}
+
+.freight-settings-icon{
+  background:#eef6fb!important;
+}
+
+.freight-settings-form{
+  display:grid;
+  gap:20px;
+  padding-top:24px;
+}
+
+.freight-settings-note{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid #dce8f0;
+  border-radius:14px;
+  background:#f7fafc;
+}
+
+.freight-settings-note>span{
+  font-size:20px;
+}
+
+.freight-settings-note strong{
+  display:block;
+  color:#123c5c;
+  font-size:11px;
+}
+
+.freight-settings-note p{
+  margin:4px 0 0;
+  color:#71879a;
+  font-size:9px;
+  line-height:1.45;
+}
+
+.freight-rate-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+
+.freight-rate-editor{
+  min-width:0;
+  padding:17px;
+  border:1px solid #dbe5ed;
+  border-radius:17px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(19,58,88,.05);
+}
+
+.freight-rate-editor-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:13px;
+  border-bottom:1px solid #edf1f4;
+}
+
+.freight-rate-editor-head small{
+  display:block;
+  color:#94a3af;
+  font-size:6px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+
+.freight-rate-editor-head h3{
+  margin:4px 0 0;
+  color:#103a59;
+  font-size:13px;
+}
+
+.freight-rate-status{
+  flex:0 0 auto;
+  padding:4px 7px;
+  border-radius:999px;
+  font-size:5.5px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+
+.freight-rate-status.active{
+  background:#e7f7ef;
+  color:#27724e;
+}
+
+.freight-rate-status.inactive{
+  background:#f6ecec;
+  color:#a34b4b;
+}
+
+.freight-rate-range{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 0;
+}
+
+.freight-rate-range span{
+  color:#8092a2;
+  font-size:8px;
+}
+
+.freight-rate-range strong{
+  color:#294f69;
+  font-size:9px;
+  text-align:right;
+}
+
+.freight-rate-price-field{
+  display:grid;
+  gap:7px;
+}
+
+.freight-rate-price-field>span{
+  color:#294f69;
+  font-size:8px;
+  font-weight:850;
+}
+
+.freight-rate-price-input{
+  height:48px;
+  display:grid;
+  grid-template-columns:35px minmax(0,1fr) 40px;
+  align-items:center;
+  overflow:hidden;
+  border:1px solid #cbd9e3;
+  border-radius:12px;
+  background:#f9fbfc;
+}
+
+.freight-rate-price-input>span{
+  display:grid;
+  place-items:center;
+  height:100%;
+  border-right:1px solid #e1e8ed;
+  color:#0d7e3d;
+  font-size:16px;
+  font-weight:950;
+}
+
+.freight-rate-price-input input{
+  width:100%;
+  height:100%;
+  min-width:0;
+  border:0;
+  outline:0;
+  padding:0 10px;
+  background:transparent;
+  color:#0b3556;
+  font-size:16px;
+  font-weight:950;
+}
+
+.freight-rate-price-input b{
+  padding-right:10px;
+  color:#8798a6;
+  font-size:7px;
+  text-align:right;
+}
+
+.freight-rate-price-input:focus-within{
+  border-color:#2b7aa7;
+  box-shadow:0 0 0 3px rgba(43,122,167,.10);
+}
+
+.freight-settings-empty{
+  padding:22px;
+  border:1px dashed #cad7e0;
+  border-radius:14px;
+  color:#7890a2;
+  text-align:center;
+  font-size:9px;
+}
+
+.freight-settings-actions{
+  display:flex;
+  justify-content:flex-end;
+}
+
+@media(max-width:1050px){
+  .freight-rate-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:700px){
+  .freight-rate-grid{
+    grid-template-columns:1fr;
+  }
+
+  .freight-settings-actions .primary-button{
+    width:100%;
+  }
+}
+
+/* =========================================================
+   E&R V39.6.21.5 · HISTORIAL IMPORTADOR
+   ========================================================= */
+.importer-history-badge{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  margin-top:6px;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#fff5dc;
+  color:#9a6b14;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.05em
+}
+
+.prospect-query-item .importer-base-value{
+  position:relative
+}
+
+.prospect-query-item .importer-base-value dt{
+  color:#9a7223
+}
+
+.prospect-query-item .importer-base-value dd{
+  color:#0b355d;
+  font-weight:950
+}
+
+.prospect-query-item .importer-base-value small{
+  display:block;
+  margin-top:2px;
+  color:#7c8da0;
+  font-size:7px
+}

@@ -27,6 +27,7 @@ import { buildQuoteCode } from "./utils/quoteCode";
 import OfficePortalClientsPage from "./modules/office-portal-clients/OfficePortalClientsPage.jsx";
 import ImportersPage from "./modules/importers/ImportersPage.jsx";
 import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
+import "./modules/customs/portal-customs-requests-v39621.css";
 
 function moneyGTQ(value) {
   if (value === null || value === undefined || value === "") return "—";
@@ -156,6 +157,255 @@ function buildWhatsAppUrl(number, message) {
 }
 
 
+const VEHICLE_BRAND_LOGO_SLUGS = {
+  acura: "acura",
+  "alfa romeo": "alfa-romeo",
+  "aston martin": "aston-martin",
+  audi: "audi",
+  bentley: "bentley",
+  bmw: "bmw",
+  buick: "buick",
+  byd: "byd",
+  cadillac: "cadillac",
+  chevrolet: "chevrolet",
+  chevy: "chevrolet",
+  chrysler: "chrysler",
+  dodge: "dodge",
+  ferrari: "ferrari",
+  fiat: "fiat",
+  ford: "ford",
+  genesis: "genesis",
+  gmc: "gmc",
+  honda: "honda",
+  hyundai: "hyundai",
+  infiniti: "infiniti",
+  jaguar: "jaguar",
+  jeep: "jeep",
+  kia: "kia",
+  lamborghini: "lamborghini",
+  "land rover": "land-rover",
+  landrover: "land-rover",
+  lexus: "lexus",
+  lincoln: "lincoln",
+  lotus: "lotus",
+  lucid: "lucid",
+  maserati: "maserati",
+  mazda: "mazda",
+  mclaren: "mclaren",
+  "mc laren": "mclaren",
+  "mercedes benz": "mercedes-benz",
+  "mercedes-benz": "mercedes-benz",
+  mercedes: "mercedes-benz",
+  mini: "mini",
+  "mini cooper": "mini",
+  mitsubishi: "mitsubishi",
+  nissan: "nissan",
+  polestar: "polestar",
+  porsche: "porsche",
+  ram: "ram",
+  "ram trucks": "ram",
+  rivian: "rivian",
+  "rolls royce": "rolls-royce",
+  "rolls-royce": "rolls-royce",
+  subaru: "subaru",
+  tesla: "tesla",
+  toyota: "toyota",
+  vinfast: "vinfast",
+  "vin fast": "vinfast",
+  volkswagen: "volkswagen",
+  vw: "volkswagen",
+  volvo: "volvo",
+};
+
+function normalizeVehicleBrandName(make) {
+  return String(make || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[._/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function officialVehicleLogoUrl(make) {
+  const normalized = normalizeVehicleBrandName(make);
+  const slug = VEHICLE_BRAND_LOGO_SLUGS[normalized];
+
+  if (!slug) return "";
+
+  return `https://raw.githubusercontent.com/diegojasso/car-logos-SVG/main/logos/${slug}.svg`;
+}
+
+function VehicleMakeLogo({ make }) {
+  const [logoDataUrl, setLogoDataUrl] = useState("");
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const url = officialVehicleLogoUrl(make);
+
+    setLogoDataUrl("");
+    setLogoError(false);
+
+    if (!url) {
+      setLogoError(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadOfficialLogo() {
+      try {
+        const response = await fetch(url, {
+          mode: "cors",
+          cache: "force-cache",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Logo HTTP ${response.status}`);
+        }
+
+        const svgText = await response.text();
+
+        const dataUrl =
+          "data:image/svg+xml;charset=UTF-8," +
+          encodeURIComponent(svgText);
+
+        if (!cancelled) {
+          setLogoDataUrl(dataUrl);
+        }
+      } catch (err) {
+        console.warn("VEHICLE BRAND LOGO ERROR:", make, err);
+
+        if (!cancelled) {
+          setLogoError(true);
+        }
+      }
+    }
+
+    loadOfficialLogo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [make]);
+
+  if (logoDataUrl) {
+    return (
+      <img
+        className="quote-make-official-logo"
+        data-quote-vehicle-logo="true"
+        src={logoDataUrl}
+        alt={`Logo ${make || "vehículo"}`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`quote-make-logo-loading${logoError ? " error" : ""}`}
+      data-quote-vehicle-logo="true"
+    >
+      {logoError
+        ? String(make || "MARCA").toUpperCase()
+        : "Cargando logo..."}
+    </div>
+  );
+}
+
+async function waitForQuoteImages(root) {
+  if (!root) return;
+
+  // Da tiempo a que VehicleMakeLogo termine de convertir el SVG oficial
+  // a data URL antes de que html2canvas capture la cotización.
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const pendingVehicleLogo = root.querySelector(
+      '[data-quote-vehicle-logo="true"].quote-make-logo-loading:not(.error)'
+    );
+
+    if (!pendingVehicleLogo) break;
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  const images = Array.from(root.querySelectorAll("img"));
+
+  await Promise.all(
+    images.map(
+      (img) =>
+        new Promise((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
+          }
+
+          const done = () => resolve();
+
+          img.addEventListener("load", done, { once: true });
+          img.addEventListener("error", done, { once: true });
+
+          setTimeout(done, 2500);
+        })
+    )
+  );
+}
+
+function QuoteWhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 448 512" aria-hidden="true">
+      <circle cx="224" cy="256" r="214" fill="#25D366" />
+      <path
+        fill="#fff"
+        d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"
+      />
+    </svg>
+  );
+}
+
+function QuoteLocationIcon() {
+  return (
+    <svg viewBox="0 0 384 512" aria-hidden="true">
+      <path
+        fill="#fff"
+        d="M192 0C86 0 0 86 0 192c0 77.4 27 99 172.3 309.7 9.5 13.8 29.9 13.8 39.4 0C357 291 384 269.4 384 192 384 86 298 0 192 0zm0 272c-44.2 0-80-35.8-80-80s35.8-80 80-80 80 35.8 80 80-35.8 80-80 80z"
+      />
+    </svg>
+  );
+}
+
+function QuoteFacebookIcon() {
+  return (
+    <svg viewBox="0 0 320 512" aria-hidden="true">
+      <path
+        fill="#0A3458"
+        d="M80 299.3V512H196V299.3h86.5l18-97.8H196V166.9c0-51.7 20.3-71.5 72.7-71.5 16.3 0 29.4 .4 37 1.2V7.9C291.4 4 256.4 0 236.2 0 129.3 0 80 50.5 80 159.4v42.1H14v97.8H80z"
+      />
+    </svg>
+  );
+}
+
+function QuoteInstagramIcon() {
+  return (
+    <svg viewBox="0 0 448 512" aria-hidden="true">
+      <path
+        fill="#0A3458"
+        d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"
+      />
+    </svg>
+  );
+}
+
+function QuoteTikTokIcon() {
+  return (
+    <svg viewBox="0 0 448 512" aria-hidden="true">
+      <path
+        fill="#0A3458"
+        d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31V278.2a74.62 74.62 0 1 0 52.23 71.18V0h88a121.18 121.18 0 0 0 1.86 22.17 122.18 122.18 0 0 0 53.91 80.22 121.43 121.43 0 0 0 67 20.14Z"
+      />
+    </svg>
+  );
+}
+
 const CUSTOMS_STAGES = [
   ["docs_collected_at", "Documentos recogidos"],
   ["emptied_at", "Vaciado"],
@@ -210,6 +460,13 @@ function emptyCustomsForm() {
     other_charges_gtq: "",
     other_charges_note: "",
     crane_usd: "",
+
+    // V39.6.21 · origen Portal del Cliente
+    portal_request_id: null,
+    portal_client_id: null,
+    portal_request_code: "",
+    portal_release_confirmed: false,
+    portal_request_notes: "",
   };
 }
 
@@ -479,6 +736,11 @@ function App() {
   const [customsMessage, setCustomsMessage] = useState("");
   const [customsPortalCandidate, setCustomsPortalCandidate] = useState(null);
   const [customsPortalCandidateLoading, setCustomsPortalCandidateLoading] = useState(false);
+
+  // V39.6.21 · Solicitudes aduanales recibidas desde Portal
+  const [portalCustomsRequests, setPortalCustomsRequests] = useState([]);
+  const [portalCustomsRequestsLoading, setPortalCustomsRequestsLoading] = useState(false);
+  const [portalCustomsRequestError, setPortalCustomsRequestError] = useState("");
 
 
   // V39.2.4 · Portal del Cliente en Control Aduanal
@@ -2609,7 +2871,67 @@ function App() {
     loadCustomsCases("");
   }
 
-  function openManualCustomsCase() {
+  async function loadPortalCustomsRequests() {
+    setPortalCustomsRequestsLoading(true);
+    setPortalCustomsRequestError("");
+
+    try {
+      const {data,error} = await supabase.rpc(
+        "list_portal_customs_requests_v39621",
+        { p_status: "PENDING" }
+      );
+
+      if (error) throw error;
+      setPortalCustomsRequests(Array.isArray(data) ? data : []);
+    } catch(err) {
+      console.error("PORTAL CUSTOMS REQUESTS ERROR:", err);
+      setPortalCustomsRequests([]);
+      setPortalCustomsRequestError(
+        err?.message || "No fue posible cargar solicitudes del Portal."
+      );
+    } finally {
+      setPortalCustomsRequestsLoading(false);
+    }
+  }
+
+  function openPortalCustomsRequest(request) {
+    setCustomsDecodeResult(null);
+    setCustomsError("");
+    setCustomsMessage("");
+
+    setCustomsForm({
+      ...emptyCustomsForm(),
+      notice_date: new Date().toISOString().slice(0,10),
+      client_name:
+        request.company_name ||
+        request.contact_name ||
+        "Cliente del Portal",
+      phone: request.client_phone || "",
+      email: request.client_email || "",
+      bl: request.bl || "",
+      container_number: request.container_number || "",
+      vin: request.vin || "",
+      make: request.vehicle_make || "",
+      model: request.vehicle_model || "",
+      model_year: request.vehicle_year || "",
+      shipping_line: request.shipping_line || "",
+      portal_request_id: request.id,
+      portal_client_id: request.office_portal_client_id,
+      portal_request_code: request.request_code || "",
+      portal_release_confirmed: Boolean(request.shipping_line_release_confirmed),
+      portal_request_notes: request.notes || "",
+    });
+
+    setShowCustomsForm(true);
+  }
+
+  useEffect(() => {
+    if (activeView === "customs") {
+      loadPortalCustomsRequests();
+    }
+  }, [activeView]);
+
+function openManualCustomsCase() {
     setCustomsForm(emptyCustomsForm());
     setCustomsDecodeResult(null);
     setCustomsError("");
@@ -2898,6 +3220,30 @@ function App() {
 
       if (insertError) throw insertError;
 
+      // V39.6.21 · Si nació desde el Portal, vincular automáticamente al cliente
+      // y cerrar la solicitud únicamente después de crear el expediente real.
+      if (customsForm.portal_request_id) {
+        if (customsForm.portal_client_id) {
+          const { error: portalLinkError } = await supabase.rpc(
+            "assign_customs_case_portal_client_v3924",
+            {
+              p_customs_case_id: data.id,
+              p_portal_client_id: customsForm.portal_client_id,
+            }
+          );
+          if (portalLinkError) throw portalLinkError;
+        }
+
+        const { error: requestConvertError } = await supabase.rpc(
+          "mark_portal_customs_request_converted_v39621",
+          {
+            p_request_id: customsForm.portal_request_id,
+            p_customs_case_id: data.id,
+          }
+        );
+        if (requestConvertError) throw requestConvertError;
+      }
+
       setShowCustomsForm(false);
       setCustomsForm(emptyCustomsForm());
       setCustomsDecodeResult(null);
@@ -2906,6 +3252,7 @@ function App() {
       );
 
       await loadCustomsCases("");
+      if (customsForm.portal_request_id) await loadPortalCustomsRequests();
     } catch (err) {
       console.error("CUSTOMS CASE SAVE ERROR:", err);
       setCustomsError(
@@ -3260,6 +3607,8 @@ async function openCustomsDetail(item) {
       setQuoteGenerating(true);
       const savedQuotation = await saveCurrentQuotation();
 
+      await waitForQuoteImages(quoteRef.current);
+
       const canvas = await html2canvas(quoteRef.current, {
         scale: 2,
         backgroundColor: "#f4f7fb",
@@ -3430,6 +3779,8 @@ async function openCustomsDetail(item) {
 
       // Guardamos/actualizamos la cotización antes de generar la imagen.
       await saveCurrentQuotation();
+
+      await waitForQuoteImages(quoteRef.current);
 
       const canvas = await html2canvas(quoteRef.current, {
         scale: 2,
@@ -5643,6 +5994,64 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               </article>
             </section>
 
+            <section className="portal-customs-requests-card">
+              <header>
+                <div>
+                  <span className="section-label">PORTAL DEL CLIENTE · V39.6.21</span>
+                  <h2>Solicitudes de nuevas gestiones</h2>
+                  <p>Solicitudes enviadas por clientes que todavía no se han convertido en expediente aduanal.</p>
+                </div>
+                <button type="button" onClick={loadPortalCustomsRequests} disabled={portalCustomsRequestsLoading}>
+                  {portalCustomsRequestsLoading ? "Actualizando..." : "↻ Actualizar"}
+                </button>
+              </header>
+
+              {portalCustomsRequestError && (
+                <div className="customer-message error">{portalCustomsRequestError}</div>
+              )}
+
+              {!portalCustomsRequestsLoading && portalCustomsRequests.length === 0 ? (
+                <div className="portal-customs-empty">
+                  <span>✓</span>
+                  <div>
+                    <strong>No hay solicitudes pendientes</strong>
+                    <small>Cuando un cliente solicite una nueva gestión desde su Portal aparecerá aquí.</small>
+                  </div>
+                </div>
+              ) : (
+                <div className="portal-customs-request-list">
+                  {portalCustomsRequests.map((request) => (
+                    <article key={request.id}>
+                      <div className="portal-customs-request-icon">🛃</div>
+
+                      <div className="portal-customs-request-main">
+                        <div>
+                          <span>{request.request_code}</span>
+                          {request.shipping_line_release_confirmed && (
+                            <em>✓ LIBERADO POR NAVIERA</em>
+                          )}
+                        </div>
+                        <strong>{request.company_name || request.contact_name || "Cliente del Portal"}</strong>
+                        <small>
+                          {request.shipping_line} · {request.vin || "VIN pendiente"} · {request.bl || "BL pendiente"}
+                        </small>
+                        {request.notes && <p>{request.notes}</p>}
+                      </div>
+
+                      <div className="portal-customs-request-meta">
+                        <small>Solicitada</small>
+                        <strong>{new Date(request.created_at).toLocaleDateString("es-GT")}</strong>
+                      </div>
+
+                      <button type="button" onClick={() => openPortalCustomsRequest(request)}>
+                        Revisar y completar →
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
             <section className="customs-search-card">
               <div>
                 <span className="section-label">EXPEDIENTES ADUANALES</span>
@@ -5825,6 +6234,22 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   </div>
 
                   <form onSubmit={saveManualCustomsCase}>
+                    {customsForm.portal_request_id && (
+                      <section className="portal-request-prefill-banner">
+                        <span>🛃</span>
+                        <div>
+                          <small>SOLICITUD {customsForm.portal_request_code}</small>
+                          <strong>Datos precargados desde el Portal del Cliente</strong>
+                          <p>
+                            Naviera: {customsForm.shipping_line || "—"}
+                            {customsForm.portal_release_confirmed ? " · ✓ Documentos reportados como liberados" : ""}
+                          </p>
+                          {customsForm.portal_request_notes && (
+                            <p>Nota del cliente: {customsForm.portal_request_notes}</p>
+                          )}
+                        </div>
+                      </section>
+                    )}
                     <section className="customs-form-section">
                       <div className="customs-section-title">
                         <span>01</span>
@@ -9206,7 +9631,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
               <div className="quote-preview-wrap">
                 <div className="quote-preview tenant-quote-preview" ref={quoteRef} style={{"--tenant-primary": tenantBranding?.primary_color || "#0A3458", "--tenant-secondary": tenantBranding?.secondary_color || "#E8A72D", "--tenant-accent": tenantBranding?.accent_color || "#F5D87F"}}>
-                  <header className="quote-sheet-header">
+                  <header className="quote-sheet-header quote-pro-header">
                     <div className="quote-sheet-brand tenant-quote-brand-logo-only">
                       <div className="quote-sheet-logo tenant-quote-logo tenant-quote-logo-large">
                         {tenantLogoUrl ? (
@@ -9216,6 +9641,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         )}
                       </div>
                     </div>
+
                     <div className="quote-sheet-title">
                       <h2>
                         {(result?.calculation_method || summary?.calculation_method) === "IMPORTER"
@@ -9232,30 +9658,56 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                             : "SERVICIOS ADUANALES · GUATEMALA"}
                       </span>
                     </div>
-                    <div className="quote-sheet-meta">
-                      <span>Fecha</span><strong>{new Date().toLocaleDateString("es-GT")}</strong>
-                      <span>Cotización #</span><strong>{quoteNumber()}</strong>
+
+                    <div className="quote-sheet-meta quote-pro-meta">
+                      <span>Fecha</span>
+                      <strong>{new Date().toLocaleDateString("es-GT")}</strong>
+
+                      <span>Cotización #</span>
+                      <strong>{quoteNumber()}</strong>
+
+                      <span>Vigencia</span>
+                      <strong>15 días</strong>
                     </div>
                   </header>
 
-                  <section className="quote-vehicle-strip">
-                    <div>
+                  <section className="quote-vehicle-strip quote-pro-vehicle-strip">
+                    <div className="quote-pro-vehicle-main">
                       <small>
                         TIPO SAT · {taxes?.vehicle_type || sat?.selected_match?.vehicle_type || "NO ESPECIFICADO"}
                       </small>
                       <h3>{vehicle?.year || vehicle?.model_year} {vehicle?.make}</h3>
                       <strong>{vehicle?.model} {vehicle?.trim || ""}</strong>
                     </div>
+
                     <div className="quote-vehicle-data">
-                      <span>VIN<strong>{vehicle?.vin}</strong></span>
-                      <span>Motor<strong>{vehicle?.engine_liters ? `${vehicle.engine_liters}L` : "—"} · {vehicle?.cylinders || "—"} cilindros</strong></span>
-                      <span>Tracción<strong>{humanDrive(vehicle?.drive_type)}</strong></span>
+                      <span>
+                        VIN
+                        <strong>{vehicle?.vin}</strong>
+                      </span>
+
+                      <span>
+                        Motor
+                        <strong>
+                          {vehicle?.engine_liters ? `${vehicle.engine_liters}L` : "—"} · {vehicle?.cylinders || "—"} cilindros
+                        </strong>
+                      </span>
+
+                      <span>
+                        Tracción
+                        <strong>{humanDrive(vehicle?.drive_type)}</strong>
+                      </span>
+                    </div>
+
+                    <div className="quote-pro-make-badge">
+                      <VehicleMakeLogo make={vehicle?.make} />
                     </div>
                   </section>
 
-                  <section className="quote-sheet-grid">
-                    <div className="quote-sheet-card">
+                  <section className="quote-sheet-grid quote-pro-cost-grid">
+                    <div className="quote-sheet-card quote-pro-cost-card">
                       <small>COSTOS EN GUATEMALA</small>
+
                       {(result?.calculation_method || summary?.calculation_method) === "IMPORTER" && (
                         <div className="quote-importer-basis">
                           <span>Factura utilizada</span>
@@ -9268,34 +9720,75 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                           </strong>
                         </div>
                       )}
+
                       <div>
                         <span>IVA ({displayTaxRate(taxes?.iva_rate, 0.12)})</span>
                         <strong>{moneyGTQ(taxes?.iva_gtq || 0)}</strong>
                       </div>
+
                       <div>
                         <span>IPRIMA ({displayTaxRate(taxes?.iprima_rate)})</span>
                         <strong>{moneyGTQ(taxes?.iprima_gtq || 0)}</strong>
                       </div>
-                      <div><span>Placas</span><strong>{moneyGTQ(taxes?.plates_gtq || 0)}</strong></div>
-                      <div><span>Recolección de documentos</span><strong>{moneyGTQ(quoteDocumentCollection)}</strong></div>
-                      <div><span>Gastos portuarios</span><strong>{moneyGTQ(quotePortExpenses)}</strong></div>
-                      <div><span>Honorarios</span><strong>{moneyGTQ(quoteProfessionalFees)}</strong></div>
-                      <div className="quote-sheet-subtotal"><span>TOTAL GUATEMALA</span><strong>{moneyGTQ(quoteGuatemalaTotal)}</strong></div>
+
+                      <div>
+                        <span>Placas</span>
+                        <strong>{moneyGTQ(taxes?.plates_gtq || 0)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Recolección de documentos</span>
+                        <strong>{moneyGTQ(quoteDocumentCollection)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Gastos portuarios</span>
+                        <strong>{moneyGTQ(quotePortExpenses)}</strong>
+                      </div>
+
+                      <div>
+                        <span>Honorarios</span>
+                        <strong>{moneyGTQ(quoteProfessionalFees)}</strong>
+                      </div>
+
+                      <div className="quote-sheet-subtotal">
+                        <span>TOTAL GUATEMALA</span>
+                        <strong>{moneyGTQ(quoteGuatemalaTotal)}</strong>
+                      </div>
                     </div>
 
                     {quoteForm.include_freight ? (
-                      <div className="quote-sheet-card quote-freight-card">
+                      <div className="quote-sheet-card quote-freight-card quote-pro-freight-card">
                         <small>TRANSPORTE MARÍTIMO</small>
-                        <div><span>Categoría</span><strong>{freight?.category || "—"}</strong></div>
-                        <div><span>Largo</span><strong>{dimensions?.length_inches ? `${Number(dimensions.length_inches).toFixed(2)}"` : "—"}</strong></div>
-                        <div><span>Configuración</span><strong>{dimensions?.dimension_model || vehicle?.model || "—"}</strong></div>
-                        {quoteForm.include_freight && (
-                      <div>
-                        <span>Grúa</span>
-                        <strong>{moneyUSD(quoteCraneUsd)}</strong>
-                      </div>
-                    )}
-                        <div className="quote-freight-price"><span>FLETE MARÍTIMO</span><strong>{moneyUSD(quoteFreightUsd)}</strong></div>
+
+                        <div>
+                          <span>Categoría</span>
+                          <strong>{freight?.category || "—"}</strong>
+                        </div>
+
+                        <div>
+                          <span>Largo</span>
+                          <strong>
+                            {dimensions?.length_inches
+                              ? `${Number(dimensions.length_inches).toFixed(2)}"`
+                              : "—"}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Configuración</span>
+                          <strong>{dimensions?.dimension_model || vehicle?.model || "—"}</strong>
+                        </div>
+
+                        <div>
+                          <span>Grúa</span>
+                          <strong>{moneyUSD(quoteCraneUsd)}</strong>
+                        </div>
+
+                        <div className="quote-freight-price quote-pro-freight-price">
+                          <span>FLETE MARÍTIMO</span>
+                          <strong>{moneyUSD(quoteFreightUsd)}</strong>
+                        </div>
                       </div>
                     ) : (
                       <div className="quote-sheet-card quote-customs-only-card">
@@ -9305,58 +9798,153 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                           Esta cotización no incluye transporte marítimo.
                           El vehículo fue embarcado por cuenta del cliente o por un tercero.
                         </p>
-                        
                       </div>
                     )}
                   </section>
 
-                  <section className="quote-grand-summary">
-                    <div><span>Total costos Guatemala</span><strong>{moneyGTQ(quoteGuatemalaTotal)}</strong></div>
-                    {quoteGuatemalaUsd !== null && (
-                      <div><span>Equivalente costos Guatemala</span><strong>{moneyUSD(quoteGuatemalaUsd)}</strong></div>
-                    )}
+                  <section className="quote-grand-summary quote-pro-summary">
+                    <div>
+                      <span>Total costos Guatemala</span>
+                      <strong>{moneyGTQ(quoteGuatemalaTotal)}</strong>
+                    </div>
+
                     {quoteForm.include_freight && (
                       <div>
                         <span>Flete marítimo</span>
                         <strong>{moneyUSD(quoteFreightUsd)}</strong>
                       </div>
                     )}
+
                     {quoteForm.include_freight && (
                       <div>
                         <span>Grúa</span>
                         <strong>{moneyUSD(quoteCraneUsd)}</strong>
                       </div>
                     )}
-                    <div className="quote-grand-total">
+
+                    <div className="quote-grand-total quote-pro-grand-total">
                       <span>
-                        {quoteGrandTotalUsd !== null
-                          ? "TOTAL GENERAL"
-                          : quoteForm.include_freight
-                            ? "FLETE + COSTOS GUATEMALA"
-                            : "COSTOS GUATEMALA"}
+                        {quoteForm.include_freight
+                          ? "FLETE + COSTOS GUATEMALA"
+                          : "COSTOS GUATEMALA"}
                       </span>
-                      {quoteGrandTotalUsd !== null ? (
-                        <div className="quote-grand-total-values">
-                          {quoteGrandTotalGtq !== null && (
-                            <strong className="quote-grand-total-gtq">
-                              {moneyGTQ(quoteGrandTotalGtq)}
-                            </strong>
-                          )}
-                          <strong className="quote-grand-total-usd">
-                            {moneyUSD(quoteGrandTotalUsd)}
-                          </strong>
-                        </div>
-                      ) : (
-                        <strong>
-                          {`${moneyUSD(quoteTransportUsd)} + ${moneyGTQ(quoteGuatemalaTotal)}`}
-                        </strong>
-                      )}
+
+                      <strong>
+                        {quoteForm.include_freight
+                          ? `${moneyUSD(quoteTransportUsd)} + ${moneyGTQ(quoteGuatemalaTotal)}`
+                          : moneyGTQ(quoteGuatemalaTotal)}
+                      </strong>
                     </div>
                   </section>
 
-                  <footer className="quote-sheet-footer">
-                    <div><strong>Notas importantes</strong><span>{tenantBranding?.quote_footer || "Cotización sujeta a validación final. Valores pueden variar por actualizaciones de SAT, naviera o gastos operativos."}</span></div>
-                    <div className="quote-sheet-footer-brand">{tenantBrandName}</div>
+                  <section className="quote-pro-info-grid">
+                    <article className="quote-pro-service-card">
+                      <div className="quote-pro-card-title">
+                        <span className="quote-pro-round-icon">✓</span>
+                        <h3>NUESTRO SERVICIO INCLUYE</h3>
+                      </div>
+
+                      <ul>
+                        <li>Asesoría y acompañamiento en todo el proceso</li>
+                        <li>Coordinación de transporte en Estados Unidos</li>
+                        <li>Gestión de documentación de exportación e importación</li>
+                        <li>Trámite aduanal en Guatemala</li>
+                        <li>Pago y gestión de impuestos (IVA e IPRIMA)</li>
+                        <li>Gestión de placas y requisitos de circulación</li>
+                        <li>Coordinación con navieras y autoridades</li>
+                        <li>Soporte continuo hasta la entrega de tu vehículo</li>
+                      </ul>
+                    </article>
+
+                    <div className="quote-pro-side-stack">
+                      <article className="quote-pro-start-card">
+                        <div className="quote-pro-card-title">
+                          <span className="quote-pro-rocket">🚀</span>
+                          <h3>¿CÓMO INICIAR?</h3>
+                        </div>
+
+                        <div className="quote-pro-steps">
+                          <div><b>1</b><span>Confirmás la propuesta</span></div>
+                          <i>→</i>
+                          <div><b>2</b><span>Realizás el pago inicial</span></div>
+                          <i>→</i>
+                          <div><b>3</b><span>Formalizamos tu expediente</span></div>
+                          <i>→</i>
+                          <div><b>4</b><span>Iniciamos la coordinación</span></div>
+                          <i>→</i>
+                          <div><b>5</b><span>Te mantenemos informado</span></div>
+                        </div>
+                      </article>
+
+                      <article className="quote-pro-important-card">
+                        <div className="quote-pro-important-icon">▤</div>
+                        <div>
+                          <h3>IMPORTANTE</h3>
+                          <ul>
+                            <li>Cotización sujeta a validación final.</li>
+                            <li>Valores pueden variar por actualizaciones de SAT, naviera o gastos operativos.</li>
+                            <li>Se confirmarán al momento de iniciar el proceso con la documentación completa.</li>
+                          </ul>
+                        </div>
+                      </article>
+                    </div>
+                  </section>
+
+                  <section className="quote-pro-assurance">
+                    <article>
+                      <span className="quote-pro-assurance-icon">▣</span>
+                      <div>
+                        <h3>VIGENCIA DE COTIZACIÓN</h3>
+                        <strong>15 días</strong>
+                        <p>Después de esta fecha los valores pueden variar.</p>
+                      </div>
+                    </article>
+
+                    <article>
+                      <span className="quote-pro-assurance-icon">🤝</span>
+                      <div>
+                        <h3>ESTAMOS PARA SERVIRTE</h3>
+                        <p>Cualquier duda, con gusto te asesoramos.</p>
+                        <strong>{tenantBrandName}</strong>
+                        <small>Tu vehículo, en manos expertas.</small>
+                      </div>
+                    </article>
+                  </section>
+
+                  <footer className="quote-sheet-footer quote-pro-footer">
+                    <div className="quote-pro-footer-slogan">
+                      "Más que trámites, soluciones."
+                    </div>
+
+                    <div className="quote-pro-footer-contact">
+                      <span className="quote-pro-footer-svg-icon whatsapp">
+                        <QuoteWhatsAppIcon />
+                      </span>
+                      <strong>
+                        {appSettings?.whatsapp_number ||
+                          tenantBranding?.whatsapp ||
+                          tenantBranding?.phone ||
+                          "Contáctanos"}
+                      </strong>
+                    </div>
+
+                    <div className="quote-pro-footer-location">
+                      <span className="quote-pro-footer-svg-icon location">
+                        <QuoteLocationIcon />
+                      </span>
+                      <strong>
+                        {tenantBranding?.address || "Puerto Barrios, Izabal · Guatemala"}
+                      </strong>
+                    </div>
+
+                    <div className="quote-pro-footer-social">
+                      <div className="quote-social-icons" aria-label="Redes sociales">
+                        <span><QuoteFacebookIcon /></span>
+                        <span><QuoteInstagramIcon /></span>
+                        <span><QuoteTikTokIcon /></span>
+                      </div>
+                      <strong>{tenantBrandName}</strong>
+                    </div>
                   </footer>
                 </div>
               </div>

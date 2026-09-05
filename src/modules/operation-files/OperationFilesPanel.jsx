@@ -19,6 +19,16 @@ const ICONS = {
   OTHER: "📎",
 };
 
+
+async function sha256Hex(file) {
+  const buffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export default function OperationFilesPanel({
   supabase,
   sourceType,
@@ -205,6 +215,10 @@ export default function OperationFilesPanel({
     }
 
     try {
+      // V39.6.20 · huella real del archivo.
+      // Dos fotos con nombres distintos pero bytes idénticos tendrán el mismo SHA-256.
+      const contentSha256 = await sha256Hex(file);
+
       const prep = await invoke({
         action: "upload_url",
         source_type: sourceType,
@@ -213,6 +227,7 @@ export default function OperationFilesPanel({
         original_name: file.name,
         mime_type: file.type,
         size_bytes: file.size,
+        content_sha256: contentSha256,
       });
 
       const response = await fetch(prep.upload_url, {
@@ -236,6 +251,7 @@ export default function OperationFilesPanel({
         storage_path: prep.storage_path,
         mime_type: file.type,
         size_bytes: file.size,
+        content_sha256: contentSha256,
         visible_to_client: visible,
       });
 
@@ -249,15 +265,18 @@ export default function OperationFilesPanel({
       };
     } catch (e) {
       const error = e?.message || "No fue posible subir el archivo.";
+      const friendlyError = error.includes("DUPLICATE_FILE")
+        ? `⚠️ ${file.name} ya está cargado en este expediente. No se volvió a subir.`
+        : error;
 
       if (!silent) {
-        setMessage(error);
+        setMessage(friendlyError);
       }
 
       return {
         ok: false,
         name: file.name,
-        error,
+        error: friendlyError,
       };
     }
   }
@@ -485,7 +504,7 @@ export default function OperationFilesPanel({
   }
 
   async function removeFile(row) {
-    if (!window.confirm(`¿Eliminar ${row.original_name}?`)) return;
+    if (!window.confirm(`¿Eliminar definitivamente ${row.original_name}?\n\nSe borrará también de Cloudflare R2.`)) return;
 
     try {
       await invoke({
@@ -511,7 +530,7 @@ export default function OperationFilesPanel({
       <section className="ofp">
         <div className="ofp-head">
           <div>
-            <span>V39.6.3 · CLOUDFLARE R2</span>
+            <span>V39.6.20 · R2 + ANTIDUPLICADOS</span>
             <h3>{title}</h3>
             <p>
               {readOnly
@@ -650,55 +669,71 @@ export default function OperationFilesPanel({
                     const isLoading = previewLoading[row.id];
 
                     return (
-                      <button
-                        type="button"
+                      <div
                         key={row.id}
                         className="ofp-photo"
-                        onClick={() => openPhotoViewer(index)}
-                        title={`Ver ${row.original_name}`}
                       >
-                        <div className="ofp-photo-preview">
-                          {previewUrl ? (
-                            <img
-                              src={previewUrl}
-                              alt={row.original_name}
-                              loading="lazy"
-                              onError={() => {
-                                setPreviewUrls((current) => {
-                                  const next = { ...current };
-                                  delete next[row.id];
-                                  return next;
-                                });
-                              }}
-                            />
-                          ) : (
-                            <div className="ofp-photo-placeholder">
-                              <span>{isLoading ? "⏳" : "📸"}</span>
-                              <small>
-                                {isLoading
-                                  ? "Cargando vista previa..."
-                                  : "Vista previa"}
-                              </small>
-                            </div>
-                          )}
+                        <button
+                          type="button"
+                          className="ofp-photo-open"
+                          onClick={() => openPhotoViewer(index)}
+                          title={`Ver ${row.original_name}`}
+                        >
+                          <div className="ofp-photo-preview">
+                            {previewUrl ? (
+                              <img
+                                src={previewUrl}
+                                alt={row.original_name}
+                                loading="lazy"
+                                onError={() => {
+                                  setPreviewUrls((current) => {
+                                    const next = { ...current };
+                                    delete next[row.id];
+                                    return next;
+                                  });
+                                }}
+                              />
+                            ) : (
+                              <div className="ofp-photo-placeholder">
+                                <span>{isLoading ? "⏳" : "📸"}</span>
+                                <small>
+                                  {isLoading
+                                    ? "Cargando vista previa..."
+                                    : "Vista previa"}
+                                </small>
+                              </div>
+                            )}
 
-                          <span className="ofp-photo-zoom">
-                            ⛶
-                          </span>
-                        </div>
+                            <span className="ofp-photo-zoom">
+                              ⛶
+                            </span>
+                          </div>
+                        </button>
 
                         <div className="ofp-photo-meta">
                           <strong>{row.original_name}</strong>
 
                           {!readOnly && (
-                            <em>
-                              {row.visible_to_client
-                                ? "CLIENTE"
-                                : "INTERNO"}
-                            </em>
+                            <>
+                              <em>
+                                {row.visible_to_client
+                                  ? "CLIENTE"
+                                  : "INTERNO"}
+                              </em>
+
+                              <button
+                                type="button"
+                                className="ofp-photo-delete"
+                                onClick={() => removeFile(row)}
+                                title={`Eliminar ${row.original_name}`}
+                                aria-label={`Eliminar ${row.original_name}`}
+                              >
+                                🗑
+                              </button>
+                            </>
                           )}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -868,6 +903,16 @@ export default function OperationFilesPanel({
                 >
                   ↗ Abrir original
                 </button>
+
+                {!readOnly && (
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => removeFile(viewerPhoto)}
+                  >
+                    🗑 Eliminar
+                  </button>
+                )}
               </div>
             </div>
 

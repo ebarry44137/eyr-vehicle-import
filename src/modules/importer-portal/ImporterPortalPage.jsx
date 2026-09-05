@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import "./importer-portal.css";
 import "./portal-v39.6.0.css";
+import "./portal-customs-request-v39621.css";
 import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
 
 const DEFAULT_BRAND = {
@@ -105,6 +106,23 @@ export default function ImporterPortalPage() {
   const [error,setError] = useState("");
   const [login,setLogin] = useState({email:"",password:""});
   const [filters,setFilters] = useState({search:"",status:"ALL"});
+
+  // V39.6.21.1 · Solicitud de gestión aduanal desde Portal
+  const [showCustomsRequest,setShowCustomsRequest] = useState(false);
+  const [customsRequestSaving,setCustomsRequestSaving] = useState(false);
+  const [customsRequestMessage,setCustomsRequestMessage] = useState("");
+  const [customsRequestForm,setCustomsRequestForm] = useState({
+    vin:"",
+    bl:"",
+    container_number:"",
+    shipping_line:"",
+    vehicle_year:"",
+    vehicle_make:"",
+    vehicle_model:"",
+    estimated_arrival_date:"",
+    shipping_line_release_confirmed:false,
+    notes:"",
+  });
 
   // V39.6.0 · Cotizador para cliente de oficina
   const [quoteVin,setQuoteVin] = useState("");
@@ -263,6 +281,108 @@ export default function ImporterPortalPage() {
     document.title = `${brandName} | Portal de Clientes`;
     if (logoUrl) setFavicon(logoUrl);
   }, [brandName,logoUrl]);
+
+  function openCustomsRequest() {
+    setCustomsRequestMessage("");
+    setCustomsRequestForm({
+      vin:"",
+      bl:"",
+      container_number:"",
+      shipping_line:"",
+      vehicle_year:"",
+      vehicle_make:"",
+      vehicle_model:"",
+      estimated_arrival_date:"",
+      shipping_line_release_confirmed:false,
+      notes:"",
+    });
+    setShowCustomsRequest(true);
+  }
+
+  async function submitCustomsRequest(event) {
+    event.preventDefault();
+
+    const cleanShippingLine = String(customsRequestForm.shipping_line || "").trim();
+    if (!cleanShippingLine) {
+      setCustomsRequestMessage(
+        "La naviera es obligatoria para coordinar la recolección de documentos."
+      );
+      return;
+    }
+
+    const cleanVin = String(customsRequestForm.vin || "")
+      .trim()
+      .toUpperCase();
+
+    if (cleanVin && cleanVin.length !== 17) {
+      setCustomsRequestMessage(
+        "El VIN es opcional, pero si lo ingresás debe tener 17 caracteres."
+      );
+      return;
+    }
+
+    setCustomsRequestSaving(true);
+    setCustomsRequestMessage("");
+
+    try {
+      const {data,error} = await supabase.rpc(
+        "submit_portal_customs_request_v39621",
+        {
+          p_vin: cleanVin || null,
+          p_bl:
+            String(customsRequestForm.bl || "")
+              .trim()
+              .toUpperCase() || null,
+          p_container_number:
+            String(customsRequestForm.container_number || "")
+              .trim()
+              .toUpperCase() || null,
+          p_shipping_line: cleanShippingLine,
+          p_vehicle_year:
+            customsRequestForm.vehicle_year
+              ? Number(customsRequestForm.vehicle_year)
+              : null,
+          p_vehicle_make:
+            String(customsRequestForm.vehicle_make || "").trim() || null,
+          p_vehicle_model:
+            String(customsRequestForm.vehicle_model || "").trim() || null,
+          p_estimated_arrival_date:
+            customsRequestForm.estimated_arrival_date || null,
+          p_shipping_line_release_confirmed:
+            Boolean(customsRequestForm.shipping_line_release_confirmed),
+          p_notes:
+            String(customsRequestForm.notes || "").trim() || null,
+        }
+      );
+
+      if (error) throw error;
+
+      const row = Array.isArray(data) ? data[0] : data;
+
+      setCustomsRequestMessage(
+        `✅ Solicitud ${row?.request_code || ""} enviada correctamente a ${brandName}.`
+      );
+
+      setCustomsRequestForm({
+        vin:"",
+        bl:"",
+        container_number:"",
+        shipping_line:"",
+        vehicle_year:"",
+        vehicle_make:"",
+        vehicle_model:"",
+        estimated_arrival_date:"",
+        shipping_line_release_confirmed:false,
+        notes:"",
+      });
+    } catch(err) {
+      setCustomsRequestMessage(
+        err?.message || "No fue posible enviar la solicitud."
+      );
+    } finally {
+      setCustomsRequestSaving(false);
+    }
+  }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -433,6 +553,7 @@ export default function ImporterPortalPage() {
         <nav>
           <button className={activeView==="dashboard"?"active":""} onClick={()=>setActiveView("dashboard")}><span>▦</span>Dashboard</button>
           <button className={activeView==="imports"?"active":""} onClick={()=>setActiveView("imports")}><span>🚢</span>Mis importaciones</button>
+          <button type="button" onClick={openCustomsRequest}><span>＋</span>Solicitar gestión</button>
           <button className={activeView==="documents"?"active":""} onClick={()=>setActiveView("documents")}><span>📄</span>Documentos</button>
           <button className={activeView==="quote"?"active":""} onClick={()=>setActiveView("quote")}><span>🧮</span>Cotizador</button>
         </nav>
@@ -483,6 +604,21 @@ export default function ImporterPortalPage() {
               <article><span>⚓</span><div><small>EN PUERTO / PROCESO</small><strong>{kpis.arrived}</strong></div></article>
               <article><span>📄</span><div><small>DUCA CONFIRMADAS</small><strong>{kpis.duca}</strong></div></article>
               <article><span>✓</span><div><small>ENTREGADAS</small><strong>{kpis.delivered}</strong></div></article>
+            </section>
+
+            <section className="ip-customs-request-cta">
+              <div className="ip-customs-request-cta-icon">🛃</div>
+              <div>
+                <small>NUEVA OPERACIÓN</small>
+                <h3>¿Necesitás iniciar otra gestión aduanal?</h3>
+                <p>
+                  Enviá los datos básicos del vehículo. La naviera es obligatoria
+                  porque ahí coordinaremos la recolección de documentos.
+                </p>
+              </div>
+              <button type="button" onClick={openCustomsRequest}>
+                ＋ Solicitar nueva gestión aduanal
+              </button>
             </section>
 
             <section className="ip-panel ip-imports-preview" style={{marginTop:16}}>
@@ -615,11 +751,15 @@ export default function ImporterPortalPage() {
           <section className="ip-quote-page">
             <div className="ip-imports-hero">
               <div>
-                <small>COTIZADOR PARA IMPORTADOR</small>
+                <small>COTIZADOR INCLUIDO · CLIENTE E&amp;R</small>
                 <h2>VIN + factura. Calculamos tus impuestos.</h2>
-                <p>Ingresá el VIN y el valor real de tu factura de compra. El sistema utilizará la modalidad de cálculo para importador.</p>
+                <p>Ingresá el VIN y el valor real de tu factura. Como cliente activo de E&R, este cotizador está incluido sin límite de consultas.</p>
               </div>
-              <div className="ip-quote-badge">🧾 FACTURA REAL</div>
+              <div className="ip-quote-benefit">
+                <span>🎁 BENEFICIO CLIENTE E&amp;R</span>
+                <strong>Cotizador incluido</strong>
+                <small>Consultas sin límite mientras tu acceso al Portal esté activo.</small>
+              </div>
             </div>
 
             <form className="ip-quote-card" onSubmit={runImporterQuote}>
@@ -697,6 +837,231 @@ export default function ImporterPortalPage() {
           </section>
         ) : null}
       </main>
+
+      {showCustomsRequest && (
+        <div
+          className="ip-request-backdrop"
+          onMouseDown={(event)=>{
+            if (
+              event.target === event.currentTarget &&
+              !customsRequestSaving
+            ) {
+              setShowCustomsRequest(false);
+            }
+          }}
+        >
+          <form className="ip-request-modal" onSubmit={submitCustomsRequest}>
+            <header>
+              <div>
+                <small>SOLICITUD DESDE EL PORTAL</small>
+                <h2>Solicitar nueva gestión aduanal</h2>
+                <p>
+                  Completá la información que tengás disponible. E&R revisará
+                  la solicitud y terminará de crear el expediente.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={()=>setShowCustomsRequest(false)}
+                disabled={customsRequestSaving}
+              >
+                ×
+              </button>
+            </header>
+
+            {customsRequestMessage && (
+              <div
+                className={
+                  customsRequestMessage.startsWith("✅")
+                    ? "ip-request-message success"
+                    : "ip-request-message"
+                }
+              >
+                {customsRequestMessage}
+              </div>
+            )}
+
+            <section className="ip-request-grid">
+              <label className="span-2 required">
+                <span>Naviera *</span>
+                <input
+                  required
+                  value={customsRequestForm.shipping_line}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      shipping_line:e.target.value,
+                    }))
+                  }
+                  placeholder="Ej. Port to Port, North Atlantic, Transoceanic..."
+                />
+                <small>
+                  Obligatorio: necesitamos saber dónde recoger los documentos.
+                </small>
+              </label>
+
+              <label>
+                <span>VIN</span>
+                <input
+                  maxLength="17"
+                  value={customsRequestForm.vin}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      vin:e.target.value.toUpperCase(),
+                    }))
+                  }
+                  placeholder="17 caracteres"
+                />
+              </label>
+
+              <label>
+                <span>BL</span>
+                <input
+                  value={customsRequestForm.bl}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      bl:e.target.value.toUpperCase(),
+                    }))
+                  }
+                  placeholder="Número de BL"
+                />
+              </label>
+
+              <label>
+                <span>Contenedor</span>
+                <input
+                  value={customsRequestForm.container_number}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      container_number:e.target.value.toUpperCase(),
+                    }))
+                  }
+                  placeholder="Opcional"
+                />
+              </label>
+
+              <label>
+                <span>ETA / llegada estimada</span>
+                <input
+                  type="date"
+                  value={customsRequestForm.estimated_arrival_date}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      estimated_arrival_date:e.target.value,
+                    }))
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Año</span>
+                <input
+                  type="number"
+                  min="1900"
+                  max="2100"
+                  value={customsRequestForm.vehicle_year}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      vehicle_year:e.target.value,
+                    }))
+                  }
+                  placeholder="Ej. 2020"
+                />
+              </label>
+
+              <label>
+                <span>Marca</span>
+                <input
+                  value={customsRequestForm.vehicle_make}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      vehicle_make:e.target.value,
+                    }))
+                  }
+                  placeholder="Ej. Toyota"
+                />
+              </label>
+
+              <label className="span-2">
+                <span>Modelo / descripción del vehículo</span>
+                <input
+                  value={customsRequestForm.vehicle_model}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      vehicle_model:e.target.value,
+                    }))
+                  }
+                  placeholder="Ej. Tacoma Double Cab"
+                />
+              </label>
+
+              <label className="span-2 ip-release-check">
+                <input
+                  type="checkbox"
+                  checked={
+                    customsRequestForm.shipping_line_release_confirmed
+                  }
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      shipping_line_release_confirmed:e.target.checked,
+                    }))
+                  }
+                />
+                <div>
+                  <strong>
+                    Los documentos ya están liberados por la naviera
+                  </strong>
+                  <small>
+                    Opcional. Marcá esta casilla únicamente si la naviera ya
+                    confirmó la liberación.
+                  </small>
+                </div>
+              </label>
+
+              <label className="span-2">
+                <span>Observaciones</span>
+                <textarea
+                  rows="4"
+                  value={customsRequestForm.notes}
+                  onChange={e=>
+                    setCustomsRequestForm(p=>({
+                      ...p,
+                      notes:e.target.value,
+                    }))
+                  }
+                  placeholder="Cualquier información que debamos conocer antes de iniciar..."
+                />
+              </label>
+            </section>
+
+            <footer>
+              <button
+                type="button"
+                className="secondary"
+                onClick={()=>setShowCustomsRequest(false)}
+                disabled={customsRequestSaving}
+              >
+                Cancelar
+              </button>
+
+              <button type="submit" disabled={customsRequestSaving}>
+                {customsRequestSaving
+                  ? "Enviando..."
+                  : "Enviar solicitud →"}
+              </button>
+            </footer>
+          </form>
+        </div>
+      )}
 
       {selected && (
         <div className="ip-detail-backdrop" onMouseDown={e=>{

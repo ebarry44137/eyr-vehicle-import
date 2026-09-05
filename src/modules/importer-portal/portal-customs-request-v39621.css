@@ -1,0 +1,88 @@
+/* =========================================================
+   E&R · V39.6.21 · SOLICITUD ADUANAL DESDE PORTAL
+   ========================================================= */
+
+.ip-customs-request-cta{
+  margin-top:16px;
+  padding:18px 20px;
+  display:grid;
+  grid-template-columns:50px 1fr auto;
+  gap:14px;
+  align-items:center;
+  border:1px solid color-mix(in srgb,var(--ip-primary) 16%,#dfe8ef);
+  border-radius:18px;
+  background:linear-gradient(135deg,#f7fbff,#fff);
+  box-shadow:0 5px 22px rgba(10,52,88,.06)
+}
+.ip-customs-request-cta-icon{
+  width:50px;height:50px;border-radius:15px;display:grid;place-items:center;
+  background:var(--ip-primary);font-size:22px
+}
+.ip-customs-request-cta small{display:block;color:#9b7222;font-size:8px;font-weight:950;letter-spacing:.08em}
+.ip-customs-request-cta h3{margin:3px 0 4px;color:#123c62;font-size:16px}
+.ip-customs-request-cta p{margin:0;color:#728498;font-size:10px;line-height:1.5}
+.ip-customs-request-cta button{
+  min-height:44px;padding:0 15px;border:0;border-radius:12px;
+  background:var(--ip-primary);color:#fff;font-size:9px;font-weight:950;cursor:pointer
+}
+
+.ip-request-backdrop{
+  position:fixed;inset:0;z-index:10000;padding:22px;
+  display:grid;place-items:center;background:rgba(5,25,43,.72);backdrop-filter:blur(5px)
+}
+.ip-request-modal{
+  width:min(760px,96vw);max-height:92vh;overflow:auto;border-radius:20px;background:#fff;
+  box-shadow:0 28px 90px rgba(0,0,0,.28)
+}
+.ip-request-modal>header{
+  padding:18px 20px;display:flex;justify-content:space-between;gap:16px;
+  background:linear-gradient(135deg,var(--ip-primary),#174f78);color:#fff
+}
+.ip-request-modal>header small{font-size:8px;font-weight:950;letter-spacing:.09em;color:#f2cf78}
+.ip-request-modal>header h2{margin:4px 0;font-size:20px}
+.ip-request-modal>header p{margin:0;color:#d7e5ef;font-size:10px;line-height:1.5}
+.ip-request-modal>header>button{
+  flex:0 0 34px;width:34px;height:34px;border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:20px;cursor:pointer
+}
+.ip-request-grid{
+  padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:13px
+}
+.ip-request-grid label{display:grid;gap:5px}
+.ip-request-grid label.span-2{grid-column:1/-1}
+.ip-request-grid label>span{color:#41566a;font-size:9px;font-weight:900}
+.ip-request-grid input,.ip-request-grid textarea{
+  width:100%;box-sizing:border-box;border:1px solid #d8e2ea;border-radius:11px;
+  padding:10px 11px;background:#fff;color:#1d3348;font:inherit;font-size:10px;outline:none
+}
+.ip-request-grid input:focus,.ip-request-grid textarea:focus{
+  border-color:var(--ip-primary);box-shadow:0 0 0 3px rgba(10,52,88,.08)
+}
+.ip-request-grid label>small{color:#7d8e9d;font-size:8px}
+.ip-release-check{
+  grid-template-columns:auto 1fr!important;align-items:flex-start;padding:12px;
+  border:1px solid #dce6ed;border-radius:12px;background:#f8fbfd
+}
+.ip-release-check input{width:17px;height:17px;margin-top:1px}
+.ip-release-check strong,.ip-release-check small{display:block}
+.ip-release-check strong{color:#193d5b;font-size:10px}
+.ip-release-check small{margin-top:3px;color:#778b9d;font-size:8px;line-height:1.4}
+.ip-request-modal>footer{
+  padding:14px 20px;border-top:1px solid #e5edf2;display:flex;justify-content:flex-end;gap:9px
+}
+.ip-request-modal>footer button{
+  min-height:40px;padding:0 14px;border:0;border-radius:11px;background:var(--ip-primary);
+  color:#fff;font-size:9px;font-weight:950;cursor:pointer
+}
+.ip-request-modal>footer button.secondary{background:#edf3f7;color:#455c70}
+.ip-request-message{margin:14px 20px 0;padding:10px 12px;border-radius:10px;background:#fff2ef;color:#9a473f;font-size:9px}
+.ip-request-message.success{background:#ebf8f0;color:#27724d}
+
+@media(max-width:700px){
+  .ip-customs-request-cta{grid-template-columns:44px 1fr}
+  .ip-customs-request-cta>button{grid-column:1/-1;width:100%}
+  .ip-request-backdrop{padding:0}
+  .ip-request-modal{width:100%;max-height:100dvh;height:100dvh;border-radius:0}
+  .ip-request-grid{grid-template-columns:1fr}
+  .ip-request-grid label.span-2{grid-column:auto}
+}

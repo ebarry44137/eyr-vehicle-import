@@ -1,6 +1,3 @@
-import { useEffect } from "react";
-import "./prospects.css";
-
 export default function ProspectDetailDrawer({
   prospect,
   queries = [],
@@ -20,62 +17,32 @@ export default function ProspectDetailDrawer({
   moneyGTQ,
   moneyUSD,
 }) {
-  useEffect(() => {
-    if (!prospect) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function handleKeyDown(event) {
-      if (event.key === "Escape") onClose?.();
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [prospect, onClose]);
-
   if (!prospect) return null;
 
-  const status = prospect.lead_status || "NUEVO";
-  const queryCount = Number(prospect.query_count || queries.length || 0);
+  const count = Array.isArray(queries) ? queries.length : 0;
 
   return (
-    <div
-      className="prospect-drawer-backdrop"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose?.();
-      }}
-    >
-      <aside
-        className="prospect-detail-drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Detalle de ${prospect.full_name || "prospecto"}`}
-      >
+    <div className="prospect-drawer-backdrop" onMouseDown={(e) => {
+      if (e.target === e.currentTarget) onClose?.();
+    }}>
+      <aside className="prospect-detail-drawer">
         <header className="prospect-drawer-header">
           <div>
             <span className="section-label">EXPEDIENTE COMERCIAL</span>
             <h2>{prospect.full_name || "Cliente"}</h2>
-
-            <div className="prospect-drawer-meta">
-              <span className={`lead-status ${status.toLowerCase()}`}>
-                {status}
+            <div className="prospect-drawer-status-row">
+              <span className={`lead-status ${String(prospect.lead_status || "NUEVO").toLowerCase()}`}>
+                {prospect.lead_status || "NUEVO"}
               </span>
-              <span>•</span>
-              <span>{queryCount} consulta{queryCount === 1 ? "" : "s"}</span>
+              <small>· {count} consulta{count === 1 ? "" : "s"}</small>
             </div>
           </div>
 
           <button
             type="button"
-            className="prospect-drawer-close"
+            className="prospect-close"
             onClick={onClose}
-            aria-label="Cerrar detalle"
+            aria-label="Cerrar"
           >
             ×
           </button>
@@ -85,28 +52,24 @@ export default function ProspectDetailDrawer({
           <section className="prospect-contact-card">
             <div>
               <small>CORREO</small>
-              <strong>{prospect.email || "Sin correo"}</strong>
+              <strong>{prospect.email || "—"}</strong>
             </div>
             <div>
               <small>CELULAR</small>
-              <strong>{prospect.phone || "Sin celular"}</strong>
+              <strong>{prospect.phone || "—"}</strong>
             </div>
             <div>
-              <small>ÚLTIMA ACTIVIDAD</small>
-              <strong>
-                {prospect.updated_at
-                  ? new Date(prospect.updated_at).toLocaleString("es-GT")
-                  : "—"}
-              </strong>
+              <small>CLAVE COMERCIAL</small>
+              <strong>{prospect.contact_key || "—"}</strong>
             </div>
           </section>
 
-          {prospect.phone && (
+          {prospect.phone && buildWhatsAppUrl && (
             <a
               className="whatsapp-action prospect-whatsapp"
               href={buildWhatsAppUrl(
                 prospect.phone,
-                `Hola ${prospect.full_name || ""}, te contactamos de E&R Solutions. Vimos que realizaste una cotización de importación de vehículo y queremos ayudarte con los siguientes pasos.`
+                `Hola ${prospect.full_name || ""}, te contactamos de E&R Solutions.`
               )}
               target="_blank"
               rel="noreferrer"
@@ -116,58 +79,63 @@ export default function ProspectDetailDrawer({
             </a>
           )}
 
-          <section className="prospect-followup prospect-drawer-section">
-            <div className="prospect-drawer-section-title">
-              <span className="section-label">SEGUIMIENTO COMERCIAL</span>
-              <h3>Estado y notas</h3>
-            </div>
+          {statusForm && setStatusForm && (
+            <section className="prospect-drawer-section">
+              <div className="prospect-drawer-section-title">
+                <span className="section-label">SEGUIMIENTO</span>
+                <h3>Estado comercial</h3>
+              </div>
 
-            <label>
-              <span>Estado comercial</span>
-              <select
-                value={statusForm.status}
-                onChange={(e) =>
-                  setStatusForm((prev) => ({
-                    ...prev,
-                    status: e.target.value,
-                  }))
-                }
-              >
-                <option value="NUEVO">Nuevo</option>
-                <option value="CONTACTADO">Contactado</option>
-                <option value="SEGUIMIENTO">En seguimiento</option>
-                <option value="CONVERTIDO">Convertido</option>
-                <option value="NO_INTERESADO">No interesado</option>
-              </select>
-            </label>
+              <div className="prospect-followup">
+                <label>
+                  <span>Estado</span>
+                  <select
+                    value={statusForm.status || "NUEVO"}
+                    onChange={(e) =>
+                      setStatusForm((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="NUEVO">Nuevo</option>
+                    <option value="CONTACTADO">Contactado</option>
+                    <option value="SEGUIMIENTO">En seguimiento</option>
+                    <option value="CONVERTIDO">Convertido</option>
+                    <option value="NO_INTERESADO">No interesado</option>
+                  </select>
+                </label>
 
-            <label>
-              <span>Notas de seguimiento</span>
-              <textarea
-                rows="4"
-                value={statusForm.notes}
-                onChange={(e) =>
-                  setStatusForm((prev) => ({
-                    ...prev,
-                    notes: e.target.value,
-                  }))
-                }
-                placeholder="Ej. Se llamó, interesado en traer el vehículo el próximo mes..."
-              />
-            </label>
+                <label>
+                  <span>Notas</span>
+                  <textarea
+                    rows="3"
+                    value={statusForm.notes || ""}
+                    onChange={(e) =>
+                      setStatusForm((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
+                    placeholder="Ej. Se llamó, interesado en traer el vehículo..."
+                  />
+                </label>
 
-            <button
-              className="primary-button"
-              onClick={onSaveStatus}
-              disabled={saving}
-            >
-              {saving ? "Guardando..." : "Guardar seguimiento"}
-            </button>
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={onSaveStatus}
+                  disabled={saving}
+                >
+                  {saving ? "Guardando..." : "Guardar seguimiento"}
+                </button>
 
-            {message && (
-              <div className="customer-message success">{message}</div>
-            )}
-          </section>
+                {message && (
+                  <div className="customer-message success">{message}</div>
+                )}
+              </div>
+            </section>
+          )}
 
           <section className="prospect-query-history prospect-drawer-section">
             <div className="prospect-history-title">
@@ -178,126 +146,169 @@ export default function ProspectDetailDrawer({
               <strong>
                 {queriesLoading
                   ? "Cargando..."
-                  : `${queries.length} consulta${queries.length === 1 ? "" : "s"}`}
+                  : `${count} consulta${count === 1 ? "" : "s"}`}
               </strong>
             </div>
 
-            {!queriesLoading && queries.length === 0 && (
+            {!queriesLoading && count === 0 && (
               <div className="prospect-empty-history">
-                Este prospecto es anterior al registro detallado de consultas.
-                Las próximas consultas sí aparecerán aquí.
+                Este prospecto todavía no tiene consultas registradas.
               </div>
             )}
 
-            {queries.map((q) => (
-              <article className="prospect-query-item" key={q.id}>
-                <div className="prospect-query-top">
-                  <div>
-                    <strong>
-                      {[q.model_year, q.make, q.model, q.vehicle_trim]
-                        .filter(Boolean)
-                        .join(" ") || "Vehículo consultado"}
-                    </strong>
-                    <small>{q.vin}</small>
+            {queries.map((q) => {
+              const isImporter =
+                String(q.calculation_method || "SAT").toUpperCase() === "IMPORTER";
 
-                    {q.import_requested_at && (
-                      <span className="import-request-badge">
-                        🔥 Solicitó iniciar importación
-                      </span>
-                    )}
-                  </div>
+              const importerBase =
+                Number(q.invoice_taxable_value_gtq || 0) > 0
+                  ? Number(q.invoice_taxable_value_gtq)
+                  : (
+                      Number(q.invoice_value_usd || 0) > 0 &&
+                      Number(q.invoice_exchange_rate || 0) > 0
+                    )
+                    ? Number(q.invoice_value_usd) * Number(q.invoice_exchange_rate)
+                    : null;
 
-                  <span
-                    className={`query-result ${String(
-                      q.calculation_status || ""
-                    ).toLowerCase()}`}
-                  >
-                    {q.calculation_status || "—"}
-                  </span>
-                </div>
-
-                <dl>
-                  <div>
-                    <dt>Línea SAT</dt>
-                    <dd>{q.sat_line || "Pendiente de revisión"}</dd>
-                  </div>
-                  <div>
-                    <dt>Valor SAT</dt>
-                    <dd>{q.sat_value_gtq ? moneyGTQ(q.sat_value_gtq) : "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Tributos</dt>
-                    <dd>
-                      {q.total_taxes_gtq
-                        ? moneyGTQ(q.total_taxes_gtq)
-                        : "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Flete</dt>
-                    <dd>{q.freight_usd ? moneyUSD(q.freight_usd) : "—"}</dd>
-                  </div>
-                </dl>
-
-                {q.calculation_status === "READY" && (
-                  <div className="prospect-import-actions prospect-commercial-ready">
+              return (
+                <article className="prospect-query-item" key={q.id}>
+                  <div className="prospect-query-top">
                     <div>
-                      <small>✓ CÁLCULO READY</small>
-                      <span>
-                        {q.import_requested_at
-                          ? `Solicitó importación · ${new Date(q.import_requested_at).toLocaleString("es-GT")}`
-                          : "Lista para preparar propuesta comercial E&R"}
-                      </span>
+                      <strong>
+                        {[q.model_year, q.make, q.model, q.vehicle_trim]
+                          .filter(Boolean)
+                          .join(" ") || "Vehículo consultado"}
+                      </strong>
+                      <small>{q.vin}</small>
+
+                      {isImporter && (
+                        <span className="importer-history-badge">
+                          🧾 IMPORTADOR · FACTURA REAL
+                        </span>
+                      )}
                     </div>
 
-                    <button
-                      className="primary-button prospect-generate-quote"
-                      onClick={() => onGenerateQuotation?.(q)}
-                      disabled={quoteLoadingId === q.id}
-                    >
-                      {quoteLoadingId === q.id
-                        ? "Abriendo..."
-                        : q.quote_generated_at
-                          ? "Ver / ajustar cotización"
-                          : "Preparar cotización final"}{" "}
-                      <span>→</span>
-                    </button>
+                    <span className={`query-result ${String(q.calculation_status || "").toLowerCase()}`}>
+                      {q.calculation_status || "—"}
+                    </span>
                   </div>
-                )}
 
-                {q.quote_generated_at && (
-                  <div className="prospect-quote-generated">
-                    <span>✓ Cotización {q.quote_code || ""} generada</span>
+                  <dl>
+                    {isImporter ? (
+                      <>
+                        <div>
+                          <dt>Factura</dt>
+                          <dd>
+                            {Number(q.invoice_value_usd || 0) > 0
+                              ? moneyUSD?.(q.invoice_value_usd)
+                              : "—"}
+                          </dd>
+                        </div>
 
-                    {q.import_management_id ? (
-                      <button
-                        className="prospect-management-created"
-                        onClick={onOpenManagements}
-                      >
-                        Gestión creada · Ver →
-                      </button>
+                        <div className="importer-base-value">
+                          <dt>Valor factura GTQ</dt>
+                          <dd>
+                            {importerBase
+                              ? moneyGTQ?.(importerBase)
+                              : "—"}
+                          </dd>
+                          {Number(q.invoice_exchange_rate || 0) > 0 && (
+                            <small>
+                              TC Q {Number(q.invoice_exchange_rate).toFixed(4)}
+                            </small>
+                          )}
+                        </div>
+                      </>
                     ) : (
+                      <>
+                        <div>
+                          <dt>Línea SAT</dt>
+                          <dd>{q.sat_line || "Pendiente de revisión"}</dd>
+                        </div>
+
+                        <div>
+                          <dt>Valor SAT</dt>
+                          <dd>
+                            {Number(q.sat_value_gtq || 0) > 0
+                              ? moneyGTQ?.(q.sat_value_gtq)
+                              : "—"}
+                          </dd>
+                        </div>
+                      </>
+                    )}
+
+                    <div>
+                      <dt>Tributos</dt>
+                      <dd>
+                        {Number(q.total_taxes_gtq || 0) > 0
+                          ? moneyGTQ?.(q.total_taxes_gtq)
+                          : "—"}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt>Flete</dt>
+                      <dd>
+                        {Number(q.freight_usd || 0) > 0
+                          ? moneyUSD?.(q.freight_usd)
+                          : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {q.calculation_status === "READY" && (
+                    <div className="prospect-import-actions">
+                      <div>
+                        <small>✓ CÁLCULO READY</small>
+                        <span>Lista para preparar propuesta comercial E&R</span>
+                      </div>
+
+                      {onGenerateQuotation && (
+                        <button
+                          type="button"
+                          className="primary-button prospect-generate-quote"
+                          onClick={() => onGenerateQuotation(q)}
+                          disabled={quoteLoadingId === q.id}
+                        >
+                          {quoteLoadingId === q.id
+                            ? "Preparando..."
+                            : "Preparar cotización final →"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {onConvertManagement && !q.import_management_id && (
+                    <div className="prospect-management-action">
                       <button
-                        className="primary-button prospect-convert-management"
-                        onClick={() => onConvertManagement?.(q)}
+                        type="button"
+                        onClick={() => onConvertManagement(q)}
                         disabled={convertingQueryId === q.id}
                       >
                         {convertingQueryId === q.id
-                          ? "Creando..."
-                          : "Convertir en gestión"}
-                        <span>→</span>
+                          ? "Creando gestión..."
+                          : "Convertir a gestión"}
                       </button>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                <small className="prospect-query-date">
-                  {q.created_at
-                    ? new Date(q.created_at).toLocaleString("es-GT")
-                    : ""}
-                </small>
-              </article>
-            ))}
+                  {q.import_management_id && onOpenManagements && (
+                    <div className="prospect-quote-generated">
+                      <span>✓ Gestión creada</span>
+                      <button type="button" onClick={onOpenManagements}>
+                        Ver gestiones →
+                      </button>
+                    </div>
+                  )}
+
+                  <small className="prospect-query-date">
+                    {q.created_at
+                      ? new Date(q.created_at).toLocaleString("es-GT")
+                      : ""}
+                  </small>
+                </article>
+              );
+            })}
           </section>
         </div>
       </aside>

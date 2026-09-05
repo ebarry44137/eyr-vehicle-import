@@ -112,7 +112,6 @@
   border-radius:12px;
   background:#fff;
   overflow:hidden;
-  cursor:pointer;
   text-align:left;
   box-shadow:0 2px 8px rgba(23,63,94,.05);
   transition:
@@ -121,15 +120,25 @@
     border-color .18s ease
 }
 
+.ofp-photo-open{
+  display:block;
+  width:100%;
+  padding:0;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+  text-align:left
+}
+
 .ofp-photo:hover{
   transform:translateY(-2px);
   border-color:#aac8dc;
   box-shadow:0 8px 20px rgba(23,63,94,.12)
 }
 
-.ofp-photo:focus-visible{
+.ofp-photo-open:focus-visible{
   outline:3px solid rgba(43,122,167,.22);
-  outline-offset:2px
+  outline-offset:-3px
 }
 
 .ofp-photo-preview{
@@ -224,6 +233,42 @@
   font-size:5px;
   font-style:normal;
   font-weight:900
+}
+
+
+.ofp-photo-delete{
+  flex:0 0 auto;
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #f0c9c9;
+  border-radius:8px;
+  background:#fff5f5;
+  color:#a43d3d;
+  font-size:11px;
+  cursor:pointer;
+  transition:
+    background .16s ease,
+    border-color .16s ease,
+    transform .16s ease
+}
+
+.ofp-photo-delete:hover{
+  background:#ffe5e5;
+  border-color:#e7aaaa;
+  transform:translateY(-1px)
+}
+
+.ofp-lightbox-actions button.danger{
+  border-color:rgba(255,120,120,.35);
+  background:rgba(150,35,35,.28);
+  color:#ffd7d7
+}
+
+.ofp-lightbox-actions button.danger:hover{
+  background:rgba(185,45,45,.42)
 }
 
 /* DOCUMENTOS */

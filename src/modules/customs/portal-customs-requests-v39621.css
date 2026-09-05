@@ -1,0 +1,56 @@
+/* =========================================================
+   E&R · V39.6.21 · SOLICITUDES DEL PORTAL EN CONTROL ADUANAL
+   ========================================================= */
+.portal-customs-requests-card{
+  margin:0 0 18px;padding:18px;border:1px solid #dbe6ee;border-radius:18px;background:#fff;
+  box-shadow:0 5px 22px rgba(17,55,82,.05)
+}
+.portal-customs-requests-card>header{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:13px
+}
+.portal-customs-requests-card>header h2{margin:3px 0;color:#163f60}
+.portal-customs-requests-card>header p{margin:0;color:#7c8d9b;font-size:10px}
+.portal-customs-requests-card>header>button{
+  min-height:36px;padding:0 11px;border:1px solid #d8e3eb;border-radius:10px;background:#f8fbfd;
+  color:#31556f;font-size:8px;font-weight:900;cursor:pointer
+}
+.portal-customs-request-list{display:grid;gap:9px}
+.portal-customs-request-list article{
+  display:grid;grid-template-columns:42px minmax(0,1fr) auto auto;gap:11px;align-items:center;
+  padding:11px 12px;border:1px solid #e2eaf0;border-radius:13px;background:#fbfdfe
+}
+.portal-customs-request-icon{
+  width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#103f64;font-size:18px
+}
+.portal-customs-request-main{min-width:0}
+.portal-customs-request-main>div{display:flex;align-items:center;gap:7px}
+.portal-customs-request-main>div>span{font-size:7px;font-weight:950;color:#9b7222;letter-spacing:.07em}
+.portal-customs-request-main em{
+  padding:3px 6px;border-radius:999px;background:#e6f7ed;color:#27724d;font-size:6px;font-style:normal;font-weight:950
+}
+.portal-customs-request-main>strong{display:block;margin-top:2px;color:#173f60;font-size:11px}
+.portal-customs-request-main>small{display:block;margin-top:2px;color:#718495;font-size:8px}
+.portal-customs-request-main>p{margin:4px 0 0;color:#62798b;font-size:8px}
+.portal-customs-request-meta{text-align:right}
+.portal-customs-request-meta small,.portal-customs-request-meta strong{display:block}
+.portal-customs-request-meta small{font-size:7px;color:#8b9aa7}.portal-customs-request-meta strong{font-size:9px;color:#415c71}
+.portal-customs-request-list article>button{
+  min-height:35px;padding:0 10px;border:0;border-radius:10px;background:#173f60;color:#fff;font-size:8px;font-weight:950;cursor:pointer
+}
+.portal-customs-empty{display:flex;gap:10px;align-items:center;padding:13px;border-radius:12px;background:#f4faf6;color:#2c6b4c}
+.portal-customs-empty>span{font-size:20px}.portal-customs-empty strong,.portal-customs-empty small{display:block}
+.portal-customs-empty strong{font-size:10px}.portal-customs-empty small{margin-top:2px;font-size:8px;color:#6d8b7c}
+.portal-request-prefill-banner{
+  margin:14px 16px 0;padding:12px 13px;display:flex;gap:10px;align-items:flex-start;
+  border:1px solid #d5e7f2;border-radius:12px;background:#f3f9fd
+}
+.portal-request-prefill-banner>span{font-size:20px}
+.portal-request-prefill-banner small,.portal-request-prefill-banner strong,.portal-request-prefill-banner p{display:block}
+.portal-request-prefill-banner small{color:#9a7227;font-size:7px;font-weight:950}
+.portal-request-prefill-banner strong{margin-top:2px;color:#153e5e;font-size:10px}
+.portal-request-prefill-banner p{margin:3px 0 0;color:#6c8192;font-size:8px}
+@media(max-width:800px){
+  .portal-customs-request-list article{grid-template-columns:42px 1fr}
+  .portal-customs-request-meta{text-align:left}
+  .portal-customs-request-list article>button{grid-column:1/-1}
+}

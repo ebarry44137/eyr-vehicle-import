@@ -4,7 +4,6 @@ import "./importer-portal.css";
 import "./portal-v39.6.0.css";
 import "./portal-customs-request-v39621.css";
 import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
-import FirebasePushActivation from "../notifications/FirebasePushActivation.jsx";
 
 const DEFAULT_BRAND = {
   office_name: "E&R Solutions",
@@ -360,6 +359,32 @@ export default function ImporterPortalPage() {
 
       const row = Array.isArray(data) ? data[0] : data;
 
+      // V39.7.1 · La solicitud ya está guardada. Push es secundario:
+      // si Firebase falla, NO bloqueamos ni duplicamos la solicitud del cliente.
+      try {
+        const { error: pushError } = await supabase.functions.invoke(
+          "send-fcm-notification",
+          {
+            body: {
+              action: "portal_customs_request",
+              portal_slug: routeSlug,
+              request_id: row?.id || null,
+              request_code: row?.request_code || null,
+              shipping_line: cleanShippingLine,
+              vin: cleanVin || null,
+              bl: String(customsRequestForm.bl || "").trim().toUpperCase() || null,
+              container_number:
+                String(customsRequestForm.container_number || "")
+                  .trim()
+                  .toUpperCase() || null,
+            },
+          }
+        );
+        if (pushError) console.warn("PORTAL REQUEST PUSH WARNING:", pushError.message);
+      } catch (pushErr) {
+        console.warn("PORTAL REQUEST PUSH WARNING:", pushErr?.message);
+      }
+
       setCustomsRequestMessage(
         `✅ Solicitud ${row?.request_code || ""} enviada correctamente a ${brandName}.`
       );
@@ -599,12 +624,6 @@ export default function ImporterPortalPage() {
                 <p>Seguimiento de las operaciones que {brandName} está gestionando para tu cuenta.</p>
               </div>
             </section>
-
-            <FirebasePushActivation
-              supabase={supabase}
-              title="Activá las notificaciones de tu gestión"
-              description={`Recibí avisos de ${brandName} cuando tu expediente cambie de estado, tenga selectivo o nuevos documentos.`}
-            />
 
             <section className="ip-kpi-grid">
               <article><span>🚢</span><div><small>IMPORTACIONES ACTIVAS</small><strong>{kpis.active}</strong></div></article>

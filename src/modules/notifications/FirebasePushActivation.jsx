@@ -41,6 +41,7 @@ export default function FirebasePushActivation({
 
         if (next.registered) {
           setMessage("✅ Dispositivo registrado correctamente.");
+          window.dispatchEvent(new CustomEvent("eyr:fcm-device-registered"));
           onRegistered?.(next);
         } else {
           setMessage(

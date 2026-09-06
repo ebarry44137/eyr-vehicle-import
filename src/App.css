@@ -9198,3 +9198,45 @@ nav {
   .fcm-activation-card button{width:100%;margin-left:0}
   .fcm-status-pill{margin-left:0}
 }
+
+/* =========================================================
+   V39.7.0.2 · CAMPANA SINCRONIZADA + BOTÓN PROBAR PUSH
+   ========================================================= */
+.admin-notification-panel .push-enable-card{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+
+.admin-notification-panel .push-enable-card > div{
+  width:100%;
+  min-width:0;
+}
+
+.admin-notification-panel .push-enable-card > button{
+  display:block !important;
+  width:100% !important;
+  min-height:34px;
+  margin:0 !important;
+  padding:9px 10px !important;
+  border:0;
+  border-radius:10px;
+  background:#0f4167;
+  color:#fff;
+  font-size:8px;
+  font-weight:950;
+  cursor:pointer;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+.admin-notification-panel .push-enabled-card > button{
+  background:#1d7a4c;
+}
+
+.admin-notification-panel .push-enable-card small{
+  display:block;
+  margin-top:5px;
+  line-height:1.35;
+}

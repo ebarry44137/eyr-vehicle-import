@@ -21,6 +21,12 @@ export default function AdminNotificationBell({
     [items]
   );
 
+  async function refreshPushState() {
+    const status = await getFirebasePushStatus({ supabase });
+    setPushState(status?.state || "UNKNOWN");
+    return status;
+  }
+
   async function loadNotifications() {
     if (!userId) return;
 
@@ -42,9 +48,17 @@ export default function AdminNotificationBell({
 
     const timer = window.setInterval(loadNotifications, 30000);
 
-    getFirebasePushStatus({ supabase }).then((status) => {
-      if (alive) setPushState(status?.state || "UNKNOWN");
+    refreshPushState().catch((error) => {
+      console.warn("FCM status refresh pending:", error?.message);
     });
+
+    const handleDeviceRegistered = () => {
+      refreshPushState().catch((error) => {
+        console.warn("FCM status refresh pending:", error?.message);
+      });
+    };
+
+    window.addEventListener("eyr:fcm-device-registered", handleDeviceRegistered);
 
     listenForegroundMessages(async () => {
       await loadNotifications();
@@ -59,6 +73,7 @@ export default function AdminNotificationBell({
     return () => {
       alive = false;
       window.clearInterval(timer);
+      window.removeEventListener("eyr:fcm-device-registered", handleDeviceRegistered);
       stopForeground?.();
     };
   }, [userId]);
@@ -155,8 +170,14 @@ export default function AdminNotificationBell({
         type="button"
         className="admin-notification-trigger"
         onClick={() => {
-          setOpen((value) => !value);
-          if (!open) loadNotifications();
+          const nextOpen = !open;
+          setOpen(nextOpen);
+          if (nextOpen) {
+            loadNotifications();
+            refreshPushState().catch((error) => {
+              console.warn("FCM status refresh pending:", error?.message);
+            });
+          }
         }}
         aria-label="Notificaciones"
       >

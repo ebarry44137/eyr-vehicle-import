@@ -1,5 +1,5 @@
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCiiIWhj8Hfh8vau0Qc_KQZTwiIFiRQ0ow",
+  apiKey: "AIzaSyCiiIWhj8Hfh8vauOqc_KQZTwiIFiRQOow",
   authDomain: "eyr-vehicle-import.firebaseapp.com",
   projectId: "eyr-vehicle-import",
   storageBucket: "eyr-vehicle-import.firebasestorage.app",

@@ -9080,3 +9080,121 @@ nav {
   color:#7c8da0;
   font-size:7px
 }
+/* Agregar al final de src/App.css */
+.push-enabled-card{background:#eefaf3!important;border-color:#c8e8d4!important}
+.notification-push-message{margin:0 12px 10px;padding:8px 10px;border-radius:9px;background:#f4f7fa;color:#31516b;font-size:8px;font-weight:800;line-height:1.4}
+/* Agregar al final de src/App.css */
+.push-enabled-card{background:#eefaf3!important;border-color:#c8e8d4!important}
+.notification-push-message{margin:0 12px 10px;padding:8px 10px;border-radius:9px;background:#f4f7fa;color:#31516b;font-size:8px;font-weight:800;line-height:1.4}
+
+
+/* =========================================================
+   V39.7.0.1 · ACTIVACIÓN FCM VISIBLE + ESTADO REAL
+   ========================================================= */
+.fcm-activation-card{
+  margin:12px 0 16px;
+  padding:14px 16px;
+  border:1px solid #d9e5ee;
+  border-radius:16px;
+  background:linear-gradient(135deg,#ffffff,#f5f9fc);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  box-shadow:0 6px 22px rgba(10,48,78,.06);
+}
+.fcm-activation-card.registered{
+  border-color:#c8e8d4;
+  background:linear-gradient(135deg,#f4fbf6,#eef9f2);
+}
+.fcm-activation-icon{
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  border-radius:13px;
+  display:grid;
+  place-items:center;
+  background:#0f4167;
+  color:#fff;
+  font-size:18px;
+}
+.fcm-activation-card strong{
+  display:block;
+  color:#123b5c;
+  font-size:12px;
+  font-weight:950;
+}
+.fcm-activation-card p{
+  margin:3px 0 0;
+  color:#6f8291;
+  font-size:9px;
+  line-height:1.4;
+}
+.fcm-activation-copy{
+  flex:1;
+  min-width:0;
+}
+.fcm-activation-card button{
+  margin-left:auto;
+  border:0;
+  border-radius:11px;
+  padding:10px 14px;
+  background:#0f4167;
+  color:#fff;
+  font-size:9px;
+  font-weight:950;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.fcm-activation-card button:disabled{opacity:.6;cursor:not-allowed}
+.fcm-status-pill{
+  margin-left:auto;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#dff4e7;
+  color:#1d7a4c;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.06em;
+}
+.fcm-warning,.fcm-message{
+  display:block;
+  margin-top:5px;
+  font-size:8px;
+  line-height:1.4;
+}
+.fcm-warning{color:#a86c0a}
+.fcm-message{color:#416177}
+
+/* Sidebar interno: visible pero compacto */
+.sidebar > .fcm-activation-card.compact{
+  margin:8px 12px 12px;
+  padding:10px;
+  border-radius:12px;
+  display:grid;
+  grid-template-columns:34px 1fr;
+  gap:8px;
+}
+.sidebar > .fcm-activation-card.compact .fcm-activation-icon{
+  width:34px;height:34px;flex-basis:34px;font-size:14px;border-radius:10px;
+}
+.sidebar > .fcm-activation-card.compact strong{font-size:9px}
+.sidebar > .fcm-activation-card.compact p{font-size:7px}
+.sidebar > .fcm-activation-card.compact button,
+.sidebar > .fcm-activation-card.compact .fcm-status-pill{
+  grid-column:1/-1;
+  margin:0;
+  width:100%;
+  text-align:center;
+  box-sizing:border-box;
+}
+
+/* Portal del cliente */
+.ip-main > .fcm-activation-card,
+.ip-main .fcm-activation-card{
+  max-width:none;
+}
+@media(max-width:720px){
+  .fcm-activation-card{align-items:flex-start;flex-wrap:wrap}
+  .fcm-activation-card button{width:100%;margin-left:0}
+  .fcm-status-pill{margin-left:0}
+}

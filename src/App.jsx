@@ -6,6 +6,7 @@ import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
 import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
 import ImporterCustomsServiceRequest from "./modules/importer-customs/ImporterCustomsServiceRequest";
 import AdminNotificationBell from "./modules/notifications/AdminNotificationBell";
+import FirebasePushActivation from "./modules/notifications/FirebasePushActivation";
 import ProspectList from "./modules/prospects/ProspectList";
 import ProspectDetailDrawer from "./modules/prospects/ProspectDetailDrawer";
 import InternalUsersPage from "./modules/internal-users/InternalUsersPage";
@@ -5072,6 +5073,15 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           supabase={supabase}
           userId={session?.user?.id || null}
         />
+
+        {session?.user?.id && (
+          <FirebasePushActivation
+            supabase={supabase}
+            compact
+            title="Notificaciones Push"
+            description="Registrá este dispositivo para recibir alertas de E&R."
+          />
+        )}
 
         <nav>
           <button className="nav-item">

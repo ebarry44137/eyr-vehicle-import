@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import "./finance.css";
+import "./finance-v39622.css";
 import AccountsPayablePanel from "./AccountsPayablePanel";
+import AccountsReceivablePanel from "./AccountsReceivablePanel";
 
 function q(value) {
   const number = Number(value || 0);
@@ -24,6 +26,17 @@ export default function FinanceDashboard({ supabase }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [reserves, setReserves] = useState({
+    duca_pending_gtq: 0,
+    dispatch_pending_gtq: 0,
+    other_pending_gtq: 0,
+    total_pending_gtq: 0,
+    supplier_payments_period_gtq: 0,
+    duca_provider_debt_gtq: 0,
+    dispatch_provider_debt_gtq: 0,
+    other_provider_debt_gtq: 0,
+    total_provider_debt_gtq: 0,
+  });
 
   const [fromDate, setFromDate] = useState(monthStart());
   const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
@@ -57,6 +70,12 @@ export default function FinanceDashboard({ supabase }) {
       );
       if (summaryError) throw summaryError;
 
+      const { data: reserveRows, error: reserveError } = await supabase.rpc(
+        "finance_operational_reserves_v396223",
+        { p_from: fromDate, p_to: toDate }
+      );
+      if (reserveError) throw reserveError;
+
       const { data: caseRows, error: caseError } = await supabase
         .from("finance_case_overview")
         .select("*")
@@ -84,6 +103,17 @@ export default function FinanceDashboard({ supabase }) {
       if (closingError) throw closingError;
 
       setSummary(Array.isArray(summaryRows) ? summaryRows[0] : summaryRows);
+      setReserves((Array.isArray(reserveRows) ? reserveRows[0] : reserveRows) || {
+        duca_pending_gtq: 0,
+        dispatch_pending_gtq: 0,
+        other_pending_gtq: 0,
+        total_pending_gtq: 0,
+        supplier_payments_period_gtq: 0,
+        duca_provider_debt_gtq: 0,
+        dispatch_provider_debt_gtq: 0,
+        other_provider_debt_gtq: 0,
+        total_provider_debt_gtq: 0,
+      });
       setCases(caseRows || []);
       setExpenses(expenseRows || []);
       setClosings(closingRows || []);
@@ -187,6 +217,22 @@ export default function FinanceDashboard({ supabase }) {
     net_result_gtq: 0,
   };
 
+  const reserveTotal = Number(reserves?.total_pending_gtq || 0);
+  const providerDebtTotal = Number(reserves?.total_provider_debt_gtq || 0);
+  // V39.6.22.5
+  // Disponible real DEL PERÍODO:
+  // dinero cobrado - salidas reales - gastos - apartados operativos pendientes.
+  // finance_period_summary ya devuelve cash_result_gtq =
+  // cobrado - salidas reales - gastos.
+  const grossProfit = Number(s.gross_profit_gtq || 0);
+  const generalExpenses = Number(s.general_expenses_gtq || 0);
+
+  // V39.6.22.6
+  // Disponible real según criterio E&R:
+  // Utilidad bruta - gastos generales - apartado operativo.
+  const availableAfterReserves =
+    grossProfit - generalExpenses - reserveTotal;
+
   const expenseByCategory = useMemo(() => {
     return expenses.reduce((acc, item) => {
       acc[item.category] = (acc[item.category] || 0) + Number(item.amount_gtq || 0);
@@ -228,7 +274,54 @@ export default function FinanceDashboard({ supabase }) {
         <article><span>Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong><small>Personal, renta, servicios...</small></article>
         <article className={Number(s.net_result_gtq || 0) >= 0 ? "profit" : "danger"}><span>Utilidad neta</span><strong>{q(s.net_result_gtq)}</strong><small>Utilidad bruta - gastos generales</small></article>
         <article><span>Pagos a proveedores</span><strong>{q(s.supplier_payments_gtq || 0)}</strong><small>Salidas reales por cuentas a pagar</small></article>
-        <article className={Number(s.cash_result_gtq ?? s.net_result_gtq) >= 0 ? "profit" : "danger"}><span>Flujo de caja</span><strong>{q(s.cash_result_gtq ?? s.net_result_gtq)}</strong><small>Cobrado - salidas reales - gastos</small></article>
+        <article className="warning"><span>Apartado operativo</span><strong>{q(reserveTotal)}</strong><small>DUCA usadas + despachos pendientes</small></article>
+        <article className={availableAfterReserves >= 0 ? "profit" : "danger"}>
+          <span>Disponible real</span>
+          <strong>{q(availableAfterReserves)}</strong>
+          <small>Utilidad bruta - gastos generales - apartado operativo</small>
+        </article>
+      </section>
+
+      <section className="finance-reserve-board">
+        <div className="finance-reserve-head">
+          <div>
+            <span className="finance-eyebrow">OBLIGACIONES Y DINERO APARTADO</span>
+            <h2>Apartados operativos y deuda pendiente</h2>
+            <p>La deuda total muestra todo lo que todavía debemos a proveedores. El apartado operativo solo reserva lo ya consumido por gestiones activas y evita confundir deuda futura con dinero que debe quedar inmovilizado hoy.</p>
+          </div>
+          <div className="finance-provider-debt-total">
+            <small>DEUDA TOTAL PROVEEDORES</small>
+            <strong>{q(providerDebtTotal)}</strong>
+          </div>
+        </div>
+
+        <div className="finance-reserve-grid finance-reserve-grid-v396223">
+          <article className="debt-card">
+            <span>💳 Deuda total proveedores</span>
+            <strong>{q(providerDebtTotal)}</strong>
+            <small>Todo lo pendiente: lotes DUCA + despachos + otros</small>
+          </article>
+
+          <article>
+            <span>🧾 Apartado DUCA usadas</span>
+            <strong>{q(reserves?.duca_pending_gtq)}</strong>
+            <small>Solo correlativos ya utilizados en gestiones y aún no cubiertos</small>
+          </article>
+
+          <article>
+            <span>🚙 Despachos pendientes</span>
+            <strong>{q(reserves?.dispatch_pending_gtq)}</strong>
+            <small>Gestiones de despacho reconocidas y todavía no pagadas</small>
+          </article>
+
+          <article>
+            <span>🔒 Apartado operativo total</span>
+            <strong>{q(reserveTotal)}</strong>
+            <small>Dinero comprometido por servicios ya consumidos</small>
+          </article>
+
+        </div>
+
       </section>
 
       <div className="finance-grid-layout">
@@ -327,6 +420,11 @@ export default function FinanceDashboard({ supabase }) {
         </div>
       </section>
 
+      <AccountsReceivablePanel
+        supabase={supabase}
+        onChanged={load}
+      />
+
       <AccountsPayablePanel
         supabase={supabase}
         onChanged={load}
@@ -352,7 +450,9 @@ export default function FinanceDashboard({ supabase }) {
             <div><span>- Salidas operativas reales</span><strong>{q(s.cash_direct_outflows_gtq ?? s.direct_costs_gtq)}</strong></div>
             <div><span className="closing-subnote">Incluye pagos a proveedores: {q(s.supplier_payments_gtq || 0)}</span><strong></strong></div>
             <div><span>- Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong></div>
-            <div className="closing-total"><span>Saldo final estimado</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number((s.cash_direct_outflows_gtq ?? s.direct_costs_gtq) || 0) - Number(s.general_expenses_gtq || 0))}</strong></div>
+            <div><span>Saldo de caja estimado</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number((s.cash_direct_outflows_gtq ?? s.direct_costs_gtq) || 0) - Number(s.general_expenses_gtq || 0))}</strong></div>
+            <div><span>- Apartado operativo pendiente</span><strong>{q(reserveTotal)}</strong></div>
+            <div className="closing-total"><span>Disponible no comprometido</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number((s.cash_direct_outflows_gtq ?? s.direct_costs_gtq) || 0) - Number(s.general_expenses_gtq || 0) - reserveTotal)}</strong></div>
           </div>
         </div>
 

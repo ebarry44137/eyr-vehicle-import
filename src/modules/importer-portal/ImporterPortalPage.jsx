@@ -4,6 +4,7 @@ import "./importer-portal.css";
 import "./portal-v39.6.0.css";
 import "./portal-customs-request-v39621.css";
 import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
+import FirebasePushActivation from "../notifications/FirebasePushActivation.jsx";
 
 const DEFAULT_BRAND = {
   office_name: "E&R Solutions",
@@ -598,6 +599,12 @@ export default function ImporterPortalPage() {
                 <p>Seguimiento de las operaciones que {brandName} está gestionando para tu cuenta.</p>
               </div>
             </section>
+
+            <FirebasePushActivation
+              supabase={supabase}
+              title="Activá las notificaciones de tu gestión"
+              description={`Recibí avisos de ${brandName} cuando tu expediente cambie de estado, tenga selectivo o nuevos documentos.`}
+            />
 
             <section className="ip-kpi-grid">
               <article><span>🚢</span><div><small>IMPORTACIONES ACTIVAS</small><strong>{kpis.active}</strong></div></article>

@@ -1,0 +1,138 @@
+.finance-reserve-board{margin:16px 0;padding:18px;border:1px solid #dce6ee;border-radius:18px;background:linear-gradient(135deg,#fbfdff,#f4f8fb);box-shadow:0 5px 22px rgba(15,57,88,.05)}
+.finance-reserve-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:14px}.finance-reserve-head h2{margin:3px 0;color:#143e60}.finance-reserve-head p{margin:0;max-width:760px;color:#718596;font-size:10px;line-height:1.5}.finance-reserve-head>strong{font-size:24px;color:#b57913;white-space:nowrap}.finance-reserve-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.finance-reserve-grid article{padding:13px 14px;border:1px solid #e0e8ee;border-radius:13px;background:#fff}.finance-reserve-grid span,.finance-reserve-grid strong,.finance-reserve-grid small{display:block}.finance-reserve-grid span{font-size:8px;font-weight:900;color:#657b8d}.finance-reserve-grid strong{margin-top:5px;font-size:18px;color:#143c5d}.finance-reserve-grid small{margin-top:4px;font-size:7px;color:#8a99a6}.finance-reserve-grid article.available{border-color:#cde7d7;background:#f4fbf6}.finance-reserve-grid article.available strong{color:#1d774b}.finance-reserve-grid article.danger{border-color:#efc9c9;background:#fff7f7}.finance-reserve-grid article.danger strong{color:#ad3e3e}
+.finance-ap-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 15px}.finance-ap-kpis article{padding:12px;border:1px solid #dfe8ef;border-radius:12px;background:#f8fbfd}.finance-ap-kpis span,.finance-ap-kpis strong{display:block}.finance-ap-kpis span{font-size:8px;color:#738696;font-weight:900}.finance-ap-kpis strong{margin-top:4px;color:#173f60;font-size:16px}.finance-ap-kpis article.total{background:#fff8e9;border-color:#efdcae}.finance-ap-kpis article.total strong{color:#9a6a12}.ap-type{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:7px;font-weight:950;white-space:nowrap;background:#edf4fa;color:#315f7d}.ap-type.duca_batch{background:#fff4d8;color:#916718}.ap-type.dispatch_case{background:#eaf5ff;color:#23628d}.ap-pay-button{border:0;border-radius:9px;padding:8px 10px;background:#123f63;color:#fff;font-size:8px;font-weight:900;cursor:pointer;white-space:nowrap}.ap-payment-backdrop{position:fixed;inset:0;z-index:10020;display:grid;place-items:center;padding:20px;background:rgba(6,29,48,.70);backdrop-filter:blur(5px)}.ap-payment-modal{width:min(620px,96vw);border-radius:18px;background:#fff;box-shadow:0 28px 90px rgba(0,0,0,.28);overflow:hidden}.ap-payment-modal>header{display:flex;justify-content:space-between;gap:16px;padding:18px 20px;background:#123f63;color:#fff}.ap-payment-modal>header h3{margin:3px 0}.ap-payment-modal>header p{margin:0;color:#d6e4ee;font-size:9px}.ap-payment-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:16px 20px 0}.ap-payment-summary>div{padding:10px;border:1px solid #e0e8ee;border-radius:11px;background:#f8fbfd}.ap-payment-summary span,.ap-payment-summary strong{display:block}.ap-payment-fields{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:11px}.ap-payment-fields label{display:grid;gap:4px}.ap-payment-fields .span-2{grid-column:1/-1}.ap-payment-fields input,.ap-payment-fields select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d9e3ea;border-radius:10px}.ap-payment-modal>footer{padding:13px 20px;border-top:1px solid #e2eaf0;display:flex;justify-content:flex-end;gap:8px}.ap-payment-modal>footer button{border:0;border-radius:10px;padding:10px 13px;background:#123f63;color:#fff;font-size:8px;font-weight:900}.ap-payment-modal>footer button.secondary{background:#eef3f6;color:#465e70}@media(max-width:900px){.finance-reserve-grid{grid-template-columns:1fr 1fr}}@media(max-width:620px){.finance-reserve-head{flex-direction:column}.finance-reserve-grid,.finance-ap-kpis,.ap-payment-summary,.ap-payment-fields{grid-template-columns:1fr}.ap-payment-fields .span-2{grid-column:auto}}
+/* =========================================================
+   V39.6.22.3 · DEUDA TOTAL + DISPONIBLE REAL
+   ========================================================= */
+.finance-provider-debt-total{display:grid;gap:2px;text-align:right;white-space:nowrap}
+.finance-provider-debt-total small{font-size:7px;font-weight:950;color:#8b6a24;letter-spacing:.06em}
+.finance-provider-debt-total strong{font-size:24px;color:#a56b08}
+.finance-reserve-grid-v396223{grid-template-columns:repeat(4,minmax(0,1fr))}
+.finance-reserve-grid-v396223 .debt-card{background:#fff8e8;border-color:#efd8a5}
+.finance-reserve-grid-v396223 .debt-card strong{color:#9a6810}
+.finance-opening-cash-card input{width:100%;box-sizing:border-box;margin-top:6px;padding:8px 9px;border:1px solid #d8e3ea;border-radius:9px;background:#fff;color:#143c5d;font-size:14px;font-weight:850;outline:none}
+.finance-opening-cash-card input:focus{border-color:#8eb2ca;box-shadow:0 0 0 3px rgba(79,137,177,.12)}
+.finance-cash-explainer{margin-top:12px;padding:10px 12px;border:1px dashed #cbd9e3;border-radius:11px;background:#f9fbfd;display:flex;gap:8px;align-items:flex-start;color:#6f8291;font-size:8px;line-height:1.45}
+.finance-cash-explainer strong{color:#31536d;white-space:nowrap}
+@media(max-width:1050px){.finance-reserve-grid-v396223{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.finance-provider-debt-total{text-align:left}.finance-reserve-grid-v396223{grid-template-columns:1fr}.finance-cash-explainer{display:grid}}
+
+
+/* =========================================================
+   V39.6.22.4 · POSICIÓN DE CAJA SEPARADA DE APARTADOS
+   ========================================================= */
+.finance-cash-position-board{
+  margin:16px 0;
+  padding:18px;
+  border:1px solid #dce6ee;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 5px 22px rgba(15,57,88,.05)
+}
+.finance-cash-position-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:14px
+}
+.finance-cash-position-head h2{
+  margin:3px 0;
+  color:#143e60
+}
+.finance-cash-position-head p{
+  margin:0;
+  max-width:780px;
+  color:#718596;
+  font-size:10px;
+  line-height:1.5
+}
+.finance-cash-position-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px
+}
+.finance-cash-position-grid article{
+  padding:13px 14px;
+  border:1px solid #e0e8ee;
+  border-radius:13px;
+  background:#f9fbfd
+}
+.finance-cash-position-grid span,
+.finance-cash-position-grid strong,
+.finance-cash-position-grid small{
+  display:block
+}
+.finance-cash-position-grid span{
+  font-size:8px;
+  font-weight:900;
+  color:#657b8d
+}
+.finance-cash-position-grid strong{
+  margin-top:5px;
+  font-size:18px;
+  color:#143c5d
+}
+.finance-cash-position-grid small{
+  margin-top:4px;
+  font-size:7px;
+  color:#8a99a6;
+  line-height:1.35
+}
+.finance-cash-position-grid article.available{
+  border-color:#cde7d7;
+  background:#f4fbf6
+}
+.finance-cash-position-grid article.available strong{
+  color:#1d774b
+}
+.finance-cash-position-grid article.danger{
+  border-color:#efc9c9;
+  background:#fff7f7
+}
+.finance-cash-position-grid article.danger strong,
+.finance-cash-position-grid .negative-value{
+  color:#ad3e3e
+}
+.finance-cash-position-grid .positive-value{
+  color:#1d774b
+}
+
+/* En el panel de apartados quedan únicamente 4 conceptos */
+.finance-reserve-grid-v396223{
+  grid-template-columns:repeat(4,minmax(0,1fr))
+}
+
+@media(max-width:1050px){
+  .finance-cash-position-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+}
+@media(max-width:620px){
+  .finance-cash-position-grid{
+    grid-template-columns:1fr
+  }
+}
+
+
+/* =========================================================
+   V39.6.22.5 · DISPONIBLE REAL EN RESUMEN SUPERIOR
+   ========================================================= */
+.finance-kpis{
+  grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+}
+.finance-kpis article.warning strong{
+  color:#a66a00;
+}
+.finance-kpis article.danger{
+  border-color:#efc9c9;
+  background:#fff7f7;
+}
+.finance-kpis article.danger strong{
+  color:#ad3e3e;
+}
+
+/* El panel de obligaciones queda dedicado solo a deuda/apartados. */
+.finance-reserve-board{
+  margin-top:16px;
+}

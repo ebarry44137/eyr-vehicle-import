@@ -1,19 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-
-function urlBase64ToUint8Array(base64String) {
-  const padding =
-    "=".repeat((4 - (base64String.length % 4)) % 4);
-
-  const base64 = (base64String + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-
-  const rawData = window.atob(base64);
-
-  return Uint8Array.from(
-    [...rawData].map((char) => char.charCodeAt(0))
-  );
-}
+import {
+  getFirebasePushStatus,
+  listenForegroundMessages,
+  registerFirebaseDevice,
+} from "./firebaseMessagingCompat";
 
 export default function AdminNotificationBell({
   supabase,
@@ -23,6 +13,8 @@ export default function AdminNotificationBell({
   const [open, setOpen] = useState(false);
   const [pushState, setPushState] = useState("UNKNOWN");
   const [pushLoading, setPushLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
 
   const unread = useMemo(
     () => items.filter((item) => !item.is_read).length,
@@ -37,26 +29,38 @@ export default function AdminNotificationBell({
       { p_limit: 25 }
     );
 
-    if (!error) {
-      setItems(data || []);
-    }
+    if (!error) setItems(data || []);
   }
 
   useEffect(() => {
     if (!userId) return;
 
+    let alive = true;
+    let stopForeground = null;
+
     loadNotifications();
 
-    const timer = window.setInterval(
-      loadNotifications,
-      30000
-    );
+    const timer = window.setInterval(loadNotifications, 30000);
 
-    if ("Notification" in window) {
-      setPushState(Notification.permission);
-    }
+    getFirebasePushStatus({ supabase }).then((status) => {
+      if (alive) setPushState(status?.state || "UNKNOWN");
+    });
 
-    return () => window.clearInterval(timer);
+    listenForegroundMessages(async () => {
+      await loadNotifications();
+    })
+      .then((stop) => {
+        stopForeground = stop;
+      })
+      .catch((error) => {
+        console.warn("FCM foreground listener pending:", error?.message);
+      });
+
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      stopForeground?.();
+    };
   }, [userId]);
 
   async function markRead(notificationId) {
@@ -77,76 +81,71 @@ export default function AdminNotificationBell({
   }
 
   async function enablePush() {
-    if (
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window) ||
-      !("Notification" in window)
-    ) {
-      setPushState("UNSUPPORTED");
-      return;
-    }
-
-    const publicKey =
-      import.meta.env.VITE_VAPID_PUBLIC_KEY;
-
-    if (!publicKey) {
-      setPushState("MISSING_KEY");
-      return;
-    }
-
     setPushLoading(true);
+    setPushMessage("");
 
     try {
-      const permission =
-        await Notification.requestPermission();
+      const result = await registerFirebaseDevice({ supabase });
+      if (result.permission === "granted") {
+        const status = await getFirebasePushStatus({ supabase });
+        setPushState(status?.state || "UNKNOWN");
 
-      setPushState(permission);
+        if (!status?.registered) {
+          throw new Error(
+            "El navegador dio permiso, pero el dispositivo no quedó registrado en notification_devices."
+          );
+        }
 
-      if (permission !== "granted") return;
-
-      const registration =
-        await navigator.serviceWorker.register(
-          "/push-sw.js"
+        setPushMessage("✅ Este dispositivo ya quedó conectado con Firebase.");
+      } else if (result.permission === "denied") {
+        setPushMessage(
+          "El navegador bloqueó las notificaciones. Podés habilitarlas desde los permisos del sitio."
         );
-
-      await navigator.serviceWorker.ready;
-
-      let subscription =
-        await registration.pushManager.getSubscription();
-
-      if (!subscription) {
-        subscription =
-          await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey:
-              urlBase64ToUint8Array(publicKey),
-          });
       }
-
-      const json = subscription.toJSON();
-
-      const { error } = await supabase
-        .from("push_subscriptions")
-        .upsert(
-          {
-            user_id: userId,
-            endpoint: subscription.endpoint,
-            p256dh: json?.keys?.p256dh || null,
-            auth: json?.keys?.auth || null,
-            user_agent: navigator.userAgent,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "endpoint" }
-        );
-
-      if (error) throw error;
-
-      setPushState("granted");
-    } catch (err) {
-      console.error("PUSH REGISTRATION ERROR:", err);
+    } catch (error) {
+      console.error("FCM DEVICE REGISTRATION ERROR:", error);
       setPushState("ERROR");
+      setPushMessage(error?.message || "No fue posible activar Firebase Push.");
     } finally {
       setPushLoading(false);
+    }
+  }
+
+  async function sendTestPush() {
+    setTestLoading(true);
+    setPushMessage("");
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) throw new Error("Sesión requerida.");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-fcm-notification`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ action: "test_self" }),
+        }
+      );
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || "No fue posible enviar la prueba.");
+      }
+
+      setPushMessage(
+        `✅ Push enviado a ${payload.sent || 0} dispositivo(s).`
+      );
+    } catch (error) {
+      console.error("FCM TEST ERROR:", error);
+      setPushMessage(error?.message || "Falló la prueba de Firebase Push.");
+    } finally {
+      setTestLoading(false);
     }
   }
 
@@ -162,9 +161,7 @@ export default function AdminNotificationBell({
         aria-label="Notificaciones"
       >
         🔔
-        {unread > 0 && (
-          <b>{unread > 9 ? "9+" : unread}</b>
-        )}
+        {unread > 0 && <b>{unread > 9 ? "9+" : unread}</b>}
       </button>
 
       {open && (
@@ -175,22 +172,23 @@ export default function AdminNotificationBell({
               <h3>Notificaciones</h3>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-            >
+            <button type="button" onClick={() => setOpen(false)}>
               ×
             </button>
           </header>
 
-          {pushState !== "granted" && (
+          {pushState !== "REGISTERED" ? (
             <div className="push-enable-card">
               <div>
-                <strong>🔔 Activá notificaciones push</strong>
+                <strong>🔥 Activá Firebase Push</strong>
                 <p>
-                  Recibí nuevas solicitudes aduanales
-                  aunque estés trabajando en otra pestaña.
+                  Recibí alertas de E&R aunque la plataforma esté cerrada.
                 </p>
+                {pushState === "PERMISSION_ONLY" && (
+                  <small>
+                    El permiso existe, pero este dispositivo todavía no está registrado en Firebase.
+                  </small>
+                )}
               </div>
 
               <button
@@ -198,9 +196,28 @@ export default function AdminNotificationBell({
                 onClick={enablePush}
                 disabled={pushLoading}
               >
-                {pushLoading ? "Activando..." : "Activar"}
+                {pushLoading ? "Conectando..." : "Activar"}
               </button>
             </div>
+          ) : (
+            <div className="push-enable-card push-enabled-card">
+              <div>
+                <strong>✅ Firebase Push activo</strong>
+                <p>Este navegador ya puede recibir notificaciones.</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={sendTestPush}
+                disabled={testLoading}
+              >
+                {testLoading ? "Enviando..." : "Probar push"}
+              </button>
+            </div>
+          )}
+
+          {pushMessage && (
+            <div className="notification-push-message">{pushMessage}</div>
           )}
 
           <div className="admin-notification-list">
@@ -226,9 +243,7 @@ export default function AdminNotificationBell({
                   <p>{item.body}</p>
                   <small>
                     {item.created_at
-                      ? new Date(
-                          item.created_at
-                        ).toLocaleString("es-GT")
+                      ? new Date(item.created_at).toLocaleString("es-GT")
                       : ""}
                   </small>
                 </div>

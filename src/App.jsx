@@ -234,18 +234,19 @@ function officialVehicleLogoUrl(make) {
 
   if (!slug) return "";
 
-  return `https://raw.githubusercontent.com/diegojasso/car-logos-SVG/main/logos/${slug}.svg`;
+  return `https://cdn.jsdelivr.net/gh/vehiclespecs/brand-logos@v1.0.0/${slug}-logo.svg`;
 }
 
 function VehicleMakeLogo({ make }) {
-  const [logoDataUrl, setLogoDataUrl] = useState("");
+  const [pngDataUrl, setPngDataUrl] = useState("");
   const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+
     const url = officialVehicleLogoUrl(make);
 
-    setLogoDataUrl("");
+    setPngDataUrl("");
     setLogoError(false);
 
     if (!url) {
@@ -255,7 +256,7 @@ function VehicleMakeLogo({ make }) {
       };
     }
 
-    async function loadOfficialLogo() {
+    async function loadAndRasterizeOfficialLogo() {
       try {
         const response = await fetch(url, {
           mode: "cors",
@@ -268,15 +269,161 @@ function VehicleMakeLogo({ make }) {
 
         const svgText = await response.text();
 
-        const dataUrl =
-          "data:image/svg+xml;charset=UTF-8," +
-          encodeURIComponent(svgText);
+        // Normalizamos el SVG antes de rasterizarlo.
+        // Algunos logos traen width/height que no coinciden con su viewBox
+        // y eso hace que el navegador los estire al convertirlos a PNG.
+        const parser = new DOMParser();
+        const svgDocument = parser.parseFromString(
+          svgText,
+          "image/svg+xml"
+        );
 
-        if (!cancelled) {
-          setLogoDataUrl(dataUrl);
+        const svgElement = svgDocument.documentElement;
+
+        if (
+          !svgElement ||
+          String(svgElement.nodeName).toLowerCase() !== "svg"
+        ) {
+          throw new Error("El archivo del fabricante no es un SVG válido.");
+        }
+
+        const viewBoxRaw =
+          svgElement.getAttribute("viewBox") ||
+          svgElement.getAttribute("viewbox") ||
+          "";
+
+        const viewBox = viewBoxRaw
+          .trim()
+          .split(/[,\s]+/)
+          .map(Number);
+
+        let sourceWidth = 512;
+        let sourceHeight = 256;
+
+        if (
+          viewBox.length === 4 &&
+          viewBox.every(Number.isFinite) &&
+          viewBox[2] > 0 &&
+          viewBox[3] > 0
+        ) {
+          sourceWidth = viewBox[2];
+          sourceHeight = viewBox[3];
+        } else {
+          const parsedWidth = Number.parseFloat(
+            String(svgElement.getAttribute("width") || "")
+          );
+
+          const parsedHeight = Number.parseFloat(
+            String(svgElement.getAttribute("height") || "")
+          );
+
+          if (
+            Number.isFinite(parsedWidth) &&
+            parsedWidth > 0 &&
+            Number.isFinite(parsedHeight) &&
+            parsedHeight > 0
+          ) {
+            sourceWidth = parsedWidth;
+            sourceHeight = parsedHeight;
+
+            svgElement.setAttribute(
+              "viewBox",
+              `0 0 ${sourceWidth} ${sourceHeight}`
+            );
+          }
+        }
+
+        // Muy importante: quitamos dimensiones rígidas del archivo original.
+        svgElement.removeAttribute("width");
+        svgElement.removeAttribute("height");
+        svgElement.setAttribute("width", String(sourceWidth));
+        svgElement.setAttribute("height", String(sourceHeight));
+        svgElement.setAttribute(
+          "preserveAspectRatio",
+          "xMidYMid meet"
+        );
+
+        const serializer = new XMLSerializer();
+        const normalizedSvgText =
+          serializer.serializeToString(svgElement);
+
+        const svgBlob = new Blob([normalizedSvgText], {
+          type: "image/svg+xml;charset=utf-8",
+        });
+
+        const objectUrl = URL.createObjectURL(svgBlob);
+
+        try {
+          const image = await new Promise((resolve, reject) => {
+            const img = new Image();
+
+            img.onload = () => resolve(img);
+            img.onerror = () =>
+              reject(
+                new Error(
+                  `No se pudo rasterizar el logo de ${make}.`
+                )
+              );
+
+            img.src = objectUrl;
+          });
+
+          // Conservamos SIEMPRE la proporción real del viewBox.
+          const ratio = sourceWidth / sourceHeight;
+
+          const maxWidth = 900;
+          const maxHeight = 480;
+
+          let targetWidth = maxWidth;
+          let targetHeight = targetWidth / ratio;
+
+          if (targetHeight > maxHeight) {
+            targetHeight = maxHeight;
+            targetWidth = targetHeight * ratio;
+          }
+
+          const canvas = document.createElement("canvas");
+
+          canvas.width = Math.max(
+            1,
+            Math.round(targetWidth)
+          );
+
+          canvas.height = Math.max(
+            1,
+            Math.round(targetHeight)
+          );
+
+          const ctx = canvas.getContext("2d", {
+            alpha: true,
+          });
+
+          if (!ctx) {
+            throw new Error(
+              "No se pudo preparar el canvas del logo."
+            );
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          ctx.drawImage(
+            image,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+
+          const dataUrl = canvas.toDataURL("image/png");
+
+          if (!cancelled) {
+            setPngDataUrl(dataUrl);
+          }
+        } finally {
+          URL.revokeObjectURL(objectUrl);
         }
       } catch (err) {
-        console.warn("VEHICLE BRAND LOGO ERROR:", make, err);
+        console.warn("VEHICLE BRAND LOGO RASTER ERROR:", make, err);
 
         if (!cancelled) {
           setLogoError(true);
@@ -284,19 +431,21 @@ function VehicleMakeLogo({ make }) {
       }
     }
 
-    loadOfficialLogo();
+    loadAndRasterizeOfficialLogo();
 
     return () => {
       cancelled = true;
     };
   }, [make]);
 
-  if (logoDataUrl) {
+  if (pngDataUrl) {
     return (
       <img
-        className="quote-make-official-logo"
-        data-quote-vehicle-logo="true"
-        src={logoDataUrl}
+        className={`quote-make-official-logo brand-${normalizeVehicleBrandName(make)
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")}`}
+        data-quote-vehicle-logo="ready"
+        src={pngDataUrl}
         alt={`Logo ${make || "vehículo"}`}
       />
     );
@@ -305,7 +454,7 @@ function VehicleMakeLogo({ make }) {
   return (
     <div
       className={`quote-make-logo-loading${logoError ? " error" : ""}`}
-      data-quote-vehicle-logo="true"
+      data-quote-vehicle-logo={logoError ? "error" : "loading"}
     >
       {logoError
         ? String(make || "MARCA").toUpperCase()
@@ -314,18 +463,54 @@ function VehicleMakeLogo({ make }) {
   );
 }
 
+async function waitForVehicleLogoRaster(root) {
+  if (!root) return;
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const state = root
+      .querySelector("[data-quote-vehicle-logo]")
+      ?.getAttribute("data-quote-vehicle-logo");
+
+    if (!state || state === "ready" || state === "error") {
+      break;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  const logo = root.querySelector(
+    'img[data-quote-vehicle-logo="ready"]'
+  );
+
+  if (logo && !(logo.complete && logo.naturalWidth > 0)) {
+    await new Promise((resolve) => {
+      const done = () => resolve();
+
+      logo.addEventListener("load", done, { once: true });
+      logo.addEventListener("error", done, { once: true });
+
+      setTimeout(done, 1500);
+    });
+  }
+
+  await new Promise((resolve) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(resolve)
+    )
+  );
+}
+
+
 async function waitForQuoteImages(root) {
   if (!root) return;
 
-  // Da tiempo a que VehicleMakeLogo termine de convertir el SVG oficial
-  // a data URL antes de que html2canvas capture la cotización.
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const pendingVehicleLogo = root.querySelector(
-      '[data-quote-vehicle-logo="true"].quote-make-logo-loading:not(.error)'
+      '[data-quote-vehicle-logo="true"].quote-make-logo-loading:not(.error), ' +
+      '[data-quote-vehicle-logo="loading"]'
     );
 
     if (!pendingVehicleLogo) break;
-
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
@@ -347,6 +532,12 @@ async function waitForQuoteImages(root) {
 
           setTimeout(done, 2500);
         })
+    )
+  );
+
+  await new Promise((resolve) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(resolve)
     )
   );
 }
@@ -3333,6 +3524,12 @@ async function openCustomsDetail(item) {
     setCustomsMessage("");
 
     try {
+      // V39.7.2 · snapshot para detectar hitos que ACABAN de ocurrir.
+      const previousCustomsDetail = selectedCustomsCase
+        ? { ...selectedCustomsCase }
+        : null;
+
+
 
       const { error: customsImporterAssignmentError } = await supabase.rpc(
         "assign_customs_case_importer_v393",
@@ -3407,6 +3604,93 @@ async function openCustomsDetail(item) {
           .single();
 
       if (updateError) throw updateError;
+
+      // V39.7.2 · notificamos solamente hitos NUEVOS.
+      // Un fallo de Firebase nunca bloquea el guardado del expediente.
+      try {
+        const before = previousCustomsDetail || {};
+        const after = data || {};
+
+        const events = [];
+
+        if (
+          !before.office_portal_client_id &&
+          after.office_portal_client_id
+        ) {
+          events.push("CASE_LINKED");
+        }
+
+        const milestoneFields = [
+          ["docs_collected_at", "DOCS_COLLECTED"],
+          ["declaration_signed_at", "DECLARATION_SIGNED"],
+          ["iva_form_sent_at", "IVA_FORM_SENT"],
+          ["iva_paid_at", "IVA_PAID"],
+          ["port_exit_at", "PORT_EXIT"],
+          ["envelope_ready_at", "ENVELOPE_READY"],
+          ["delivered_at", "DELIVERED"],
+        ];
+
+        for (const [field, eventType] of milestoneFields) {
+          if (!before[field] && after[field]) {
+            events.push(eventType);
+          }
+        }
+
+        const beforeSelective = String(before.selective_type || "")
+          .trim()
+          .toUpperCase();
+        const afterSelective = String(after.selective_type || "")
+          .trim()
+          .toUpperCase();
+
+        const selectiveJustHappened =
+          Boolean(after.selective_at) &&
+          (
+            !before.selective_at ||
+            beforeSelective !== afterSelective
+          );
+
+        if (selectiveJustHappened) {
+          if (
+            afterSelective.includes("ROJO") ||
+            afterSelective === "RED"
+          ) {
+            events.push("SELECTIVE_RED");
+          } else if (
+            afterSelective.includes("VERDE") ||
+            afterSelective === "GREEN"
+          ) {
+            events.push("SELECTIVE_GREEN");
+          }
+        }
+
+        for (const eventType of [...new Set(events)]) {
+          const { error: pushError } = await supabase.functions.invoke(
+            "send-fcm-notification",
+            {
+              body: {
+                action: "customs_case_milestone",
+                case_id: after.id,
+                event_type: eventType,
+              },
+            }
+          );
+
+          if (pushError) {
+            console.warn(
+              "CUSTOMS CLIENT PUSH WARNING:",
+              eventType,
+              pushError.message
+            );
+          }
+        }
+      } catch (pushErr) {
+        console.warn(
+          "CUSTOMS CLIENT PUSH WARNING:",
+          pushErr?.message
+        );
+      }
+
 
       setSelectedCustomsCase(data);
       setCustomsDetail(data);
@@ -3609,6 +3893,8 @@ async function openCustomsDetail(item) {
       const savedQuotation = await saveCurrentQuotation();
 
       await waitForQuoteImages(quoteRef.current);
+
+      await waitForVehicleLogoRaster(quoteRef.current);
 
       const canvas = await html2canvas(quoteRef.current, {
         scale: 2,

@@ -242,7 +242,7 @@ export default function OperationFilesPanel({
         throw new Error(`R2 rechazó la carga (${response.status}).`);
       }
 
-      await invoke({
+      const registered = await invoke({
         action: "register",
         source_type: sourceType,
         source_id: sourceId,
@@ -255,6 +255,38 @@ export default function OperationFilesPanel({
         visible_to_client: visible,
       });
 
+      // V39.7.3 · PUSH DOCUMENTO PUBLICADO
+      // Solo documentos visibles al cliente. Las fotos no generan Push para evitar spam.
+      if (
+        visible &&
+        String(category || "").toUpperCase() !== "PHOTO" &&
+        registered?.file?.id
+      ) {
+        try {
+          const { error: pushError } = await supabase.functions.invoke(
+            "send-fcm-notification",
+            {
+              body: {
+                action: "operation_document_published",
+                file_id: registered.file.id,
+              },
+            }
+          );
+
+          if (pushError) {
+            console.warn(
+              "DOCUMENT CLIENT PUSH WARNING:",
+              pushError.message
+            );
+          }
+        } catch (pushErr) {
+          console.warn(
+            "DOCUMENT CLIENT PUSH WARNING:",
+            pushErr?.message
+          );
+        }
+      }
+
       if (!silent) {
         setMessage(`${file.name} guardado en Cloudflare R2.`);
       }
@@ -262,6 +294,7 @@ export default function OperationFilesPanel({
       return {
         ok: true,
         name: file.name,
+        fileId: registered?.file?.id || null,
       };
     } catch (e) {
       const error = e?.message || "No fue posible subir el archivo.";
@@ -360,6 +393,47 @@ export default function OperationFilesPanel({
 
     if (success > 0) {
       await load();
+    }
+
+    // V39.7.3.1 · PUSH LOTE DE FOTOGRAFÍAS
+    // Se envía UNA sola notificación al finalizar toda la carga, usando
+    // únicamente la cantidad de fotos que realmente se registraron.
+    if (
+      success > 0 &&
+      visible &&
+      String(category || "").toUpperCase() === "PHOTO"
+    ) {
+      const representativeFileId =
+        [...results]
+          .reverse()
+          .find((item) => item?.ok && item?.fileId)?.fileId || null;
+
+      if (representativeFileId) {
+        try {
+          const { error: pushError } = await supabase.functions.invoke(
+            "send-fcm-notification",
+            {
+              body: {
+                action: "operation_photo_batch_published",
+                file_id: representativeFileId,
+                photo_count: success,
+              },
+            }
+          );
+
+          if (pushError) {
+            console.warn(
+              "PHOTO BATCH CLIENT PUSH WARNING:",
+              pushError.message
+            );
+          }
+        } catch (pushErr) {
+          console.warn(
+            "PHOTO BATCH CLIENT PUSH WARNING:",
+            pushErr?.message
+          );
+        }
+      }
     }
 
     setMessage(

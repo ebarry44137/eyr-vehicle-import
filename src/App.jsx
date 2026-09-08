@@ -37,6 +37,7 @@ import ImportersPage from "./modules/importers/ImportersPage.jsx";
 import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
 import "./modules/customs/portal-customs-requests-v39621.css";
 import CustomerSupportPage from "./modules/customer-support/CustomerSupportPage.jsx";
+import InternalOperationsDashboard from "./modules/internal-dashboard/InternalOperationsDashboard.jsx";
 // V39.7.7 · CUSTOMER SUPPORT
 
 function moneyGTQ(value) {
@@ -5433,9 +5434,13 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
         <nav>
           <button
-            className={`nav-item ${activeView === "importer-dashboard" ? "active" : ""}`}
+            className={`nav-item ${(
+              isStandaloneImporter
+                ? activeView === "importer-dashboard"
+                : activeView === "dashboard"
+            ) ? "active" : ""}`}
             onClick={() => {
-              if (isStandaloneImporter) setActiveView("importer-dashboard");
+              setActiveView(isStandaloneImporter ? "importer-dashboard" : "dashboard");
             }}
           >
             <span>▦</span>
@@ -5659,7 +5664,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "importer-pro-team" && canManageImporterProTeam ? (
+        {activeView === "dashboard" && !isStandaloneImporter ? (
+          <InternalOperationsDashboard
+            onNavigate={setActiveView}
+            onOpenCustoms={openCustomsView}
+          />
+        ) : activeView === "importer-pro-team" && canManageImporterProTeam ? (
           <ImporterProTeamPage supabase={supabase} />
         ) : activeView === "importer-pro-files" && isStandaloneImporter && isImporterProPlan ? (
           <ImporterProFilesPage

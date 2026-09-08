@@ -5,6 +5,13 @@ import eyrSolutionsLogo from "./assets/eyr-solutions-logo.png";
 import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
 import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
 import ImporterCustomsServiceRequest from "./modules/importer-customs/ImporterCustomsServiceRequest";
+import ImporterDashboard from "./modules/importer/ImporterDashboard.jsx";
+import ImporterCustomsRecordsPage from "./modules/importer/ImporterCustomsRecordsPage.jsx";
+import ImporterProExpensesPage from "./modules/importer/ImporterProExpensesPage.jsx";
+import ImporterProAnalyticsPage from "./modules/importer/ImporterProAnalyticsPage.jsx";
+import ImporterProRemindersPage from "./modules/importer/ImporterProRemindersPage.jsx";
+import ImporterProFilesPage from "./modules/importer/ImporterProFilesPage.jsx";
+import ImporterProTeamPage from "./modules/importer/ImporterProTeamPage.jsx";
 import AdminNotificationBell from "./modules/notifications/AdminNotificationBell";
 import FirebasePushActivation from "./modules/notifications/FirebasePushActivation";
 import ProspectList from "./modules/prospects/ProspectList";
@@ -228,13 +235,19 @@ function normalizeVehicleBrandName(make) {
     .trim();
 }
 
+// V39.7.5.4.2 · REAL VEHICLE BRAND ASSETS
+const LOCAL_VEHICLE_LOGO_FILES = {"acura": "acura-logo.svg", "alfa-romeo": "alfa-romeo-logo.svg", "aston-martin": "aston-martin-logo.svg", "audi": "audi-logo.svg", "bentley": "bentley-logo.svg", "bmw": "bmw-logo.svg", "buick": "buick-logo.png", "byd": "byd-logo.svg", "cadillac": "cadillac-logo.png", "chevrolet": "chevrolet-logo.png", "chrysler": "chrysler-logo.svg", "dodge": "dodge-logo.png", "ferrari": "ferrari-logo.svg", "fiat": "fiat-logo.svg", "ford": "ford-logo.png", "genesis": "genesis-logo.svg", "gmc": "gmc-logo.png", "honda": "honda-logo.png", "hyundai": "hyundai-logo.svg", "infiniti": "infiniti-logo.svg", "jaguar": "jaguar-logo.svg", "jeep": "jeep-logo.svg", "kia": "kia-logo.svg", "lamborghini": "lamborghini-logo.png", "land-rover": "land-rover-logo.svg", "lexus": "lexus-logo.png", "lincoln": "lincoln-logo.svg", "lotus": "lotus-logo.svg", "lucid": "lucid-logo.png", "maserati": "maserati-logo.png", "mazda": "mazda-logo.svg", "mclaren": "mclaren-logo.svg", "mercedes-benz": "mercedes-benz-logo.svg", "mini": "mini-logo.svg", "mitsubishi": "mitsubishi-logo.svg", "nissan": "nissan-logo.svg", "polestar": "polestar-logo.png", "porsche": "porsche-logo.svg", "ram": "ram-logo.svg", "rivian": "rivian-logo.svg", "rolls-royce": "rolls-royce-logo.svg", "subaru": "subaru-logo.png", "tesla": "tesla-logo.svg", "toyota": "toyota-logo.svg", "vinfast": "vinfast-logo.png", "volkswagen": "volkswagen-logo.svg", "volvo": "volvo-logo.svg"};
+
 function officialVehicleLogoUrl(make) {
   const normalized = normalizeVehicleBrandName(make);
   const slug = VEHICLE_BRAND_LOGO_SLUGS[normalized];
 
   if (!slug) return "";
 
-  return `https://cdn.jsdelivr.net/gh/vehiclespecs/brand-logos@v1.0.0/${slug}-logo.svg`;
+  const localFile = LOCAL_VEHICLE_LOGO_FILES[slug];
+  if (localFile) return `/vehicle-logos/${localFile}`;
+
+  return `https://cdn.jsdelivr.net/npm/car-brand-logos@1.0.0/${slug}-logo.svg`;
 }
 
 function VehicleMakeLogo({ make }) {
@@ -256,6 +269,54 @@ function VehicleMakeLogo({ make }) {
       };
     }
 
+    async function imageToPngDataUrl(image, sourceWidth, sourceHeight) {
+      const ratio =
+        Number(sourceWidth) > 0 && Number(sourceHeight) > 0
+          ? Number(sourceWidth) / Number(sourceHeight)
+          : 2;
+
+      const maxWidth = 900;
+      const maxHeight = 480;
+
+      let targetWidth = maxWidth;
+      let targetHeight = targetWidth / ratio;
+
+      if (targetHeight > maxHeight) {
+        targetHeight = maxHeight;
+        targetWidth = targetHeight * ratio;
+      }
+
+      const canvas = document.createElement("canvas");
+
+      canvas.width = Math.max(1, Math.round(targetWidth));
+      canvas.height = Math.max(1, Math.round(targetHeight));
+
+      const ctx = canvas.getContext("2d", {
+        alpha: true,
+      });
+
+      if (!ctx) {
+        throw new Error("No se pudo preparar el canvas del logo.");
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      return canvas.toDataURL("image/png");
+    }
+
+    async function loadImageFromUrl(src) {
+      return await new Promise((resolve, reject) => {
+        const img = new Image();
+
+        img.onload = () => resolve(img);
+        img.onerror = () =>
+          reject(new Error(`No se pudo cargar el logo de ${make}.`));
+
+        img.src = src;
+      });
+    }
+
     async function loadAndRasterizeOfficialLogo() {
       try {
         const response = await fetch(url, {
@@ -267,11 +328,41 @@ function VehicleMakeLogo({ make }) {
           throw new Error(`Logo HTTP ${response.status}`);
         }
 
+        const contentType = String(
+          response.headers.get("content-type") || ""
+        ).toLowerCase();
+
+        const isSvg =
+          contentType.includes("image/svg") ||
+          /\.svg(?:$|\?)/i.test(url);
+
+        // V39.7.5.4.3 · Los assets reales pueden venir en SVG o PNG.
+        // Los PNG se cargan como imagen binaria; NO se intentan parsear como SVG.
+        if (!isSvg) {
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          try {
+            const image = await loadImageFromUrl(objectUrl);
+            const dataUrl = await imageToPngDataUrl(
+              image,
+              image.naturalWidth || image.width,
+              image.naturalHeight || image.height
+            );
+
+            if (!cancelled) {
+              setPngDataUrl(dataUrl);
+            }
+          } finally {
+            URL.revokeObjectURL(objectUrl);
+          }
+
+          return;
+        }
+
         const svgText = await response.text();
 
-        // Normalizamos el SVG antes de rasterizarlo.
-        // Algunos logos traen width/height que no coinciden con su viewBox
-        // y eso hace que el navegador los estire al convertirlos a PNG.
+        // Conservamos la normalización estable para SVG.
         const parser = new DOMParser();
         const svgDocument = parser.parseFromString(
           svgText,
@@ -333,7 +424,6 @@ function VehicleMakeLogo({ make }) {
           }
         }
 
-        // Muy importante: quitamos dimensiones rígidas del archivo original.
         svgElement.removeAttribute("width");
         svgElement.removeAttribute("height");
         svgElement.setAttribute("width", String(sourceWidth));
@@ -354,67 +444,12 @@ function VehicleMakeLogo({ make }) {
         const objectUrl = URL.createObjectURL(svgBlob);
 
         try {
-          const image = await new Promise((resolve, reject) => {
-            const img = new Image();
-
-            img.onload = () => resolve(img);
-            img.onerror = () =>
-              reject(
-                new Error(
-                  `No se pudo rasterizar el logo de ${make}.`
-                )
-              );
-
-            img.src = objectUrl;
-          });
-
-          // Conservamos SIEMPRE la proporción real del viewBox.
-          const ratio = sourceWidth / sourceHeight;
-
-          const maxWidth = 900;
-          const maxHeight = 480;
-
-          let targetWidth = maxWidth;
-          let targetHeight = targetWidth / ratio;
-
-          if (targetHeight > maxHeight) {
-            targetHeight = maxHeight;
-            targetWidth = targetHeight * ratio;
-          }
-
-          const canvas = document.createElement("canvas");
-
-          canvas.width = Math.max(
-            1,
-            Math.round(targetWidth)
-          );
-
-          canvas.height = Math.max(
-            1,
-            Math.round(targetHeight)
-          );
-
-          const ctx = canvas.getContext("2d", {
-            alpha: true,
-          });
-
-          if (!ctx) {
-            throw new Error(
-              "No se pudo preparar el canvas del logo."
-            );
-          }
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          ctx.drawImage(
+          const image = await loadImageFromUrl(objectUrl);
+          const dataUrl = await imageToPngDataUrl(
             image,
-            0,
-            0,
-            canvas.width,
-            canvas.height
+            sourceWidth,
+            sourceHeight
           );
-
-          const dataUrl = canvas.toDataURL("image/png");
 
           if (!cancelled) {
             setPngDataUrl(dataUrl);
@@ -4305,9 +4340,26 @@ async function openCustomsDetail(item) {
   const tenantLogoUrl = tenantBranding?.logo_url || (isWhiteLabelClient ? "" : "/branding/eyr-logo-horizontal.png");
 
   // V38.2 · Permisos por plan SaaS
+  // V39.7.4 · IMPORTER EXPERIENCE
+  // V39.7.4.4 · IMPORTER CUSTOMS RECORDS
+  // V39.7.5 · IMPORTER PRO CORE
+  // V39.7.5.1 · IMPORTER PRO DOCS & PHOTOS
   const tenantPlanCode = String(tenantOrganization?.plan_code || "").toUpperCase();
   const isFullOfficePlan = tenantPlanCode === "FULL_OFFICE";
+  const isBasicImporterPlan = tenantPlanCode === "IMPORTER";
+  const isImporterProPlan = tenantPlanCode === "IMPORTER_PRO";
   const isImporterPlan = ["IMPORTER", "IMPORTER_PRO", "FULL_OFFICE"].includes(tenantPlanCode);
+  const isStandaloneImporter =
+    isWhiteLabelClient && ["IMPORTER", "IMPORTER_PRO"].includes(tenantPlanCode);
+  // V39.7.5.3.1 · FIX ORDEN DE INICIALIZACIÓN IMPORTER PRO TEAM
+  const isImporterProManager =
+    isStandaloneImporter &&
+    isImporterProPlan &&
+    tenantMembershipRole === "MEMBER";
+  const canManageImporterProTeam =
+    isStandaloneImporter &&
+    isImporterProPlan &&
+    isTenantAdmin;
   const canUseOfficeOperations = !isWhiteLabelClient || isFullOfficePlan;
   const canUseTenantImports = !isWhiteLabelClient || isImporterPlan;
   const canUseTenantDuca =
@@ -4329,6 +4381,14 @@ async function openCustomsDetail(item) {
   const canManagePortalClients =
     isSystemAdmin ||
     (isWhiteLabelClient && isFullOfficePlan && isTenantAdmin);
+
+  useEffect(() => {
+    if (isStandaloneImporter) {
+      setActiveView((current) =>
+        current === "new" ? "importer-dashboard" : current
+      );
+    }
+  }, [isStandaloneImporter]);
   const tenantEyebrow = isWhiteLabelClient
     ? tenantBrandName.toUpperCase()
     : "E&R GLOBAL LOGISTIC";
@@ -5370,7 +5430,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
         )}
 
         <nav>
-          <button className="nav-item">
+          <button
+            className={`nav-item ${activeView === "importer-dashboard" ? "active" : ""}`}
+            onClick={() => {
+              if (isStandaloneImporter) setActiveView("importer-dashboard");
+            }}
+          >
             <span>▦</span>
             Dashboard
           </button>
@@ -5391,7 +5456,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             Cotizaciones
           </button>
 
-          {(isSystemAdmin || isTenantAdmin) && (
+          {(isSystemAdmin || (isTenantAdmin && isFullOfficePlan)) && (
             <button
               className={`nav-item ${activeView === "branding" ? "active" : ""}`}
               onClick={() => setActiveView("branding")}
@@ -5473,12 +5538,24 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
           {canUseTenantImports && (
           <button
-            className={`nav-item ${activeView === "imports" ? "active" : ""}`}
-            onClick={openImportManagementsView}
+            className={`nav-item ${isStandaloneImporter ? (activeView === "importer-customs-records" ? "active" : "") : (activeView === "imports" ? "active" : "")}`}
+            onClick={isStandaloneImporter ? () => setActiveView("importer-customs-records") : openImportManagementsView}
           >
-            <span>🚢</span>
-            Gestiones de Importación
+            <span>{isStandaloneImporter ? "🛃" : "🚢"}</span>
+            {isStandaloneImporter ? "Mis Gestiones Aduanales" : "Gestiones de Importación"}
           </button>
+          )}
+
+          {isStandaloneImporter && isImporterProPlan && (
+            <>
+              {canManageImporterProTeam && <button className={`nav-item ${activeView === "importer-pro-team" ? "active" : ""}`} onClick={() => setActiveView("importer-pro-team")}><span>👥</span> Mi Equipo</button>}
+              {!isImporterProManager && <>
+                <button className={`nav-item ${activeView === "importer-pro-expenses" ? "active" : ""}`} onClick={() => setActiveView("importer-pro-expenses")}><span>💰</span> Costos PRO</button>
+                <button className={`nav-item ${activeView === "importer-pro-analytics" ? "active" : ""}`} onClick={() => setActiveView("importer-pro-analytics")}><span>📊</span> Estadísticas</button>
+                <button className={`nav-item ${activeView === "importer-pro-reminders" ? "active" : ""}`} onClick={() => setActiveView("importer-pro-reminders")}><span>🔔</span> Agenda PRO</button>
+              </>}
+              <button className={`nav-item ${activeView === "importer-pro-files" ? "active" : ""}`} onClick={() => setActiveView("importer-pro-files")}><span>📁</span> Documentos & Fotos</button>
+            </>
           )}
 
           {canUseOfficeOperations && (
@@ -5575,7 +5652,44 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       </aside>
 
       <main className="main">
-        {activeView === "commercial-quote" && isSystemAdmin && commercialQuoteContext ? (
+        {activeView === "importer-pro-team" && canManageImporterProTeam ? (
+          <ImporterProTeamPage supabase={supabase} />
+        ) : activeView === "importer-pro-files" && isStandaloneImporter && isImporterProPlan ? (
+          <ImporterProFilesPage
+            supabase={supabase}
+            organizationId={tenantOrganization?.id || ""}
+          />
+        ) : activeView === "importer-pro-expenses" && isStandaloneImporter && isImporterProPlan && !isImporterProManager ? (
+          <ImporterProExpensesPage supabase={supabase} organizationId={tenantOrganization?.id || ""} userId={session?.user?.id || ""} />
+        ) : activeView === "importer-pro-analytics" && isStandaloneImporter && isImporterProPlan && !isImporterProManager ? (
+          <ImporterProAnalyticsPage supabase={supabase} organizationId={tenantOrganization?.id || ""} />
+        ) : activeView === "importer-pro-reminders" && isStandaloneImporter && isImporterProPlan && !isImporterProManager ? (
+          <ImporterProRemindersPage supabase={supabase} organizationId={tenantOrganization?.id || ""} userId={session?.user?.id || ""} />
+        ) : activeView === "importer-customs-records" && isStandaloneImporter ? (
+          <ImporterCustomsRecordsPage
+            supabase={supabase}
+            organizationId={tenantOrganization?.id || ""}
+            userId={session?.user?.id || ""}
+            importerName={profile?.full_name || tenantBrandName}
+            planCode={tenantPlanCode}
+            membershipRole={tenantMembershipRole}
+          />
+        ) : activeView === "importer-dashboard" && isStandaloneImporter ? (
+          <ImporterDashboard
+            supabase={supabase}
+            organizationId={tenantOrganization?.id || ""}
+            importerName={profile?.full_name || tenantBrandName}
+            planCode={tenantPlanCode}
+            onNewQuote={openNewQuoteView}
+            onOpenImports={() => setActiveView("importer-customs-records")}
+            onOpenExpenses={() => setActiveView("importer-pro-expenses")}
+            onOpenAnalytics={() => setActiveView("importer-pro-analytics")}
+            onOpenReminders={() => setActiveView("importer-pro-reminders")}
+            onOpenTeam={() => setActiveView("importer-pro-team")}
+            onOpenFiles={() => setActiveView("importer-pro-files")}
+            isManager={isImporterProManager}
+          />
+        ) : activeView === "commercial-quote" && isSystemAdmin && commercialQuoteContext ? (
           <CommercialQuotePage
             supabase={supabase}
             context={commercialQuoteContext}
@@ -8541,7 +8655,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
             <p>
               {isWhiteLabelClient
-                ? "Calculá por Tabla SAT, factura de importador o cálculo manual desde tu propia oficina."
+                ? isStandaloneImporter
+                  ? "Calculá por Tabla SAT o con el valor real de tu factura."
+                  : "Calculá por Tabla SAT, factura de importador o cálculo manual desde tu propia oficina."
                 : "Calculá por Tabla SAT o con factura de importador, sin consumir consultas públicas."}
             </p>
           </div>
@@ -8598,20 +8714,22 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               }}
             />
 
-            <button
-              type="button"
-              className={`manual-mode-tab ${internalQuoteMode === "MANUAL" ? "active" : ""}`}
-              onClick={async () => {
-                setInternalQuoteMode("MANUAL");
-                setResult(null);
-                setError("");
-                resetReviewState();
-                await loadManualTaxRules();
-              }}
-            >
-              <span>🧮</span>
-              <div><strong>Cálculo Manual</strong><small>Valor imponible definido por E&amp;R</small></div>
-            </button>
+            {!isStandaloneImporter && (
+              <button
+                type="button"
+                className={`manual-mode-tab ${internalQuoteMode === "MANUAL" ? "active" : ""}`}
+                onClick={async () => {
+                  setInternalQuoteMode("MANUAL");
+                  setResult(null);
+                  setError("");
+                  resetReviewState();
+                  await loadManualTaxRules();
+                }}
+              >
+                <span>🧮</span>
+                <div><strong>Cálculo Manual</strong><small>Valor imponible definido por E&amp;R</small></div>
+              </button>
+            )}
 
             {internalQuoteMode === "IMPORTER" && (
               <ImporterQuoteFields

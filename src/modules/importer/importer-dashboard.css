@@ -1,0 +1,410 @@
+.importer-dashboard-v3974 {
+  min-height: 100%;
+  padding: 28px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(22, 121, 173, 0.10), transparent 35%),
+    #f4f7fb;
+  color: #092f54;
+}
+
+.importer-dashboard-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: stretch;
+  padding: 32px;
+  border-radius: 24px;
+  color: #fff;
+  background:
+    linear-gradient(120deg, rgba(4, 34, 66, .98), rgba(6, 67, 102, .95)),
+    linear-gradient(135deg, #082c50, #0f7ba0);
+  box-shadow: 0 22px 50px rgba(5, 43, 79, .14);
+}
+
+.importer-dashboard-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  color: #efb83f;
+}
+
+.importer-dashboard-hero h1 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.05;
+}
+
+.importer-dashboard-hero p {
+  margin: 12px 0 0;
+  color: rgba(255,255,255,.76);
+  font-size: 17px;
+}
+
+.importer-plan-badge {
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px 24px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 18px;
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(12px);
+}
+
+.importer-plan-badge.pro {
+  border-color: rgba(239,184,63,.45);
+  background: linear-gradient(145deg, rgba(239,184,63,.18), rgba(255,255,255,.07));
+}
+
+.importer-plan-badge small {
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: rgba(255,255,255,.6);
+}
+
+.importer-plan-badge strong {
+  margin-top: 5px;
+  font-size: 19px;
+}
+
+.importer-plan-badge span {
+  margin-top: 4px;
+  color: #efb83f;
+  font-weight: 900;
+}
+
+.importer-dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.importer-dashboard-actions button,
+.importer-dashboard-section-head button,
+.importer-dashboard-empty button {
+  border: 1px solid #d6e2ec;
+  border-radius: 12px;
+  padding: 11px 16px;
+  background: #fff;
+  color: #0a3458;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.importer-dashboard-actions button.primary {
+  border-color: #0a3458;
+  background: #0a3458;
+  color: #fff;
+}
+
+.importer-dashboard-actions button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.importer-dashboard-error {
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  background: #fff1f1;
+  color: #9d1f1f;
+  border: 1px solid #f2c6c6;
+  font-weight: 700;
+}
+
+.importer-dashboard-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.importer-dashboard-kpis article {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  min-height: 114px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #dce6ef;
+  border-radius: 17px;
+  box-shadow: 0 8px 22px rgba(7, 48, 84, .04);
+}
+
+.importer-dashboard-kpis article > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #edf6fb;
+  font-size: 21px;
+}
+
+.importer-dashboard-kpis small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: #71869a;
+  font-weight: 900;
+}
+
+.importer-dashboard-kpis strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 27px;
+}
+
+.importer-dashboard-kpis p {
+  margin: 0;
+  color: #8190a0;
+  font-size: 11px;
+}
+
+.importer-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.importer-dashboard-recent,
+.importer-dashboard-pro-card {
+  background: #fff;
+  border: 1px solid #dce6ef;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.importer-dashboard-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 22px;
+  border-bottom: 1px solid #e7edf3;
+}
+
+.importer-dashboard-section-head small,
+.importer-dashboard-pro-card > small {
+  color: #b67b12;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.importer-dashboard-section-head h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.importer-dashboard-section-head button {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.importer-dashboard-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.importer-dashboard-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(120px, .35fr) 20px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 18px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  background: #fff;
+  text-align: left;
+  color: #0a3458;
+  cursor: pointer;
+}
+
+.importer-dashboard-row:hover {
+  background: #f8fbfd;
+}
+
+.vehicle-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #eaf4fa;
+}
+
+.vehicle-copy strong,
+.vehicle-status strong {
+  display: block;
+}
+
+.vehicle-copy span {
+  display: block;
+  margin-top: 3px;
+  color: #7a8d9f;
+  font-size: 11px;
+}
+
+.vehicle-status small {
+  display: block;
+  font-size: 8px;
+  color: #91a0ad;
+  letter-spacing: .12em;
+  font-weight: 900;
+}
+
+.vehicle-status strong {
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.row-arrow {
+  font-weight: 900;
+}
+
+.importer-dashboard-empty {
+  padding: 40px 24px;
+  text-align: center;
+  color: #6f8294;
+}
+
+.importer-dashboard-empty > span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 34px;
+}
+
+.importer-dashboard-empty strong {
+  display: block;
+  color: #0a3458;
+}
+
+.importer-dashboard-empty p {
+  margin: 6px 0 16px;
+}
+
+.importer-dashboard-pro-card {
+  padding: 24px;
+  color: #fff;
+  background: linear-gradient(155deg, #072f58, #0c5c85);
+}
+
+.importer-dashboard-pro-card.enabled {
+  background: linear-gradient(155deg, #071f42, #0b3e72);
+  border-color: rgba(239,184,63,.55);
+}
+
+.importer-dashboard-pro-card > span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 30px;
+}
+
+.importer-dashboard-pro-card h3 {
+  margin: 7px 0 9px;
+  font-size: 23px;
+  line-height: 1.08;
+}
+
+.importer-dashboard-pro-card p {
+  margin: 0;
+  color: rgba(255,255,255,.72);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.importer-dashboard-pro-features {
+  display: grid;
+  gap: 9px;
+  margin: 20px 0;
+  color: rgba(255,255,255,.88);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.upgrade-price {
+  display: inline-block;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #efb83f;
+  color: #082d51;
+}
+
+@media (max-width: 1180px) {
+  .importer-dashboard-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .importer-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .importer-dashboard-v3974 {
+    padding: 16px 14px 96px;
+  }
+
+  .importer-dashboard-hero {
+    flex-direction: column;
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .importer-plan-badge {
+    min-width: 0;
+  }
+
+  .importer-dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .importer-dashboard-kpis article {
+    min-height: 100px;
+    padding: 14px;
+  }
+
+  .importer-dashboard-kpis article > span {
+    width: 36px;
+    height: 36px;
+  }
+
+  .importer-dashboard-kpis strong {
+    font-size: 23px;
+  }
+
+  .importer-dashboard-row {
+    grid-template-columns: 38px minmax(0, 1fr) 18px;
+  }
+
+  .vehicle-status {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .importer-dashboard-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .importer-dashboard-kpis article:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .importer-dashboard-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .importer-dashboard-actions button:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.importer-pro-dashboard-links{display:grid;grid-template-columns:1fr;gap:8px;margin-top:14px}.importer-pro-dashboard-links button{border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:9px 10px;background:rgba(255,255,255,.08);color:#fff;text-align:left;font-weight:800;cursor:pointer}.importer-pro-dashboard-links button:hover{background:rgba(255,255,255,.14)}

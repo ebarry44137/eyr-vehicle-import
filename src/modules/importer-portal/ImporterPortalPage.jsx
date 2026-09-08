@@ -4,6 +4,11 @@ import "./importer-portal.css";
 import "./portal-v39.6.0.css";
 import "./portal-customs-request-v39621.css";
 import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
+import PortalProfilePage from "../portal-profile/PortalProfilePage.jsx";
+import PortalSupportCenter from "../portal-support/PortalSupportCenter.jsx";
+import PortalVehiclePhoto from "./PortalVehiclePhoto.jsx";
+// V39.7.7 · CENTRO AYUDA
+// V39.7.6.1 · MI PERFIL
 
 const DEFAULT_BRAND = {
   office_name: "E&R Solutions",
@@ -68,8 +73,7 @@ function vehicleName(item) {
     [item?.vehicle_year,item?.vehicle_make,item?.vehicle_model,item?.vehicle_trim]
       .filter(Boolean)
       .join(" ") ||
-    item?.reference_code ||
-    "Vehículo"
+    "Vehículo por identificar"
   );
 }
 
@@ -94,6 +98,11 @@ export default function ImporterPortalPage() {
   const [context,setContext] = useState(null);
   const [branding,setBranding] = useState(DEFAULT_BRAND);
   const [imports,setImports] = useState([]);
+  // V39.7.6 · VEHICLE IDENTITY PORTAL
+  const [portalVinIdentity, setPortalVinIdentity] = useState(null);
+  const [portalVinIdentityLoading, setPortalVinIdentityLoading] = useState(false);
+  const [portalVinIdentityError, setPortalVinIdentityError] = useState("");
+  const [portalVehicleBackfillDone, setPortalVehicleBackfillDone] = useState(false);
   const [selected,setSelected] = useState(null);
   const [detail,setDetail] = useState(null);
 
@@ -410,6 +419,99 @@ export default function ImporterPortalPage() {
     }
   }
 
+
+  async function identifyPortalVinV3976(vinValue, options = {}) {
+    const cleanVin = String(vinValue || "").trim().toUpperCase().replace(/\\s+/g, "");
+    if (cleanVin.length !== 17) return null;
+
+    setPortalVinIdentityLoading(true);
+    setPortalVinIdentityError("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("identify-vin", {
+        body: {
+          vin: cleanVin,
+          customs_case_id: options.customsCaseId || null,
+          portal_request_id: options.portalRequestId || null,
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "No fue posible identificar el vehículo.");
+
+      const vehicle = data.vehicle || {};
+      setPortalVinIdentity(vehicle);
+
+      setCustomsRequestForm((prev) => ({
+        ...prev,
+        vin: cleanVin,
+        vehicle_year: vehicle.model_year ?? prev.vehicle_year ?? "",
+        vehicle_make: vehicle.make || prev.vehicle_make || "",
+        vehicle_model: vehicle.model || prev.vehicle_model || "",
+        vehicle_trim: vehicle.trim || prev.vehicle_trim || "",
+        vehicle_type: vehicle.vehicle_type || prev.vehicle_type || "",
+        vehicle_engine: vehicle.engine || prev.vehicle_engine || "",
+      }));
+
+      return vehicle;
+    } catch (err) {
+      console.error("PORTAL VIN IDENTITY ERROR:", err);
+      setPortalVinIdentityError(err?.message || "No fue posible identificar el VIN.");
+      return null;
+    } finally {
+      setPortalVinIdentityLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const cleanVin = String(customsRequestForm?.vin || "").trim().toUpperCase().replace(/\\s+/g, "");
+
+    if (cleanVin.length !== 17) {
+      setPortalVinIdentity(null);
+      setPortalVinIdentityError("");
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      identifyPortalVinV3976(cleanVin);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [customsRequestForm?.vin]);
+
+  useEffect(() => {
+    if (portalVehicleBackfillDone || !Array.isArray(imports) || imports.length === 0) return;
+
+    const missing = imports.filter((item) => {
+      const cleanVin = String(item?.vin || "").trim().toUpperCase();
+      const hasIdentity = Boolean(item?.vehicle_make || item?.vehicle_model || item?.vehicle_year);
+      return cleanVin.length === 17 && !hasIdentity;
+    });
+
+    if (missing.length === 0) {
+      setPortalVehicleBackfillDone(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      for (const item of missing.slice(0, 8)) {
+        if (cancelled) return;
+        await identifyPortalVinV3976(item.vin, { customsCaseId: item.id });
+      }
+
+      if (!cancelled) {
+        setPortalVehicleBackfillDone(true);
+        try {
+          await loadImports({ search: "", status: "ALL" });
+        } catch {}
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [imports, portalVehicleBackfillDone]);
+
   async function handleLogin(e) {
     e.preventDefault();
     setAuthLoading(true);
@@ -579,6 +681,7 @@ export default function ImporterPortalPage() {
         <nav>
           <button className={activeView==="dashboard"?"active":""} onClick={()=>setActiveView("dashboard")}><span>▦</span>Dashboard</button>
           <button className={activeView==="imports"?"active":""} onClick={()=>setActiveView("imports")}><span>🚢</span>Mis importaciones</button>
+<button className={activeView==="profile"?"active":""} onClick={()=>setActiveView("profile")}><span>⚙️</span>Mi perfil</button>
           <button type="button" onClick={openCustomsRequest}><span>＋</span>Solicitar gestión</button>
           <button className={activeView==="documents"?"active":""} onClick={()=>setActiveView("documents")}><span>📄</span>Documentos</button>
           <button className={activeView==="quote"?"active":""} onClick={()=>setActiveView("quote")}><span>🧮</span>Cotizador</button>
@@ -586,9 +689,9 @@ export default function ImporterPortalPage() {
 
         <div className="ip-sidebar-footer">
           <div className="ip-user">
-            <div>{initials(client?.contact_name || profile?.full_name)}</div>
+            <div>{initials(client?.preferred_name || client?.contact_name || profile?.full_name)}</div>
             <section>
-              <strong>{client?.contact_name || profile?.full_name || "Cliente"}</strong>
+              <strong>{client?.preferred_name || client?.preferred_name || client?.contact_name || profile?.full_name || "Cliente"}</strong>
               <span>{client?.company_name || client?.email}</span>
               <small>CLIENTE</small>
             </section>
@@ -615,12 +718,13 @@ export default function ImporterPortalPage() {
 
         {error && <div className="ip-message error">{error}</div>}
 
-        {activeView==="dashboard" ? (
+        <PortalSupportCenter context={context} imports={imports} branding={branding} />
+        {activeView==="profile" ? (<PortalProfilePage context={context} onSaved={()=>loadPortal(session)} />) : activeView==="dashboard" ? (
           <>
             <section className="ip-welcome-card">
               <div className="ip-welcome-copy">
                 <small>BIENVENIDO</small>
-                <h2>Hola, {String(client?.contact_name || profile?.full_name || "Cliente").split(" ")[0]} 👋</h2>
+                <h2>Hola, {String(client?.preferred_name || client?.preferred_name || client?.contact_name || profile?.full_name || "Cliente").split(" ")[0]} 👋</h2>
                 <p>Seguimiento de las operaciones que {brandName} está gestionando para tu cuenta.</p>
               </div>
             </section>
@@ -659,7 +763,7 @@ export default function ImporterPortalPage() {
                 <div className="ip-import-list">
                   {imports.slice(0,5).map(item=>(
                     <button className="ip-import-row" key={item.id} onClick={()=>openImport(item)}>
-                      <div className="ip-vehicle-icon">🚗</div>
+                      <PortalVehiclePhoto item={item} />
                       <section><strong>{vehicleName(item)}</strong><span>{item.vin || "VIN pendiente"} · {item.reference_code}</span><small>ETA {formatDate(item.eta)} · {item.shipping_line || "Naviera pendiente"}</small></section>
                       <div className="ip-import-status"><strong>{item.status_label}</strong></div>
                     </button>
@@ -941,6 +1045,29 @@ export default function ImporterPortalPage() {
                   placeholder="17 caracteres"
                 />
               </label>
+                {(portalVinIdentityLoading || portalVinIdentity || portalVinIdentityError) && (
+                  <div className="ip-vin-identity-v3976">
+                    {portalVinIdentityLoading ? (
+                      <span>🔎 Identificando vehículo por VIN...</span>
+                    ) : portalVinIdentity ? (
+                      <>
+                        <strong>🚙 {[
+                          portalVinIdentity.model_year,
+                          portalVinIdentity.make,
+                          portalVinIdentity.model,
+                          portalVinIdentity.trim,
+                        ].filter(Boolean).join(" ")}</strong>
+                        <small>{[
+                          portalVinIdentity.vehicle_type,
+                          portalVinIdentity.engine,
+                        ].filter(Boolean).join(" · ")}</small>
+                        <em>VIN identificado · No se calcularon impuestos</em>
+                      </>
+                    ) : (
+                      <span className="error">{portalVinIdentityError}</span>
+                    )}
+                  </div>
+                )}
 
               <label>
                 <span>BL</span>

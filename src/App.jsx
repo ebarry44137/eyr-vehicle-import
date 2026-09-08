@@ -36,6 +36,8 @@ import OfficePortalClientsPage from "./modules/office-portal-clients/OfficePorta
 import ImportersPage from "./modules/importers/ImportersPage.jsx";
 import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
 import "./modules/customs/portal-customs-requests-v39621.css";
+import CustomerSupportPage from "./modules/customer-support/CustomerSupportPage.jsx";
+// V39.7.7 · CUSTOMER SUPPORT
 
 function moneyGTQ(value) {
   if (value === null || value === undefined || value === "") return "—";
@@ -5507,14 +5509,19 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           )}
 
           {canManagePortalClients && (
-            <button
-              className={`nav-item ${activeView === "portal-clients" ? "active" : ""}`}
-              onClick={() => setActiveView("portal-clients")}
-            >
-              <span>👥</span>
-              Clientes del Portal
-            </button>
+            <>
+              <button
+                className={`nav-item $<CustomerSupportPage />
+
+          {activeView === "portal-clients" ? "active" : ""}`}
+                onClick={() => setActiveView("portal-clients")}
+              >
+                <span>👥</span>
+                Clientes del Portal
+              </button>
+</>
           )}
+          {/* V39.7.7.2 · JSX PORTAL CLIENTS */}
 
           {canManageImporters && (
             <button

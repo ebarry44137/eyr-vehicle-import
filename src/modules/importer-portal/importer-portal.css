@@ -1636,3 +1636,36 @@ body{margin:0}
 .ip-vin-identity-v3976 small{font-size:12px;color:#60748a}
 .ip-vin-identity-v3976 em{font-size:11px;font-style:normal;font-weight:800;color:#16803a}
 .ip-vin-identity-v3976 .error{color:#b42318;font-weight:700}
+
+
+/* V39.7.9.1 · VEHICLE META PORTAL */
+.ip-vehicle-meta-v39791{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  margin-top:3px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:rgba(10,52,88,.07);
+  color:#5f7488;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.35;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.ip-import-card-title .ip-vehicle-meta-v39791{
+  margin-top:4px;
+}
+.ip-detail-header .ip-vehicle-meta-v39791{
+  margin-top:5px;
+  background:rgba(255,255,255,.12);
+  color:rgba(255,255,255,.88);
+}
+@media(max-width:700px){
+  .ip-vehicle-meta-v39791{
+    max-width:220px;
+    font-size:8px;
+  }
+}

@@ -667,6 +667,7 @@ function emptyCustomsForm() {
     model: "",
     vehicle_trim: "",
     model_year: "",
+    vehicle_type: "",
     shipping_line: "",
     responsible: "",
     priority: "Normal",
@@ -3169,6 +3170,68 @@ function openManualCustomsCase() {
     setShowCustomsForm(true);
   }
 
+  // V39.7.9 · Identidad del vehículo independiente de impuestos
+  async function identifyManualCustomsVehicle() {
+    const cleanVin = String(customsForm.vin || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\\s+/g, "");
+
+    if (cleanVin.length !== 17) {
+      setCustomsError("El VIN debe contener 17 caracteres para identificar el vehículo.");
+      return;
+    }
+
+    setCustomsDecodeLoading(true);
+    setCustomsError("");
+    setCustomsDecodeResult(null);
+
+    try {
+      const { data, error: identityError } =
+        await invokeFunction("identify-vin", {
+          body: { vin: cleanVin },
+        });
+
+      if (identityError) throw identityError;
+      if (!data?.success) {
+        throw new Error(
+          data?.error || "No fue posible identificar el vehículo."
+        );
+      }
+
+      const vehicle = data?.vehicle || {};
+
+      setCustomsForm((prev) => ({
+        ...prev,
+        vin: cleanVin,
+        make: vehicle.make || prev.make,
+        model: vehicle.model || prev.model,
+        vehicle_trim: vehicle.trim || prev.vehicle_trim,
+        model_year: vehicle.model_year ?? prev.model_year,
+        vehicle_type: vehicle.vehicle_type || prev.vehicle_type,
+      }));
+
+      setCustomsDecodeResult({
+        success: true,
+        identity_only: true,
+        vehicle,
+      });
+
+      setCustomsMessage(
+        [vehicle.model_year, vehicle.make, vehicle.model, vehicle.trim]
+          .filter(Boolean)
+          .join(" ") || "Vehículo identificado correctamente."
+      );
+    } catch (err) {
+      console.error("CUSTOMS VEHICLE IDENTITY ERROR:", err);
+      setCustomsError(
+        err?.message || "No fue posible identificar el VIN."
+      );
+    } finally {
+      setCustomsDecodeLoading(false);
+    }
+  }
+
   async function calculateManualCustomsTaxes() {
     const cleanVin = String(customsForm.vin || "")
       .trim()
@@ -3377,6 +3440,8 @@ function openManualCustomsCase() {
           customsForm.model_year !== ""
             ? Number(customsForm.model_year)
             : null,
+        vehicle_type:
+          String(customsForm.vehicle_type || "").trim() || null,
         shipping_line:
           String(customsForm.shipping_line || "").trim() || null,
         responsible:
@@ -6825,19 +6890,22 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       </div>
                     </section>
 
-                    <section className="customs-form-section customs-tax-section">
+                                        <section className="customs-form-section customs-vehicle-identity-section">
                       <div className="customs-section-title">
                         <span>02</span>
                         <div>
-                          <strong>Vehículo + cálculo SAT <em className="optional-field">Opcional</em></strong>
+                          <strong>
+                            Identificación del vehículo
+                            <em className="optional-field">VIN opcional</em>
+                          </strong>
                           <small>
-                            Si contás con VIN podés calcular SAT, IVA e IPRIMA automáticamente.
-                            Si no lo tenés, podés crear la gestión sin este cálculo.
+                            Registrá la identidad del vehículo sin calcular impuestos.
+                            SAT, IVA e IPRIMA se trabajan después desde el expediente.
                           </small>
                         </div>
                       </div>
 
-                      <div className="customs-vin-optional-block">
+                      <div className="customs-vin-optional-block customs-identity-vin-block">
                         <div className="customs-vin-label">
                           <span>VIN DEL VEHÍCULO</span>
                           <small>Opcional</small>
@@ -6852,37 +6920,40 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                                 ...p,
                                 vin: e.target.value
                                   .toUpperCase()
-                                  .replace(/\s/g, ""),
+                                  .replace(/\\s/g, ""),
                               }))
                             }
-                            placeholder="Ingresalo solo si lo tenés"
+                            placeholder="Ej. 3N1CP5BV4NL497064"
                           />
                           <button
                             type="button"
                             className="primary-button"
-                            onClick={calculateManualCustomsTaxes}
+                            onClick={identifyManualCustomsVehicle}
                             disabled={
                               customsDecodeLoading ||
                               String(customsForm.vin || "").trim().length !== 17
                             }
                           >
                             {customsDecodeLoading
-                              ? "Calculando..."
-                              : "Calcular IVA e IPRIMA"}
+                              ? "Identificando..."
+                              : "Identificar vehículo"}
                             <span>→</span>
                           </button>
                         </div>
 
-                        {!customsForm.vin && (
+                        {!customsForm.vin ? (
                           <div className="customs-vin-helper">
-                            ✓ Podés continuar sin VIN. Los impuestos quedarán pendientes
-                            hasta que decidan registrarlos.
+                            ✓ Podés crear la gestión sin VIN y completar la identidad después.
+                          </div>
+                        ) : (
+                          <div className="customs-identity-helper">
+                            🔎 Identificar el VIN no calcula SAT, IVA ni IPRIMA.
                           </div>
                         )}
                       </div>
 
-                      {customsDecodeResult && (
-                        <div className="customs-decode-summary">
+                      {customsDecodeResult?.identity_only && (
+                        <div className="customs-decode-summary customs-identity-summary">
                           <div>
                             <span>Vehículo identificado</span>
                             <strong>
@@ -6897,8 +6968,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                             </strong>
                           </div>
                           <div>
-                            <span>Estado del motor</span>
-                            <strong>{customsDecodeResult.calculation_status}</strong>
+                            <span>Tipo de vehículo</span>
+                            <strong>{customsForm.vehicle_type || "Pendiente de completar"}</strong>
                           </div>
                         </div>
                       )}
@@ -6914,8 +6985,10 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                                 make: e.target.value,
                               }))
                             }
+                            placeholder="Ej. NISSAN"
                           />
                         </label>
+
                         <label>
                           <span>Modelo</span>
                           <input
@@ -6926,8 +6999,10 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                                 model: e.target.value,
                               }))
                             }
+                            placeholder="Ej. KICKS"
                           />
                         </label>
+
                         <label>
                           <span>Año</span>
                           <input
@@ -6939,8 +7014,10 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                                 model_year: e.target.value,
                               }))
                             }
+                            placeholder="2022"
                           />
                         </label>
+
                         <label>
                           <span>Versión</span>
                           <input
@@ -6951,130 +7028,34 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                                 vehicle_trim: e.target.value,
                               }))
                             }
+                            placeholder="SV, EX, Limited..."
                           />
                         </label>
+
                         <label className="span-2">
-                          <span>Línea SAT</span>
+                          <span>Tipo de vehículo</span>
                           <input
-                            value={customsForm.sat_line}
+                            value={customsForm.vehicle_type || ""}
                             onChange={(e) =>
                               setCustomsForm((p) => ({
                                 ...p,
-                                sat_line: e.target.value,
+                                vehicle_type: e.target.value,
                               }))
                             }
+                            placeholder="Automóvil, SUV, Pickup, Van..."
                           />
                         </label>
-                        <label>
-                          <span>Tipo SAT</span>
-                          <input
-                            value={customsForm.sat_vehicle_type}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                sat_vehicle_type: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>Valor imponible (Q)</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={customsForm.taxable_value_gtq}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                taxable_value_gtq: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>IVA utilizado</span>
-                          <input
-                            type="number"
-                            step="0.0001"
-                            value={customsForm.iva_rate}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                iva_rate: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>IVA (Q)</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={customsForm.iva_gtq}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                iva_gtq: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>IPRIMA utilizada</span>
-                          <input
-                            type="number"
-                            step="0.0001"
-                            value={customsForm.iprima_rate}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                iprima_rate: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>IPRIMA (Q)</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={customsForm.iprima_gtq}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                iprima_gtq: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>Placas (Q)</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={customsForm.plates_gtq}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                plates_gtq: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
-                        <label>
-                          <span>Total tributos (Q)</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={customsForm.total_taxes_gtq}
-                            onChange={(e) =>
-                              setCustomsForm((p) => ({
-                                ...p,
-                                total_taxes_gtq: e.target.value,
-                              }))
-                            }
-                          />
-                        </label>
+                      </div>
+
+                      <div className="customs-identity-separation-note">
+                        <span>🧾</span>
+                        <div>
+                          <strong>Impuestos separados de la creación</strong>
+                          <small>
+                            Esta pantalla únicamente guarda la identidad del vehículo.
+                            El cálculo tributario queda pendiente hasta trabajarlo desde la gestión creada.
+                          </small>
+                        </div>
                       </div>
                     </section>
 

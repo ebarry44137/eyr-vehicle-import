@@ -68,12 +68,126 @@ function formatDate(value) {
   }
 }
 
+// V39.7.9.1 · VEHICLE META PORTAL
 function vehicleName(item) {
+  const year = item?.vehicle_year ?? item?.model_year ?? item?.year;
+  const make = item?.vehicle_make ?? item?.make;
+  const model = item?.vehicle_model ?? item?.model;
+
   return (
-    [item?.vehicle_year,item?.vehicle_make,item?.vehicle_model,item?.vehicle_trim]
+    [year, make, model]
       .filter(Boolean)
       .join(" ") ||
-    "Vehículo por identificar"
+    item?.reference_code ||
+    item?.case_code ||
+    "Vehículo"
+  );
+}
+
+const PORTAL_VEHICLE_META_CACHE = new Map();
+
+function directVehicleMeta(item) {
+  return {
+    vehicle_type:
+      item?.vehicle_type ||
+      item?.portal_vehicle_type ||
+      "",
+    trim:
+      item?.vehicle_trim ||
+      item?.trim ||
+      "",
+  };
+}
+
+function PortalVehicleMeta({ item, detailItem = null }) {
+  const direct = {
+    vehicle_type:
+      detailItem?.vehicle_type ||
+      item?.vehicle_type ||
+      detailItem?.portal_vehicle_type ||
+      item?.portal_vehicle_type ||
+      "",
+    trim:
+      detailItem?.vehicle_trim ||
+      item?.vehicle_trim ||
+      detailItem?.trim ||
+      item?.trim ||
+      "",
+  };
+
+  const [identity, setIdentity] = useState(() => {
+    const key = String(item?.id || item?.vin || "");
+    return key ? PORTAL_VEHICLE_META_CACHE.get(key) || null : null;
+  });
+
+  useEffect(() => {
+    const cleanVin = String(item?.vin || detailItem?.vin || "")
+      .trim()
+      .toUpperCase();
+
+    const key = String(item?.id || cleanVin || "");
+
+    if (!cleanVin || cleanVin.length !== 17) return;
+    if (direct.vehicle_type && direct.trim) return;
+
+    const cached = PORTAL_VEHICLE_META_CACHE.get(key);
+    if (cached) {
+      setIdentity(cached);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("identify-vin", {
+          body: {
+            vin: cleanVin,
+            customs_case_id: item?.id || null,
+          },
+        });
+
+        if (error || !data?.success || cancelled) return;
+
+        const vehicle = data?.vehicle || {};
+        const normalized = {
+          vehicle_type: vehicle.vehicle_type || "",
+          trim: vehicle.trim || "",
+        };
+
+        PORTAL_VEHICLE_META_CACHE.set(key, normalized);
+        if (!cancelled) setIdentity(normalized);
+      } catch {
+        // La identidad visual nunca debe bloquear el Portal.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    item?.id,
+    item?.vin,
+    detailItem?.vin,
+    direct.vehicle_type,
+    direct.trim,
+  ]);
+
+  const type = direct.vehicle_type || identity?.vehicle_type || "";
+  const trim = direct.trim || identity?.trim || "";
+
+  const parts = [];
+  if (type) parts.push(type);
+  if (trim && String(trim).toUpperCase() !== String(type).toUpperCase()) {
+    parts.push(trim);
+  }
+
+  if (!parts.length) return null;
+
+  return (
+    <span className="ip-vehicle-meta-v39791">
+      {parts.join(" · ")}
+    </span>
   );
 }
 
@@ -764,7 +878,9 @@ export default function ImporterPortalPage() {
                   {imports.slice(0,5).map(item=>(
                     <button className="ip-import-row" key={item.id} onClick={()=>openImport(item)}>
                       <PortalVehiclePhoto item={item} />
-                      <section><strong>{vehicleName(item)}</strong><span>{item.vin || "VIN pendiente"} · {item.reference_code}</span><small>ETA {formatDate(item.eta)} · {item.shipping_line || "Naviera pendiente"}</small></section>
+                      <section><strong>{vehicleName(item)}</strong>
+                        {/* V39.7.9.1-RECENT-META */}
+                        <PortalVehicleMeta item={item} /><span>{item.vin || "VIN pendiente"} · {item.reference_code}</span><small>ETA {formatDate(item.eta)} · {item.shipping_line || "Naviera pendiente"}</small></section>
                       <div className="ip-import-status"><strong>{item.status_label}</strong></div>
                     </button>
                   ))}
@@ -815,7 +931,9 @@ export default function ImporterPortalPage() {
                   <button className="ip-import-card" key={item.id} onClick={()=>openImport(item)}>
                     <header>
                       <div className="ip-import-card-icon">🚗</div>
-                      <div className="ip-import-card-title"><small>{item.reference_code}</small><strong>{vehicleName(item)}</strong><span>{item.vin || "VIN pendiente"}</span></div>
+                      <div className="ip-import-card-title"><small>{item.reference_code}</small><strong>{vehicleName(item)}</strong>
+                        {/* V39.7.9.1-CARD-META */}
+                        <PortalVehicleMeta item={item} /><span>{item.vin || "VIN pendiente"}</span></div>
                     </header>
 
                     <div className="ip-import-card-meta">
@@ -1222,7 +1340,9 @@ export default function ImporterPortalPage() {
         }}>
           <aside className="ip-detail-drawer">
             <header className="ip-detail-header">
-              <div><small>EXPEDIENTE</small><h2>{vehicleName(selected)}</h2><span>{selected.reference_code} · {selected.vin || "Sin VIN"}</span></div>
+              <div><small>EXPEDIENTE</small><h2>{vehicleName(selected)}</h2>
+                  {/* V39.7.9.1-DETAIL-META */}
+                  <PortalVehicleMeta item={selected} detailItem={detail} /><span>{selected.reference_code} · {selected.vin || "Sin VIN"}</span></div>
               <button onClick={()=>{setSelected(null);setDetail(null)}}>×</button>
             </header>
 

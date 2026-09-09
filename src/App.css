@@ -9626,3 +9626,107 @@ nav {
     padding-right: 14px !important;
   }
 }
+
+
+/* V39.7.9 · IDENTIDAD VEHICULO */
+.customs-vehicle-identity-section{
+  border-color:#c8dbe9!important;
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%)!important;
+}
+.customs-identity-helper{
+  margin-top:8px;
+  padding:9px 11px;
+  border-radius:10px;
+  background:#eef6fc;
+  color:#3f6785;
+  font-size:9px;
+  font-weight:700;
+}
+.customs-identity-summary{
+  border-color:#cce4d6!important;
+  background:#f5fbf7!important;
+}
+.customs-identity-separation-note{
+  display:flex;
+  gap:11px;
+  align-items:flex-start;
+  margin-top:16px;
+  padding:13px 14px;
+  border:1px solid #d8e4ed;
+  border-radius:13px;
+  background:#f7fafc;
+}
+.customs-identity-separation-note>span{
+  font-size:18px;
+  line-height:1;
+}
+.customs-identity-separation-note>div{
+  display:grid;
+  gap:3px;
+}
+.customs-identity-separation-note strong{
+  color:#173f61;
+  font-size:10px;
+}
+.customs-identity-separation-note small{
+  color:#71879a;
+  font-size:9px;
+  line-height:1.45;
+}
+@media(max-width:700px){
+  .customs-identity-separation-note{
+    padding:11px;
+  }
+}
+
+
+/* =========================================================
+   V39.7.9.3 · MOBILE CUSTOMS ACTIONS
+   En móvil, cuando el detalle de Control Aduanal está abierto,
+   el dock/sidebar inferior no debe cubrir Guardar seguimiento.
+   ========================================================= */
+@media (max-width: 760px) {
+  .app:has(.customs-detail-modal) > .sidebar {
+    display: none !important;
+  }
+
+  .customs-detail-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 100dvh !important;
+    min-height: 100dvh;
+    border-radius: 0 !important;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+    scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+
+  .customs-detail-modal .customs-form-actions.sticky {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 120 !important;
+    margin-top: 16px;
+    padding:
+      13px
+      16px
+      calc(13px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid #dce5ef;
+    background: rgba(246, 248, 251, .98) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 -10px 28px rgba(7, 36, 66, .10);
+  }
+
+  .customs-detail-modal .customs-form-actions.sticky > button {
+    min-height: 48px;
+  }
+
+  @supports not selector(:has(*)) {
+    .customs-detail-modal {
+      padding-bottom: calc(390px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .customs-detail-modal .customs-form-actions.sticky {
+      bottom: calc(360px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}

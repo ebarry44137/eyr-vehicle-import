@@ -1,0 +1,25 @@
+/* V39.7.9.5 · Mobile Navigation PRO - E&R interno */
+.imn-dock,.imn-more-sheet,.imn-backdrop{display:none}
+@media(max-width:900px){
+  /* El sidebar desktop deja de ser el dock móvil. Conservamos la campana flotante. */
+  .app>.sidebar{position:fixed!important;inset:0!important;width:0!important;height:0!important;min-height:0!important;padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;z-index:1350!important;pointer-events:none!important;overflow:visible!important}
+  .app>.sidebar>.brand,.app>.sidebar>.sidebar-footer,.app>.sidebar>nav,.app>.sidebar>.fcm-activation-card{display:none!important}
+  .app>.sidebar .admin-notification-center{pointer-events:auto!important}
+  .app>.main{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
+
+  .imn-dock{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:1320;min-height:68px;padding:7px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:linear-gradient(180deg,rgba(10,43,77,.97),rgba(5,24,46,.99));box-shadow:0 16px 42px rgba(3,20,39,.28);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+  .imn-item{min-width:0!important;min-height:54px!important;padding:5px 3px!important;border:1px solid transparent!important;border-radius:15px!important;background:transparent!important;color:#9fb3ca!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;font-size:8px!important;font-weight:850!important;line-height:1.05!important;text-align:center!important;box-shadow:none!important}
+  .imn-item .imn-icon{font-size:19px;line-height:1;color:inherit}
+  .imn-item.active{color:#fff!important;border-color:rgba(232,167,45,.30)!important;background:linear-gradient(180deg,rgba(232,167,45,.24),rgba(232,167,45,.08))!important}
+  .imn-backdrop{position:fixed;inset:0;z-index:1325;display:block;border:0;background:rgba(4,20,38,.48);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+  .imn-more-sheet{position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:1330;display:block;max-height:min(68dvh,610px);overflow:auto;padding:10px 14px 16px;border:1px solid #dbe5ed;border-radius:24px;background:#fff;box-shadow:0 24px 60px rgba(5,27,49,.28);transform:translateY(18px);opacity:0;pointer-events:none;transition:.18s ease}
+  .imn-more-sheet.open{transform:none;opacity:1;pointer-events:auto}
+  .imn-sheet-handle{width:42px;height:4px;margin:0 auto 10px;border-radius:99px;background:#d5dee6}
+  .imn-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 12px}.imn-sheet-head>div{display:flex;flex-direction:column}.imn-sheet-head small{color:#b27d18;font-size:8px;font-weight:950;letter-spacing:1.3px}.imn-sheet-head strong{margin-top:2px;color:#0b3458;font-size:19px}.imn-sheet-head>button{width:38px;height:38px;border:1px solid #e0e7ed;border-radius:12px;background:#f7f9fb;color:#466078;font-size:25px}
+  .imn-more-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.imn-more-grid .imn-item{min-height:76px!important;padding:9px 5px!important;border-color:#e3eaf0!important;background:#f8fafc!important;color:#294a67!important;font-size:9px!important}.imn-more-grid .imn-item.active{border-color:#d7b15d!important;background:#fff8e8!important;color:#0b3458!important}
+  .imn-logout{width:100%;min-height:46px;margin-top:12px;border:1px solid #e2e8ee;border-radius:14px;background:#fff;color:#8b3e3e;font-size:11px;font-weight:850}
+
+  /* En un expediente el dock no tapa Guardar seguimiento. */
+  .app:has(.customs-detail-modal)~.imn-dock,.app:has(.customs-detail-modal) .imn-dock{display:none!important}
+}
+@media(max-width:390px){.imn-dock{left:6px;right:6px}.imn-more-sheet{left:7px;right:7px}.imn-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

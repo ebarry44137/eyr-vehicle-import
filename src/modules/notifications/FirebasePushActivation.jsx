@@ -10,6 +10,7 @@ export default function FirebasePushActivation({
   title = "Activá las notificaciones",
   description = "Recibí alertas importantes aunque E&R esté cerrado.",
   onRegistered,
+  showRegistered = false,
 }) {
   const [status, setStatus] = useState({
     state: "CHECKING",
@@ -65,25 +66,35 @@ export default function FirebasePushActivation({
     }
   }
 
-  // V39.7.3.3 · Ocultar tarjeta si Push no es compatible
+  // Mantener comportamiento actual cuando Push no es compatible.
   if (status.state === "UNSUPPORTED") {
     return null;
   }
 
-  // Si el dispositivo ya está registrado, no ocupar espacio innecesario
-  if (status.registered) {
+  // Internamente sigue ocultándose si ya está registrado.
+  // En Portal usamos showRegistered para mostrar el estado del dispositivo.
+  if (status.registered && !showRegistered) {
     return null;
   }
 
   return (
-    <div className={`fcm-activation-card ${compact ? "compact" : ""}`}>
+    <div
+      className={`fcm-activation-card ${status.registered ? "registered" : ""} ${compact ? "compact" : ""}`}
+    >
       <div className="fcm-activation-icon">🔔</div>
 
       <div className="fcm-activation-copy">
-        <strong>{title}</strong>
-        <p>{description}</p>
+        <strong>
+          {status.registered ? "Notificaciones Push activas" : title}
+        </strong>
 
-        {status.state === "PERMISSION_ONLY" && (
+        <p>
+          {status.registered
+            ? "Este dispositivo ya está registrado y puede recibir alertas de tus importaciones."
+            : description}
+        </p>
+
+        {status.state === "PERMISSION_ONLY" && !status.registered && (
           <small className="fcm-warning">
             El navegador ya tiene permiso, pero todavía falta registrar este
             dispositivo con Firebase.
@@ -97,13 +108,23 @@ export default function FirebasePushActivation({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={enable}
-        disabled={loading}
-      >
-        {loading ? "Conectando..." : "Activar"}
-      </button>
+      {status.registered ? (
+        <span className="fcm-status-pill">
+          DISPOSITIVO REGISTRADO
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={enable}
+          disabled={loading || status.state === "CHECKING"}
+        >
+          {loading
+            ? "Conectando..."
+            : status.state === "CHECKING"
+              ? "Verificando..."
+              : "Activar"}
+        </button>
+      )}
     </div>
   );
 }

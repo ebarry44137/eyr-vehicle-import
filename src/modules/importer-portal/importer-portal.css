@@ -1923,3 +1923,35 @@ body{margin:0}
     margin: 14px 0 18px;
   }
 }
+/* =========================================================
+   V39.7.9.6.7 · PUSH PORTAL VISIBLE
+   ========================================================= */
+.ip-portal-push {
+  margin: 16px 0 18px;
+}
+
+.ip-portal-push .fcm-activation-card {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  .ip-portal-push {
+    margin: 14px 0 16px;
+  }
+
+  .ip-portal-push .fcm-activation-card {
+    display: flex !important;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  .ip-portal-push .fcm-activation-card button,
+  .ip-portal-push .fcm-status-pill {
+    width: 100%;
+    margin-left: 0 !important;
+    text-align: center;
+    box-sizing: border-box;
+  }
+}

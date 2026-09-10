@@ -952,6 +952,16 @@ export default function ImporterPortalPage() {
   imports={imports}
   branding={branding}
 />
+        {activeView === "dashboard" && (
+          <div className="ip-portal-push">
+            <FirebasePushActivation
+              supabase={supabase}
+              title="Notificaciones Push"
+              description="Registrá este dispositivo para recibir alertas sobre tus importaciones."
+              showRegistered
+            />
+          </div>
+        )}
 
 {session?.user?.id && (
   <div className="ip-push-activation-card">

@@ -54,3 +54,16 @@
     bottom: calc(170px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+/* =========================================================
+   V39.7.9.6.7 · ROBOT PORTAL MOBILE
+   ========================================================= */
+@media (max-width: 760px) {
+  .psf-root {
+    right: 14px !important;
+    bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .psf-panel {
+    bottom: calc(184px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

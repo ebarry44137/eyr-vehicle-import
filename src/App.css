@@ -9733,3 +9733,35 @@ nav {
 
 
 /* V39.7.9.5 · NAVEGACION MOBILE INTERNA: estilos en modules/internal-mobile-nav */
+/* =========================================================
+   V39.7.9.5.2 · FIX CHAT FLOTANTE VS DOCK MOBILE PRO
+   Mantiene libre el botón "Más"
+   ========================================================= */
+
+@media (max-width: 900px) {
+  /* Chat / asistente flotante interno */
+  #eyr-customer-support-floating-root {
+    position: relative;
+    z-index: 1300;
+  }
+
+  #eyr-customer-support-floating-root button[aria-label],
+  #eyr-customer-support-floating-root .support-floating-button,
+  #eyr-customer-support-floating-root .customer-support-floating-button,
+  #eyr-customer-support-floating-root .support-fab,
+  #eyr-customer-support-floating-root .floating-support-button {
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 18px !important;
+  }
+
+  /* El dock siempre queda accesible */
+  .imn-dock {
+    z-index: 1250 !important;
+  }
+
+  /* Más debe recibir clics sin ningún elemento encima */
+  .imn-dock .imn-item:last-child {
+    position: relative;
+    z-index: 2;
+  }
+}

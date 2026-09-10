@@ -3166,69 +3166,7 @@ function App() {
     }
   }, [activeView]);
 
-  // V39.7.9.5 · Historial real para navegación interna en PWA/móvil.
-  function navigateInternalMobile(nextView) {
-    if (!nextView || nextView === activeView) {
-      setInternalMobileMoreOpen(false);
-      return;
-    }
-
-    window.history.pushState(
-      { ...(window.history.state || {}), eyrInternalView: nextView },
-      "",
-      window.location.href
-    );
-
-    setInternalMobileMoreOpen(false);
-
-    if (nextView === "customs") {
-      openCustomsView();
-      return;
-    }
-
-    setShowCustomsForm(false);
-    setSelectedCustomsCase(null);
-    setCustomsDetail(null);
-    setActiveView(nextView);
-  }
-
-  useEffect(() => {
-    if (!session?.user?.id || isStandaloneImporter) return undefined;
-
-    if (!window.history.state?.eyrInternalView) {
-      window.history.replaceState(
-        { ...(window.history.state || {}), eyrInternalView: activeView },
-        "",
-        window.location.href
-      );
-    }
-
-    const onPopState = (event) => {
-      setInternalMobileMoreOpen(false);
-
-      // Si hay un expediente/modal abierto, Atrás primero vuelve a Control Aduanal.
-      if (selectedCustomsCase || showCustomsForm) {
-        setShowCustomsForm(false);
-        setSelectedCustomsCase(null);
-        setCustomsDetail(null);
-        setActiveView("customs");
-        loadCustomsCases("");
-        return;
-      }
-
-      const target = event.state?.eyrInternalView;
-      if (target && target !== activeView) {
-        if (target === "customs") {
-          openCustomsView();
-        } else {
-          setActiveView(target);
-        }
-      }
-    };
-
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [session?.user?.id, isStandaloneImporter, activeView, selectedCustomsCase, showCustomsForm]);
+  
 
 function openManualCustomsCase() {
     setCustomsForm(emptyCustomsForm());
@@ -4517,6 +4455,70 @@ async function openCustomsDetail(item) {
   const canManagePortalClients =
     isSystemAdmin ||
     (isWhiteLabelClient && isFullOfficePlan && isTenantAdmin);
+
+    // V39.7.9.5 · Historial real para navegación interna en PWA/móvil.
+  function navigateInternalMobile(nextView) {
+    if (!nextView || nextView === activeView) {
+      setInternalMobileMoreOpen(false);
+      return;
+    }
+
+    window.history.pushState(
+      { ...(window.history.state || {}), eyrInternalView: nextView },
+      "",
+      window.location.href
+    );
+
+    setInternalMobileMoreOpen(false);
+
+    if (nextView === "customs") {
+      openCustomsView();
+      return;
+    }
+
+    setShowCustomsForm(false);
+    setSelectedCustomsCase(null);
+    setCustomsDetail(null);
+    setActiveView(nextView);
+  }
+
+  useEffect(() => {
+    if (!session?.user?.id || isStandaloneImporter) return undefined;
+
+    if (!window.history.state?.eyrInternalView) {
+      window.history.replaceState(
+        { ...(window.history.state || {}), eyrInternalView: activeView },
+        "",
+        window.location.href
+      );
+    }
+
+    const onPopState = (event) => {
+      setInternalMobileMoreOpen(false);
+
+      // Si hay un expediente/modal abierto, Atrás primero vuelve a Control Aduanal.
+      if (selectedCustomsCase || showCustomsForm) {
+        setShowCustomsForm(false);
+        setSelectedCustomsCase(null);
+        setCustomsDetail(null);
+        setActiveView("customs");
+        loadCustomsCases("");
+        return;
+      }
+
+      const target = event.state?.eyrInternalView;
+      if (target && target !== activeView) {
+        if (target === "customs") {
+          openCustomsView();
+        } else {
+          setActiveView(target);
+        }
+      }
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [session?.user?.id, isStandaloneImporter, activeView, selectedCustomsCase, showCustomsForm]);
 
   useEffect(() => {
     if (isStandaloneImporter) {

@@ -40,6 +40,8 @@ import CustomerSupportPage from "./modules/customer-support/CustomerSupportPage.
 import InternalOperationsDashboard from "./modules/internal-dashboard/InternalOperationsDashboard.jsx";
 import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.jsx";
 import "./modules/internal-mobile-nav/internal-mobile-nav.css";
+import ConfigurationProPanels from "./modules/settings/ConfigurationProPanels.jsx";
+import "./modules/settings/configuration-pro-panels.css";
 // V39.7.7 · CUSTOMER SUPPORT
 
 function moneyGTQ(value) {
@@ -8500,6 +8502,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
               </form>
             </section>
+
+            {/* V39.7.9.6 · RESTAURAR CONFIGURACIÓN PRO */}
+            <ConfigurationProPanels
+              supabase={supabase}
+              isSystemAdmin={isSystemAdmin}
+            />
           </section>
         ) : activeView === "quotations" ? (
           <section className="quotations-module">

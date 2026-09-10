@@ -229,6 +229,7 @@ export default function ImporterPortalPage() {
   const [error,setError] = useState("");
   const [login,setLogin] = useState({email:"",password:""});
   const [filters,setFilters] = useState({search:"",status:"ALL"});
+  const [mobileMoreOpen,setMobileMoreOpen] = useState(false);
 
   // V39.6.21.1 · Solicitud de gestión aduanal desde Portal
   const [showCustomsRequest,setShowCustomsRequest] = useState(false);
@@ -272,6 +273,61 @@ export default function ImporterPortalPage() {
     "--ip-secondary": branding?.secondary_color || DEFAULT_BRAND.secondary_color,
     "--ip-accent": branding?.accent_color || DEFAULT_BRAND.accent_color,
   };
+
+  // V39.7.9.4 · Navegación PWA real
+  function currentPortalHistoryState() {
+    const state = window.history.state || {};
+    return state?.eyrPortalNav ? state : null;
+  }
+
+  function pushPortalState(next) {
+    window.history.pushState(
+      { eyrPortalNav: true, ...next },
+      "",
+      window.location.href
+    );
+  }
+
+  function replacePortalState(next) {
+    window.history.replaceState(
+      { ...(window.history.state || {}), eyrPortalNav: true, ...next },
+      "",
+      window.location.href
+    );
+  }
+
+  function navigatePortalV39794(view, { replace = false } = {}) {
+    const nextView = view || "dashboard";
+
+    setMobileMoreOpen(false);
+    setShowCustomsRequest(false);
+    setSelected(null);
+    setDetail(null);
+    setActiveView(nextView);
+
+    const nextState = { portalView: nextView };
+    if (replace) replacePortalState(nextState);
+    else pushPortalState(nextState);
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function closePortalDetailV39794() {
+    if (currentPortalHistoryState()?.portalDetailId) {
+      window.history.back();
+      return;
+    }
+    setSelected(null);
+    setDetail(null);
+  }
+
+  function closeCustomsRequestV39794() {
+    if (currentPortalHistoryState()?.portalRequest) {
+      window.history.back();
+      return;
+    }
+    setShowCustomsRequest(false);
+  }
 
   const kpis = useMemo(() => ({
     active: imports.filter(x => !["DELIVERED","CANCELLED"].includes(String(x.status).toUpperCase())).length,
@@ -318,7 +374,14 @@ export default function ImporterPortalPage() {
     }
   }
 
-  async function openImport(item) {
+  async function openImport(item, options = {}) {
+    if (!options.fromHistory) {
+      pushPortalState({
+        portalView: activeView || "imports",
+        portalDetailId: item.id,
+      });
+    }
+
     setSelected(item);
     setDetail(null);
     setDetailLoading(true);
@@ -405,7 +468,57 @@ export default function ImporterPortalPage() {
     if (logoUrl) setFavicon(logoUrl);
   }, [brandName,logoUrl]);
 
-  function openCustomsRequest() {
+  // V39.7.9.4 · POPSTATE PORTAL
+  useEffect(() => {
+    if (!session || !context?.authorized) return;
+
+    const existing = currentPortalHistoryState();
+    if (!existing) {
+      replacePortalState({ portalView: activeView || "dashboard" });
+    }
+
+    const onPopState = (event) => {
+      const state = event.state || {};
+      const nextView = state?.eyrPortalNav
+        ? state.portalView || "dashboard"
+        : "dashboard";
+
+      setMobileMoreOpen(false);
+      setShowCustomsRequest(Boolean(state?.eyrPortalNav && state.portalRequest));
+
+      const detailId =
+        state?.eyrPortalNav && state.portalDetailId
+          ? String(state.portalDetailId)
+          : "";
+
+      if (detailId) {
+        const item = imports.find((row) => String(row.id) === detailId);
+        if (item) {
+          setActiveView(state.portalView || "imports");
+          openImport(item, { fromHistory: true });
+          return;
+        }
+      }
+
+      setSelected(null);
+      setDetail(null);
+      setActiveView(nextView);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [session?.user?.id, context?.authorized, imports]);
+
+  function openCustomsRequest(options = {}) {
+    if (!options.fromHistory) {
+      pushPortalState({
+        portalView: activeView || "dashboard",
+        portalRequest: true,
+      });
+    }
+
+    setMobileMoreOpen(false);
     setCustomsRequestMessage("");
     setCustomsRequestForm({
       vin:"",
@@ -793,12 +906,12 @@ export default function ImporterPortalPage() {
         </div>
 
         <nav>
-          <button className={activeView==="dashboard"?"active":""} onClick={()=>setActiveView("dashboard")}><span>▦</span>Dashboard</button>
-          <button className={activeView==="imports"?"active":""} onClick={()=>setActiveView("imports")}><span>🚢</span>Mis importaciones</button>
-<button className={activeView==="profile"?"active":""} onClick={()=>setActiveView("profile")}><span>⚙️</span>Mi perfil</button>
+          <button className={activeView==="dashboard"?"active":""} onClick={()=>navigatePortalV39794("dashboard")}><span>▦</span>Dashboard</button>
+          <button className={activeView==="imports"?"active":""} onClick={()=>navigatePortalV39794("imports")}><span>🚢</span>Mis importaciones</button>
+<button className={activeView==="profile"?"active":""} onClick={()=>navigatePortalV39794("profile")}><span>⚙️</span>Mi perfil</button>
           <button type="button" onClick={openCustomsRequest}><span>＋</span>Solicitar gestión</button>
-          <button className={activeView==="documents"?"active":""} onClick={()=>setActiveView("documents")}><span>📄</span>Documentos</button>
-          <button className={activeView==="quote"?"active":""} onClick={()=>setActiveView("quote")}><span>🧮</span>Cotizador</button>
+          <button className={activeView==="documents"?"active":""} onClick={()=>navigatePortalV39794("documents")}><span>📄</span>Documentos</button>
+          <button className={activeView==="quote"?"active":""} onClick={()=>navigatePortalV39794("quote")}><span>🧮</span>Cotizador</button>
         </nav>
 
         <div className="ip-sidebar-footer">
@@ -820,6 +933,7 @@ export default function ImporterPortalPage() {
             <small>PORTAL DE CLIENTES</small>
             <h1>{
               activeView==="imports" ? "Mis Importaciones" :
+              activeView==="profile" ? "Mi perfil" :
               activeView==="documents" ? "Documentos" :
               activeView==="quote" ? "Cotizador para Importador" :
               "Dashboard"
@@ -868,7 +982,7 @@ export default function ImporterPortalPage() {
             <section className="ip-panel ip-imports-preview" style={{marginTop:16}}>
               <header>
                 <div><small>SEGUIMIENTO</small><h3>Importaciones recientes</h3></div>
-                <button className="ip-link-button" onClick={()=>setActiveView("imports")}>Ver todas →</button>
+                <button className="ip-link-button" onClick={()=>navigatePortalV39794("imports")}>Ver todas →</button>
               </header>
 
               {imports.length===0 ? (
@@ -1111,7 +1225,7 @@ export default function ImporterPortalPage() {
 
               <button
                 type="button"
-                onClick={()=>setShowCustomsRequest(false)}
+                onClick={closeCustomsRequestV39794}
                 disabled={customsRequestSaving}
               >
                 ×
@@ -1318,7 +1432,7 @@ export default function ImporterPortalPage() {
               <button
                 type="button"
                 className="secondary"
-                onClick={()=>setShowCustomsRequest(false)}
+                onClick={closeCustomsRequestV39794}
                 disabled={customsRequestSaving}
               >
                 Cancelar
@@ -1334,16 +1448,105 @@ export default function ImporterPortalPage() {
         </div>
       )}
 
+      {/* V39.7.9.4 · MOBILE PWA NAV */}
+      <nav className="ip-mobile-nav-v39794" aria-label="Navegación del Portal">
+        <button
+          type="button"
+          className={activeView === "dashboard" ? "active" : ""}
+          onClick={() => navigatePortalV39794("dashboard")}
+        >
+          <span>⌂</span>
+          <small>Inicio</small>
+        </button>
+
+        <button
+          type="button"
+          className={activeView === "imports" ? "active" : ""}
+          onClick={() => navigatePortalV39794("imports")}
+        >
+          <span>🚢</span>
+          <small>Importaciones</small>
+        </button>
+
+        <button
+          type="button"
+          className="primary"
+          onClick={openCustomsRequest}
+        >
+          <span>＋</span>
+          <small>Gestión</small>
+        </button>
+
+        <button
+          type="button"
+          className={activeView === "documents" ? "active" : ""}
+          onClick={() => navigatePortalV39794("documents")}
+        >
+          <span>📄</span>
+          <small>Documentos</small>
+        </button>
+
+        <button
+          type="button"
+          className={
+            activeView === "profile" || activeView === "quote" || mobileMoreOpen
+              ? "active"
+              : ""
+          }
+          onClick={() => setMobileMoreOpen((value) => !value)}
+        >
+          <span>•••</span>
+          <small>Más</small>
+        </button>
+      </nav>
+
+      {mobileMoreOpen && (
+        <div
+          className="ip-mobile-more-backdrop-v39794"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setMobileMoreOpen(false);
+          }}
+        >
+          <section className="ip-mobile-more-v39794">
+            <div className="ip-mobile-more-handle-v39794" />
+            <header>
+              <div>
+                <small>PORTAL DE CLIENTES</small>
+                <strong>Más opciones</strong>
+              </div>
+              <button type="button" onClick={() => setMobileMoreOpen(false)}>×</button>
+            </header>
+
+            <button type="button" onClick={() => navigatePortalV39794("profile")}>
+              <span>⚙️</span>
+              <div><strong>Mi perfil</strong><small>Datos, foto y preferencias</small></div>
+              <b>›</b>
+            </button>
+
+            <button type="button" onClick={() => navigatePortalV39794("quote")}>
+              <span>🧮</span>
+              <div><strong>Cotizador</strong><small>Calculá una importación</small></div>
+              <b>›</b>
+            </button>
+
+            <button type="button" className="logout" onClick={logout}>
+              <span>↪</span>
+              <div><strong>Cerrar sesión</strong><small>Salir del Portal</small></div>
+            </button>
+          </section>
+        </div>
+      )}
+
       {selected && (
         <div className="ip-detail-backdrop" onMouseDown={e=>{
-          if (e.target===e.currentTarget) {setSelected(null);setDetail(null);}
+          if (e.target===e.currentTarget) closePortalDetailV39794();
         }}>
           <aside className="ip-detail-drawer">
             <header className="ip-detail-header">
               <div><small>EXPEDIENTE</small><h2>{vehicleName(selected)}</h2>
                   {/* V39.7.9.1-DETAIL-META */}
                   <PortalVehicleMeta item={selected} detailItem={detail} /><span>{selected.reference_code} · {selected.vin || "Sin VIN"}</span></div>
-              <button onClick={()=>{setSelected(null);setDetail(null)}}>×</button>
+              <button onClick={closePortalDetailV39794}>×</button>
             </header>
 
             {detailLoading ? (

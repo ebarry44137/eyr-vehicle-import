@@ -38,6 +38,8 @@ import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.j
 import "./modules/customs/portal-customs-requests-v39621.css";
 import CustomerSupportPage from "./modules/customer-support/CustomerSupportPage.jsx";
 import InternalOperationsDashboard from "./modules/internal-dashboard/InternalOperationsDashboard.jsx";
+import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.jsx";
+import "./modules/internal-mobile-nav/internal-mobile-nav.css";
 // V39.7.7 · CUSTOMER SUPPORT
 
 function moneyGTQ(value) {
@@ -916,6 +918,8 @@ function App() {
 
   // V20 · Historial de cotizaciones
   const [activeView, setActiveView] = useState("new");
+  // V39.7.9.5 · NAVEGACION MOBILE INTERNA
+  const [internalMobileMoreOpen, setInternalMobileMoreOpen] = useState(false);
   const [quotationSearch, setQuotationSearch] = useState("");
   const [quotations, setQuotations] = useState([]);
   const [quotationLoading, setQuotationLoading] = useState(false);
@@ -3161,6 +3165,70 @@ function App() {
       loadPortalCustomsRequests();
     }
   }, [activeView]);
+
+  // V39.7.9.5 · Historial real para navegación interna en PWA/móvil.
+  function navigateInternalMobile(nextView) {
+    if (!nextView || nextView === activeView) {
+      setInternalMobileMoreOpen(false);
+      return;
+    }
+
+    window.history.pushState(
+      { ...(window.history.state || {}), eyrInternalView: nextView },
+      "",
+      window.location.href
+    );
+
+    setInternalMobileMoreOpen(false);
+
+    if (nextView === "customs") {
+      openCustomsView();
+      return;
+    }
+
+    setShowCustomsForm(false);
+    setSelectedCustomsCase(null);
+    setCustomsDetail(null);
+    setActiveView(nextView);
+  }
+
+  useEffect(() => {
+    if (!session?.user?.id || isStandaloneImporter) return undefined;
+
+    if (!window.history.state?.eyrInternalView) {
+      window.history.replaceState(
+        { ...(window.history.state || {}), eyrInternalView: activeView },
+        "",
+        window.location.href
+      );
+    }
+
+    const onPopState = (event) => {
+      setInternalMobileMoreOpen(false);
+
+      // Si hay un expediente/modal abierto, Atrás primero vuelve a Control Aduanal.
+      if (selectedCustomsCase || showCustomsForm) {
+        setShowCustomsForm(false);
+        setSelectedCustomsCase(null);
+        setCustomsDetail(null);
+        setActiveView("customs");
+        loadCustomsCases("");
+        return;
+      }
+
+      const target = event.state?.eyrInternalView;
+      if (target && target !== activeView) {
+        if (target === "customs") {
+          openCustomsView();
+        } else {
+          setActiveView(target);
+        }
+      }
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [session?.user?.id, isStandaloneImporter, activeView, selectedCustomsCase, showCustomsForm]);
 
 function openManualCustomsCase() {
     setCustomsForm(emptyCustomsForm());
@@ -5727,6 +5795,37 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
           <small>{isWhiteLabelClient ? `${tenantBrandName} · Powered by E&R` : "E&R Solutions · Vehicle Import"}</small>
         </div>
       </aside>
+
+      {/* V39.7.9.5 · NAVEGACION MOBILE INTERNA */}
+      {!isStandaloneImporter && (
+        <InternalMobileNav
+          activeView={activeView}
+          moreOpen={internalMobileMoreOpen}
+          setMoreOpen={setInternalMobileMoreOpen}
+          onNavigate={navigateInternalMobile}
+          onNewQuote={openNewQuoteView}
+          onQuotations={openQuotationsView}
+          onProspects={openProspectsView}
+          onImports={openImportManagementsView}
+          onOrganizations={openOrganizationsView}
+          onSubscriptions={openSubscriptionsView}
+          onSettings={openSettingsView}
+          onLogout={handleLogout}
+          permissions={{
+            isSystemAdmin,
+            isTenantAdmin,
+            isFullOfficePlan,
+            isWhiteLabelClient,
+            canManageOfficeUsers,
+            canManagePortalClients,
+            canManageImporters,
+            canUseTenantImports,
+            canUseOfficeOperations,
+            canUseTenantDuca,
+            canUseTenantFinance,
+          }}
+        />
+      )}
 
       <main className="main">
         {activeView === "dashboard" && !isStandaloneImporter ? (

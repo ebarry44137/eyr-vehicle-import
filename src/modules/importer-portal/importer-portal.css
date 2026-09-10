@@ -1669,3 +1669,244 @@ body{margin:0}
     font-size:8px;
   }
 }
+
+
+/* =========================================================
+   V39.7.9.4 · PWA MOBILE NAV
+   ========================================================= */
+.ip-mobile-nav-v39794,
+.ip-mobile-more-backdrop-v39794{
+  display:none;
+}
+
+@media(max-width:760px){
+  .ip-app{
+    min-height:100dvh;
+  }
+
+  .ip-main{
+    padding-bottom:calc(98px + env(safe-area-inset-bottom))!important;
+  }
+
+  .ip-mobile-nav-v39794{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:5200;
+    height:calc(72px + env(safe-area-inset-bottom));
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    align-items:start;
+    gap:2px;
+    border-top:1px solid rgba(255,255,255,.10);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb,var(--ip-primary) 91%,black),
+        color-mix(in srgb,var(--ip-primary) 82%,black)
+      );
+    box-shadow:0 -12px 34px rgba(6,29,52,.18);
+    -webkit-backdrop-filter:blur(16px);
+    backdrop-filter:blur(16px);
+  }
+
+  .ip-mobile-nav-v39794 button{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:rgba(222,234,245,.72);
+    min-width:0;
+    height:56px;
+    padding:5px 2px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    border-radius:12px;
+    font:inherit;
+    cursor:pointer;
+  }
+
+  .ip-mobile-nav-v39794 button>span{
+    min-height:24px;
+    display:grid;
+    place-items:center;
+    font-size:19px;
+    line-height:1;
+  }
+
+  .ip-mobile-nav-v39794 button>small{
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:8px;
+    font-weight:850;
+    letter-spacing:.1px;
+  }
+
+  .ip-mobile-nav-v39794 button.active{
+    color:#fff;
+    background:rgba(255,255,255,.08);
+  }
+
+  .ip-mobile-nav-v39794 button.active>span{
+    color:var(--ip-secondary);
+  }
+
+  .ip-mobile-nav-v39794 button.primary>span{
+    width:38px;
+    height:38px;
+    min-height:38px;
+    margin-top:-19px;
+    border-radius:14px;
+    background:var(--ip-secondary);
+    color:color-mix(in srgb,var(--ip-primary) 90%,black);
+    font-size:26px;
+    font-weight:900;
+    box-shadow:0 8px 22px rgba(0,0,0,.22);
+  }
+
+  .ip-mobile-nav-v39794 button.primary>small{
+    margin-top:1px;
+    color:#fff;
+  }
+
+  .ip-mobile-more-backdrop-v39794{
+    position:fixed;
+    inset:0;
+    z-index:5300;
+    display:flex;
+    align-items:flex-end;
+    background:rgba(3,18,33,.36);
+    -webkit-backdrop-filter:blur(2px);
+    backdrop-filter:blur(2px);
+  }
+
+  .ip-mobile-more-v39794{
+    width:100%;
+    padding:8px 16px calc(18px + env(safe-area-inset-bottom));
+    border-radius:24px 24px 0 0;
+    background:#fff;
+    box-shadow:0 -24px 70px rgba(3,28,52,.22);
+    animation:ipMobileMoreIn39794 .18s ease-out;
+  }
+
+  @keyframes ipMobileMoreIn39794{
+    from{transform:translateY(24px);opacity:.5}
+    to{transform:translateY(0);opacity:1}
+  }
+
+  .ip-mobile-more-handle-v39794{
+    width:42px;
+    height:4px;
+    margin:2px auto 10px;
+    border-radius:999px;
+    background:#d6e0e9;
+  }
+
+  .ip-mobile-more-v39794>header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:6px 2px 12px;
+  }
+
+  .ip-mobile-more-v39794>header div{
+    display:flex;
+    flex-direction:column;
+  }
+
+  .ip-mobile-more-v39794>header small{
+    color:var(--ip-secondary);
+    font-size:8px;
+    font-weight:900;
+    letter-spacing:1.2px;
+  }
+
+  .ip-mobile-more-v39794>header strong{
+    margin-top:2px;
+    color:var(--ip-text);
+    font-size:19px;
+  }
+
+  .ip-mobile-more-v39794>header>button{
+    width:38px;
+    height:38px;
+    border:0;
+    border-radius:11px;
+    background:#eef3f7;
+    color:var(--ip-text);
+    font-size:22px;
+  }
+
+  .ip-mobile-more-v39794>button{
+    width:100%;
+    min-height:62px;
+    margin-top:8px;
+    padding:10px 12px;
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) auto;
+    gap:11px;
+    align-items:center;
+    border:1px solid var(--ip-line);
+    border-radius:14px;
+    background:#fff;
+    color:var(--ip-text);
+    text-align:left;
+  }
+
+  .ip-mobile-more-v39794>button>span{
+    width:42px;
+    height:42px;
+    display:grid;
+    place-items:center;
+    border-radius:12px;
+    background:#eef4f9;
+    font-size:18px;
+  }
+
+  .ip-mobile-more-v39794>button>div{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .ip-mobile-more-v39794>button strong{
+    font-size:12px;
+  }
+
+  .ip-mobile-more-v39794>button small{
+    margin-top:2px;
+    color:var(--ip-muted);
+    font-size:9px;
+  }
+
+  .ip-mobile-more-v39794>button>b{
+    color:#8ea0b0;
+    font-size:24px;
+    font-weight:400;
+  }
+
+  .ip-mobile-more-v39794>button.logout{
+    color:#9f302c;
+  }
+
+  /* El chat queda por encima del nuevo dock, sin tapar navegación. */
+  .portal-support-launcher,
+  .ps-launcher,
+  .portal-support-floating-button{
+    bottom:calc(84px + env(safe-area-inset-bottom))!important;
+  }
+
+  /* Un detalle o la solicitud son tareas de primer nivel:
+     ocultamos el dock mientras están abiertos para no competir por espacio. */
+  .ip-app:has(.ip-detail-backdrop) .ip-mobile-nav-v39794,
+  .ip-app:has(.ip-customs-request-backdrop) .ip-mobile-nav-v39794,
+  .ip-app:has(.ip-customs-request-modal) .ip-mobile-nav-v39794{
+    display:none!important;
+  }
+}

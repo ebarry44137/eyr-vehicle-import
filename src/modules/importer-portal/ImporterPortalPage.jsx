@@ -7,6 +7,7 @@ import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
 import PortalProfilePage from "../portal-profile/PortalProfilePage.jsx";
 import PortalSupportCenter from "../portal-support/PortalSupportCenter.jsx";
 import PortalVehiclePhoto from "./PortalVehiclePhoto.jsx";
+import FirebasePushActivation from "../notifications/FirebasePushActivation.jsx";
 // V39.7.7 · CENTRO AYUDA
 // V39.7.6.1 · MI PERFIL
 
@@ -946,7 +947,21 @@ export default function ImporterPortalPage() {
 
         {error && <div className="ip-message error">{error}</div>}
 
-        <PortalSupportCenter context={context} imports={imports} branding={branding} />
+       <PortalSupportCenter
+  context={context}
+  imports={imports}
+  branding={branding}
+/>
+
+{session?.user?.id && (
+  <div className="ip-push-activation-card">
+    <FirebasePushActivation
+      supabase={supabase}
+      title="Notificaciones Push"
+      description="Registrá este dispositivo para recibir avisos del estado de tus importaciones."
+    />
+  </div>
+)}
         {activeView==="profile" ? (<PortalProfilePage context={context} onSaved={()=>loadPortal(session)} />) : activeView==="dashboard" ? (
           <>
             <section className="ip-welcome-card">

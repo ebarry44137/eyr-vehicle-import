@@ -1910,3 +1910,16 @@ body{margin:0}
     display:none!important;
   }
 }
+/* =========================================================
+   V39.7.9.6.4 · PUSH PORTAL
+   ========================================================= */
+
+.ip-push-activation-card {
+  margin: 18px 0 22px;
+}
+
+@media (max-width: 760px) {
+  .ip-push-activation-card {
+    margin: 14px 0 18px;
+  }
+}

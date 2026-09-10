@@ -9,3 +9,48 @@
     bottom: calc(105px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+/* =========================================================
+   V39.7.9.6.4 · PORTAL MOBILE
+   Chat flotante por encima del dock
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  /* Contenedor flotante del asistente */
+  .portal-support-floating,
+  .portal-support-root,
+  .portal-support-center,
+  [class*="portal-support"][class*="floating"] {
+    z-index: 1500 !important;
+  }
+
+  /* Botón flotante / robot */
+  .portal-support-floating button,
+  .portal-support-root > button,
+  .portal-support-center > button,
+  [class*="portal-support"][class*="launcher"],
+  [class*="portal-support"][class*="fab"],
+  [class*="portal-support"][class*="bubble"] {
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Dock móvil siempre clickeable */
+  .ip-mobile-dock,
+  .ip-mobile-nav {
+    z-index: 1400 !important;
+  }
+}
+/* =========================================================
+   V39.7.9.6.4 · FIX REAL ROBOT PORTAL MOBILE
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .psf-root {
+    right: 14px !important;
+    bottom: calc(105px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .psf-panel {
+    bottom: calc(170px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

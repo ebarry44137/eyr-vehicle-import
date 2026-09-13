@@ -14,7 +14,7 @@ export default function InternalMobileNav({
   const {
     isSystemAdmin, isTenantAdmin, isFullOfficePlan, isWhiteLabelClient,
     canManageOfficeUsers, canManagePortalClients, canManageImporters,
-    canUseTenantImports, canUseOfficeOperations, canUseTenantDuca, canUseTenantFinance,
+    canUseTenantImports, canUseOfficeOperations, canUseTenantDuca, canUseTenantFinance, canAccessPerformance,
   } = permissions;
 
   useEffect(() => {
@@ -49,7 +49,8 @@ export default function InternalMobileNav({
           {canUseTenantDuca && <Item icon="📑" label="Correlativos DUCA" active={activeView === "correlatives"} onClick={go("correlatives")} />}
           {canUseTenantFinance && <Item icon="💰" label="Finanzas" active={activeView === "finance"} onClick={go("finance")} />}
           {isSystemAdmin && <Item icon="🛠" label="Administración" active={activeView === "admin-center"} onClick={go("admin-center")} />}
-          {isSystemAdmin && <Item icon="⚙" label="Configuración" active={activeView === "settings"} onClick={action(onSettings)} />}
+                    {canAccessPerformance && <Item icon="📊" label="Rendimiento" active={activeView === "performance-bonuses"} onClick={go("performance-bonuses")} />}
+{isSystemAdmin && <Item icon="⚙" label="Configuración" active={activeView === "settings"} onClick={action(onSettings)} />}
         </div>
         <button className="imn-logout" type="button" onClick={action(onLogout)}>↪ Cerrar sesión</button>
       </section>

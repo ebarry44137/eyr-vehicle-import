@@ -42,6 +42,9 @@ import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.j
 import "./modules/internal-mobile-nav/internal-mobile-nav.css";
 import ConfigurationProPanels from "./modules/settings/ConfigurationProPanels.jsx";
 import "./modules/settings/configuration-pro-panels.css";
+import PerformanceBonusesPage from "./modules/performance-bonuses/PerformanceBonusesPage.jsx";
+import PerformanceCheckIn from "./modules/performance-attendance/PerformanceCheckIn.jsx";
+import CustomsPerformanceAssignment from "./modules/performance-attendance/CustomsPerformanceAssignment.jsx";
 // V39.7.7 · CUSTOMER SUPPORT
 
 function moneyGTQ(value) {
@@ -1035,6 +1038,7 @@ function App() {
     verification_source: "SAT Guatemala",
     notes: "",
   });
+  const [performanceAccessV3981, setPerformanceAccessV3981] = useState(false);
 
   async function loadTenantContext() {
     try {
@@ -3675,6 +3679,8 @@ async function openCustomsDetail(item) {
         "selective_type", "selective_at", "port_exit_at",
         "docs_set_built_at", "envelope_ready_at", "delivered_at",
         "incident_status", "problem_reason", "action_taken",
+        "digitizer_user_id", "port_manager_user_id",
+        "incident_detected_at", "incident_reported_at",
         "pending_from", "delivery_status",
         "document_collection_gtq", "port_expenses_gtq",
         "professional_fees_gtq", "other_charges_gtq",
@@ -4529,6 +4535,28 @@ async function openCustomsDetail(item) {
       );
     }
   }, [isStandaloneImporter]);
+  
+  // V39.8.1 · PERFORMANCE ACCESS
+  useEffect(() => {
+    let mounted = true;
+    if (!session?.user?.id) {
+      setPerformanceAccessV3981(false);
+      return () => { mounted = false; };
+    }
+    supabase.rpc("can_access_performance")
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.warn("PERFORMANCE ACCESS:", error.message);
+          setPerformanceAccessV3981(false);
+          return;
+        }
+        setPerformanceAccessV3981(Boolean(data));
+      })
+      .catch(() => mounted && setPerformanceAccessV3981(false));
+    return () => { mounted = false; };
+  }, [session?.user?.id]);
+
   const tenantEyebrow = isWhiteLabelClient
     ? tenantBrandName.toUpperCase()
     : "E&R GLOBAL LOGISTIC";
@@ -5610,7 +5638,18 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             </button>
           )}
 
-          {isSystemAdmin && (
+          
+          {performanceAccessV3981 && (
+            <button
+              className={`nav-item ${activeView === "performance-bonuses" ? "active" : ""}`}
+              onClick={() => setActiveView("performance-bonuses")}
+            >
+              <span>📊</span>
+              Rendimiento & Bonos
+            </button>
+          )}
+
+{isSystemAdmin && (
             <button
               className={`nav-item ${activeView === "organizations" ? "active" : ""}`}
               onClick={openOrganizationsView}
@@ -5827,16 +5866,27 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             canUseOfficeOperations,
             canUseTenantDuca,
             canUseTenantFinance,
+            canAccessPerformance: performanceAccessV3981,
           }}
         />
       )}
 
       <main className="main">
-        {activeView === "dashboard" && !isStandaloneImporter ? (
-          <InternalOperationsDashboard
-            onNavigate={setActiveView}
-            onOpenCustoms={openCustomsView}
-          />
+        {activeView === "performance-bonuses" && performanceAccessV3981 ? (
+          <PerformanceBonusesPage supabase={supabase} invokeFunction={invokeFunction} />
+        ) : activeView === "dashboard" && !isStandaloneImporter ? (
+          <>
+            {internalJobTitle === "DIGITADOR" && (
+              <PerformanceCheckIn
+                supabase={supabase}
+                userId={session?.user?.id || ""}
+              />
+            )}
+            <InternalOperationsDashboard
+              onNavigate={setActiveView}
+              onOpenCustoms={openCustomsView}
+            />
+          </>
         ) : activeView === "importer-pro-team" && canManageImporterProTeam ? (
           <ImporterProTeamPage supabase={supabase} />
         ) : activeView === "importer-pro-files" && isStandaloneImporter && isImporterProPlan ? (
@@ -7551,6 +7601,17 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         </label>
                       ))}
                     </div>
+
+                    <CustomsPerformanceAssignment
+                      supabase={supabase}
+                      value={customsDetail}
+                      onChange={(patch) =>
+                        setCustomsDetail((current) => ({
+                          ...current,
+                          ...patch,
+                        }))
+                      }
+                    />
 
                     <div className="customs-form-grid detail-selects">
                       <label>

@@ -255,6 +255,8 @@ export default function ImporterPortalPage() {
   const [quoteLoading,setQuoteLoading] = useState(false);
   const [quoteResult,setQuoteResult] = useState(null);
   const [quoteError,setQuoteError] = useState("");
+  // V39.7.9.7 · Una sola gestión documental abierta
+  const [documentOpenKeyV39797, setDocumentOpenKeyV39797] = useState("");
 
   const routeSlug = portalSlugFromLocation();
   const organization = context?.organization || null;
@@ -896,13 +898,9 @@ export default function ImporterPortalPage() {
   return (
     <div className="ip-app" style={style}>
       <aside className="ip-sidebar">
-        <div className="ip-company-brand">
+        <div className="ip-company-brand ip-company-brand-logo-only">
           <div className="ip-company-logo">
             {logoUrl ? <img src={logoUrl} alt={brandName}/> : initials(brandName)}
-          </div>
-          <div>
-            <small>PORTAL DE CLIENTES</small>
-            <strong>{brandName}</strong>
           </div>
         </div>
 
@@ -963,16 +961,7 @@ export default function ImporterPortalPage() {
           </div>
         )}
 
-{session?.user?.id && (
-  <div className="ip-push-activation-card">
-    <FirebasePushActivation
-      supabase={supabase}
-      title="Notificaciones Push"
-      description="Registrá este dispositivo para recibir avisos del estado de tus importaciones."
-    />
-  </div>
-)}
-        {activeView==="profile" ? (<PortalProfilePage context={context} onSaved={()=>loadPortal(session)} />) : activeView==="dashboard" ? (
+{activeView==="profile" ? (<PortalProfilePage context={context} onSaved={()=>loadPortal(session)} />) : activeView==="dashboard" ? (
           <>
             <section className="ip-welcome-card">
               <div className="ip-welcome-copy">
@@ -1068,8 +1057,8 @@ export default function ImporterPortalPage() {
               <div className="ip-import-card-grid">
                 {imports.map(item=>(
                   <button className="ip-import-card" key={item.id} onClick={()=>openImport(item)}>
-                    <header>
-                      <div className="ip-import-card-icon">🚗</div>
+                    <header className="ip-import-card-head-v39797">
+                      <PortalVehiclePhoto item={item} />
                       <div className="ip-import-card-title"><small>{item.reference_code}</small><strong>{vehicleName(item)}</strong>
                         {/* V39.7.9.1-CARD-META */}
                         <PortalVehicleMeta item={item} /><span>{item.vin || "VIN pendiente"}</span></div>
@@ -1112,25 +1101,45 @@ export default function ImporterPortalPage() {
                 <p>Cuando tu oficina vincule una gestión a tu cuenta podrás consultar aquí sus archivos publicados.</p>
               </div>
             ) : (
-              <div className="ip-document-operation-grid">
-                {imports.map(item=>(
-                  <article className="ip-document-operation" key={`${item.source_type}-${item.id}`}>
-                    <div>
-                      <small>{item.source_type==="CUSTOMS_CASE" ? "EXPEDIENTE ADUANAL" : "GESTIÓN DE IMPORTACIÓN"}</small>
-                      <strong>{vehicleName(item)}</strong>
-                      <span>{item.reference_code} · {item.vin || "VIN pendiente"}</span>
-                    </div>
+              <div className="ip-document-operation-grid ip-document-accordion-v39797">
+                {imports.map(item=>{
+                  const documentKey = `${item.source_type || "IMPORT_MANAGEMENT"}:${item.id}`;
+                  const isOpen = documentOpenKeyV39797 === documentKey;
+                  return (
+                    <article
+                      className={`ip-document-operation ip-document-operation-v39797 ${isOpen ? "is-open" : ""}`}
+                      key={documentKey}
+                    >
+                      <button
+                        type="button"
+                        className="ip-document-operation-toggle-v39797"
+                        aria-expanded={isOpen}
+                        onClick={()=>setDocumentOpenKeyV39797(prev=>prev===documentKey ? "" : documentKey)}
+                      >
+                        <PortalVehiclePhoto item={item} />
+                        <div className="ip-document-operation-copy-v39797">
+                          <small>{item.source_type==="CUSTOMS_CASE" ? "EXPEDIENTE ADUANAL" : "GESTIÓN DE IMPORTACIÓN"}</small>
+                          <strong>{vehicleName(item)}</strong>
+                          <span>{item.reference_code} · {item.vin || "VIN pendiente"}</span>
+                        </div>
+                        <span className="ip-document-operation-chevron-v39797">{isOpen ? "⌃" : "⌄"}</span>
+                      </button>
 
-                    <OperationFilesPanel
-                      supabase={supabase}
-                      sourceType={item.source_type || "IMPORT_MANAGEMENT"}
-                      sourceId={item.id}
-                      organizationId={item.organization_id}
-                      readOnly={true}
-                      title="Documentos publicados"
-                    />
-                  </article>
-                ))}
+                      {isOpen && (
+                        <div className="ip-document-operation-files-v39797">
+                          <OperationFilesPanel
+                            supabase={supabase}
+                            sourceType={item.source_type || "IMPORT_MANAGEMENT"}
+                            sourceId={item.id}
+                            organizationId={item.organization_id}
+                            readOnly={true}
+                            title="Documentos publicados"
+                          />
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>

@@ -710,6 +710,38 @@ function emptyCustomsForm() {
 
 
 function getVehicleDisplayVersion(vehicle, sat) {
+  const model = String(vehicle?.model || "").trim();
+
+  function versionFromSatLine(line) {
+    const normalizedLine = String(line || "").trim();
+
+    if (!normalizedLine || !model) return "";
+
+    const escapedModel = model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const variant = normalizedLine
+      .replace(new RegExp(`^${escapedModel}\\s*`, "i"), "")
+      .trim();
+
+    if (!variant || variant.toUpperCase() === model.toUpperCase()) {
+      return "";
+    }
+
+    return `Versión ${variant}`;
+  }
+
+  // V39.7.9.8.1 · Mientras SAT exige revisión, la versión todavía NO está
+  // confirmada. Evitamos presentar el trim/series del decoder como definitivo.
+  if (sat?.requires_review) {
+    return "Versión por confirmar";
+  }
+
+  // Si este VIN ya fue resuelto/aprendido manualmente, la línea SAT
+  // confirmada tiene prioridad sobre el trim nativo del decoder.
+  if (sat?.match_status === "MANUAL_RESOLUTION") {
+    const learnedVersion = versionFromSatLine(sat?.selected_match?.line);
+    if (learnedVersion) return learnedVersion;
+  }
+
   const nativeVersion = [vehicle?.series, vehicle?.trim]
     .filter(Boolean)
     .join(" • ")
@@ -719,34 +751,12 @@ function getVehicleDisplayVersion(vehicle, sat) {
     return nativeVersion;
   }
 
-  const satLine =
-    sat?.selected_match?.line ||
-    sat?.best_match?.line ||
-    "";
+  const satVersion = versionFromSatLine(
+    sat?.selected_match?.line || sat?.best_match?.line
+  );
 
-  const model = String(vehicle?.model || "").trim();
-
-  if (!satLine || !model) {
-    return "Versión no especificada";
-  }
-
-  const normalizedLine = String(satLine).trim();
-  const escapedModel = model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  // Quita el modelo base del inicio de la línea SAT.
-  // Ej.: "OUTLANDER XLS" -> "XLS"
-  //      "HIGHLANDER LE AWD" -> "LE AWD"
-  const variant = normalizedLine
-    .replace(new RegExp(`^${escapedModel}\\s*`, "i"), "")
-    .trim();
-
-  if (!variant || variant.toUpperCase() === model.toUpperCase()) {
-    return "Versión no especificada";
-  }
-
-  return `Versión ${variant}`;
+  return satVersion || "Versión no especificada";
 }
-
 function App() {
   // V22.1 · Landing pública + cotizador + sistema interno
   // Todas las Edge Functions reciben explícitamente el JWT de la sesión activa.
@@ -2011,7 +2021,7 @@ function App() {
     }
   }
 
-  function calcularImpuestosManual() {
+  async function calcularImpuestosManual() {
     const taxableValue = Number(manualTaxableValueGtq);
     const rule = manualTaxRules.find(
       (item) => Number(item.id) === Number(manualTaxRuleId)
@@ -2038,9 +2048,75 @@ function App() {
     const cleanVin =
       String(manualVin || "").trim().toUpperCase() || null;
 
+    if (cleanVin && cleanVin.length !== 17) {
+      setError(
+        "El VIN es opcional, pero para calcular el flete debe contener 17 caracteres."
+      );
+      return;
+    }
+
     const cleanVehicleName =
       String(manualVehicleName || "").trim().toUpperCase() ||
       "CÁLCULO MANUAL";
+
+    let freightData = null;
+    let dimensionsData = null;
+    let freightRequiresReview = false;
+    let freightOptions = [];
+    let dimensionSearchAttempts = [];
+    let freightWarning = null;
+    let freightExchangeRate = null;
+
+    // V39.7.9.8.2 · El modo MANUAL conserva impuestos/base definidos por E&R,
+    // pero si hay VIN válido reutiliza el motor únicamente para dimensiones/flete.
+    // Nunca sustituimos taxableValue, IVA, IPRIMA ni placas del cálculo manual.
+    if (cleanVin) {
+      try {
+        const { data: freightLookup, error: freightLookupError } =
+          await invokeFunction("decode-vin", {
+            body: {
+              vin: cleanVin,
+              calculation_mode: "SAT",
+            },
+          });
+
+        if (freightLookupError) throw freightLookupError;
+
+        if (freightLookup) {
+          dimensionsData = freightLookup?.dimensions || null;
+          freightExchangeRate = Number(
+            freightLookup?.summary?.exchange_rate ||
+              freightLookup?.exchange_rate ||
+              freightLookup?.taxes?.exchange_rate ||
+              0
+          ) || null;
+          freightData = freightLookup?.freight || null;
+          freightRequiresReview = Boolean(
+            freightLookup?.freight_requires_review
+          );
+          freightOptions = Array.isArray(freightLookup?.freight_options)
+            ? freightLookup.freight_options
+            : [];
+          dimensionSearchAttempts = Array.isArray(
+            freightLookup?.dimension_search_attempts
+          )
+            ? freightLookup.dimension_search_attempts
+            : [];
+
+          if (
+            freightRequiresReview ||
+            Number(freightData?.price_usd || 0) <= 0
+          ) {
+            freightWarning =
+              "El flete no quedó definido automáticamente para este VIN.";
+          }
+        }
+      } catch (freightError) {
+        console.error("MANUAL FREIGHT LOOKUP ERROR:", freightError);
+        freightWarning =
+          "No fue posible calcular el flete automáticamente. El cálculo manual de impuestos sigue disponible.";
+      }
+    }
 
     const manualSummary = {
       calculation_status: "READY",
@@ -2050,14 +2126,16 @@ function App() {
       sat_match_status: "MANUAL",
       sat_confidence: "MANUAL",
       total_taxes_gtq: total,
+
+      // El tipo de cambio del lookup puede servir a la cotización comercial,
+      // sin alterar la base tributaria manual.
+      exchange_rate: freightExchangeRate,
     };
 
     setError("");
     setResult({
       success: true,
 
-      // V39.6.2 · El cálculo manual es definitivo dentro de este modo.
-      // No depende del matching VIN / Tabla SAT.
       calculation_status: "READY",
       calculation_method: "MANUAL",
       manual_calculation: true,
@@ -2089,21 +2167,21 @@ function App() {
         calculation_source: "MANUAL",
       },
 
-      // El render general usa summary para el encabezado y la tarjeta
-      // de valor imponible. En manual lo llenamos explícitamente.
       summary: manualSummary,
 
-      dimensions: null,
-      freight: null,
-      freight_requires_review: false,
+      dimensions: dimensionsData,
+      freight: freightData,
+      freight_requires_review: freightRequiresReview,
+      freight_options: freightOptions,
+      dimension_search_attempts: dimensionSearchAttempts,
       manual_tax_rule: rule,
 
       warnings: [
         "Valor imponible establecido manualmente por E&R Solutions.",
+        ...(freightWarning ? [freightWarning] : []),
       ],
     });
   }
-
   async function consultarVehiculo() {
     const cleanVin = vin.trim().toUpperCase();
 
@@ -4257,11 +4335,8 @@ async function openCustomsDetail(item) {
       ? quoteGrandTotalUsd * quoteExchangeRate
       : null;
   const canGenerateQuote =
-    !result?.manual_calculation &&
-    (
-      result?.calculation_status === "READY" ||
-      summary?.calculation_status === "READY"
-    );
+    result?.calculation_status === "READY" ||
+    summary?.calculation_status === "READY";
 
   /*
    * V13: revisión SAT compatible + resolución excepcional.
@@ -10009,7 +10084,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
               </article>
 
-              {!isManualCalculation && (
+              {(!isManualCalculation || Boolean(freight?.price_usd) || Boolean(dimensions)) && (
               <article className="result-card freight-result">
                 <div className="result-card-header">
                   <span className="result-icon">🚢</span>

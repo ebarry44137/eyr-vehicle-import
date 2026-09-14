@@ -1,0 +1,961 @@
+
+/* =========================================================
+   E&R V39.7.9.9.0 · PRO WAVE 4
+   Operación · DUCA · Finanzas · Administración
+   Revisiones EXCLUIDO (módulo aún no habilitado)
+   ========================================================= */
+
+.app.app-internal{
+  --w4-navy:#0a2543;
+  --w4-navy-2:#123f6d;
+  --w4-gold:#c79732;
+  --w4-gold-soft:#fff7e7;
+  --w4-line:#dfe7ef;
+  --w4-line-soft:#edf2f6;
+  --w4-text:#102d49;
+  --w4-muted:#7b8da2;
+  --w4-bg:#f6f8fb;
+  --w4-card:#fff;
+  --w4-green:#20825a;
+  --w4-green-soft:#edf9f3;
+  --w4-red:#b74940;
+  --w4-red-soft:#fff3f1;
+  --w4-amber:#aa7216;
+  --w4-amber-soft:#fff8e8;
+  --w4-shadow:0 14px 34px rgba(9,38,68,.07);
+  --w4-shadow-hover:0 18px 42px rgba(9,38,68,.11);
+}
+
+/* =========================================================
+   GESTIONES DE IMPORTACIÓN
+   ========================================================= */
+
+.app.app-internal .imports-module{
+  width:100%;
+  max-width:1460px;
+  margin:0 auto;
+  padding-bottom:64px;
+}
+
+.app.app-internal .imports-topbar{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:22px;
+  margin-bottom:22px;
+}
+
+.app.app-internal .imports-topbar h1{
+  margin:5px 0 4px;
+  color:var(--w4-text);
+  font-size:31px;
+  line-height:1.08;
+  letter-spacing:-.8px;
+}
+
+.app.app-internal .imports-topbar p{
+  color:var(--w4-muted);
+  font-size:12px;
+}
+
+.app.app-internal .imports-count-card{
+  min-width:116px;
+  min-height:82px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:14px 17px;
+  border:1px solid var(--w4-line);
+  border-radius:18px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .imports-count-card span{
+  color:#a27827;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:1.1px;
+}
+
+.app.app-internal .imports-count-card strong{
+  margin-top:3px;
+  color:var(--w4-text);
+  font-size:28px;
+  line-height:1;
+}
+
+.app.app-internal .imports-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:11px;
+  margin-bottom:17px;
+}
+
+.app.app-internal .imports-kpis article{
+  position:relative;
+  overflow:hidden;
+  min-height:94px;
+  padding:17px 18px;
+  border:1px solid var(--w4-line);
+  border-radius:17px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .imports-kpis article::after{
+  content:"";
+  position:absolute;
+  right:-25px;
+  bottom:-35px;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:rgba(32,94,148,.035);
+}
+
+.app.app-internal .imports-kpis span{
+  display:block;
+  margin-bottom:8px;
+  color:#71849a;
+  font-size:9px;
+  font-weight:900;
+}
+
+.app.app-internal .imports-kpis strong{
+  color:#12324f;
+  font-size:27px;
+}
+
+.app.app-internal .imports-search-card,
+.app.app-internal .imports-table-card{
+  border:1px solid var(--w4-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .imports-search-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  margin-bottom:16px;
+  padding:18px 20px;
+}
+
+.app.app-internal .imports-search-card h2{
+  margin:4px 0 0;
+  color:var(--w4-text);
+  font-size:18px;
+}
+
+.app.app-internal .imports-search-form{
+  width:min(620px,100%);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+}
+
+.app.app-internal .imports-search-form input{
+  min-height:46px;
+  border:1px solid #d8e1ea;
+  border-radius:12px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .imports-search-form button{
+  min-width:98px;
+  border:0;
+  border-radius:12px;
+  color:#fff;
+  background:linear-gradient(135deg,#0d3158,#174d7d);
+  box-shadow:0 10px 21px rgba(13,49,88,.13);
+  font-weight:850;
+}
+
+.app.app-internal .imports-table-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:18px 20px;
+}
+
+.app.app-internal .imports-table-head h2{
+  margin:4px 0 0;
+  color:var(--w4-text);
+  font-size:22px;
+}
+
+.app.app-internal .imports-table-wrap{
+  overflow:auto;
+  border-top:1px solid var(--w4-line-soft);
+}
+
+.app.app-internal .imports-table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.app.app-internal .imports-table th{
+  padding:11px 13px;
+  background:#f5f8fb;
+  color:#75879c;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.45px;
+  text-align:left;
+}
+
+.app.app-internal .imports-table td{
+  padding:13px;
+  border-top:1px solid #edf1f5;
+  color:#294963;
+  font-size:10.5px;
+}
+
+.app.app-internal .imports-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .imports-table td strong{
+  display:block;
+  color:#123552;
+  font-weight:850;
+}
+
+.app.app-internal .imports-table td small{
+  display:block;
+  margin-top:3px;
+  color:#8c99a8;
+  font-size:9px;
+}
+
+.app.app-internal .import-status{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#eef4fa;
+  color:#315f84;
+  font-size:8.5px;
+  font-weight:900;
+  letter-spacing:.25px;
+}
+
+/* Import detail */
+.app.app-internal .import-detail-modal{
+  border:1px solid #dbe4ed;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 28px 80px rgba(7,29,52,.23);
+}
+
+.app.app-internal .import-detail-body{
+  background:#f7f9fc;
+}
+
+.app.app-internal .import-vehicle-card,
+.app.app-internal .import-progress-card,
+.app.app-internal .import-importer-card,
+.app.app-internal .import-portal-client-card,
+.app.app-internal .import-cover-data-card{
+  border:1px solid #e1e8ef;
+  border-radius:17px;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(12,42,72,.05);
+}
+
+/* =========================================================
+   DECLARACIONES
+   ========================================================= */
+
+.app.app-internal .declarations-module{
+  width:100%;
+  max-width:1460px;
+  margin:0 auto;
+  padding-bottom:64px;
+}
+
+.app.app-internal .declarations-header{
+  margin-bottom:18px;
+}
+
+.app.app-internal .declarations-header h1{
+  margin:5px 0 4px;
+  color:var(--w4-text);
+  font-size:31px;
+  line-height:1.08;
+  letter-spacing:-.75px;
+}
+
+.app.app-internal .declarations-header p{
+  color:var(--w4-muted);
+  font-size:12px;
+}
+
+.app.app-internal .declaration-create-button{
+  min-height:45px;
+  padding:0 17px;
+  border:0;
+  border-radius:12px;
+  color:#142f49;
+  background:linear-gradient(135deg,#e7b63b,#d99d20);
+  box-shadow:0 11px 24px rgba(199,151,50,.22);
+  font-weight:900;
+}
+
+.app.app-internal .declarations-module .customs-kpis,
+.app.app-internal .declarations-module .declaration-kpis{
+  gap:11px;
+}
+
+.app.app-internal .declarations-module .customs-kpis article,
+.app.app-internal .declarations-module .declaration-kpis article{
+  min-height:92px;
+  border:1px solid var(--w4-line);
+  border-radius:17px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .declarations-list-card{
+  overflow:hidden;
+  border:1px solid var(--w4-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .declarations-list-head{
+  padding:18px 20px;
+  border-bottom:1px solid var(--w4-line-soft);
+}
+
+.app.app-internal .declarations-list-head h2{
+  margin:4px 0 0;
+  color:var(--w4-text);
+  font-size:19px;
+}
+
+.app.app-internal .declaration-search{
+  min-height:44px;
+  border:1px solid #d8e1ea;
+  border-radius:12px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .declarations-table-wrap{
+  overflow:auto;
+}
+
+.app.app-internal .declarations-table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.app.app-internal .declarations-table th{
+  padding:11px 12px;
+  background:#f5f8fb;
+  color:#75879c;
+  font-size:8.5px;
+  font-weight:900;
+  letter-spacing:.4px;
+  text-align:left;
+}
+
+.app.app-internal .declarations-table td{
+  padding:12px;
+  border-top:1px solid #edf1f5;
+  color:#294963;
+  font-size:10px;
+}
+
+.app.app-internal .declarations-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .duca-correlative-badge{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#eaf8f0;
+  color:#237955;
+  font-size:8.5px;
+  font-weight:900;
+}
+
+.app.app-internal .duca-correlative-missing{
+  background:#fff4e8;
+  color:#9a6518;
+}
+
+.app.app-internal .declaration-charge-pending{
+  color:#a16814;
+  font-weight:900;
+}
+
+.app.app-internal .declaration-adjust-charge{
+  min-height:34px;
+  padding:0 10px;
+  border:1px solid #d7e1ea;
+  border-radius:9px;
+  background:#fff;
+  color:#234b6d;
+  font-size:9px;
+  font-weight:850;
+}
+
+/* =========================================================
+   CORRELATIVOS DUCA
+   ========================================================= */
+
+.app.app-internal .correlatives-module{
+  width:100%;
+  max-width:1460px;
+  margin:0 auto;
+  padding-bottom:64px;
+}
+
+.app.app-internal .correlative-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:11px;
+  margin-bottom:15px;
+}
+
+.app.app-internal .correlative-kpis>article,
+.app.app-internal .correlative-kpis>div{
+  min-height:90px;
+  padding:16px 18px;
+  border:1px solid var(--w4-line);
+  border-radius:17px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .correlative-kpis span{
+  color:#71849a;
+  font-size:9px;
+  font-weight:900;
+}
+
+.app.app-internal .correlative-kpis strong{
+  display:block;
+  margin-top:7px;
+  color:#12324f;
+  font-size:27px;
+}
+
+.app.app-internal .correlatives-module .customer-message.error{
+  margin:0 0 15px;
+  padding:12px 15px;
+  border:1px solid #efc9c5;
+  border-radius:12px;
+  background:#fff2f0;
+  color:#a93c35;
+  font-weight:800;
+}
+
+.app.app-internal .correlatives-grid.v32-2{
+  gap:16px;
+}
+
+.app.app-internal .correlative-register-card,
+.app.app-internal .correlative-batches-card{
+  overflow:hidden;
+  border:1px solid var(--w4-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .correlative-register-card{
+  padding:0;
+}
+
+.app.app-internal .correlative-register-card .declarations-list-head,
+.app.app-internal .correlative-batches-card .declarations-list-head{
+  padding:18px 20px;
+}
+
+.app.app-internal .correlative-register-card form{
+  padding:18px 20px 20px;
+}
+
+.app.app-internal .correlative-register-card input,
+.app.app-internal .correlative-register-card select,
+.app.app-internal .correlative-register-card textarea{
+  min-height:44px;
+  border:1px solid #d8e1ea;
+  border-radius:11px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .batch-financial-summary{
+  gap:8px;
+  padding:10px;
+  border:1px solid #e2e9f0;
+  border-radius:13px;
+  background:#f7f9fc;
+}
+
+.app.app-internal .batch-financial-summary>div{
+  min-height:54px;
+  padding:9px 10px;
+  border-radius:10px;
+  background:#fff;
+}
+
+.app.app-internal .batch-financial-summary>div:last-child{
+  background:var(--w4-amber-soft);
+}
+
+.app.app-internal .correlative-batch-list{
+  padding:0 20px 20px;
+}
+
+.app.app-internal .batch-v32-2{
+  padding:14px 0;
+  border-bottom:1px solid var(--w4-line-soft);
+}
+
+.app.app-internal .batch-v32-2:last-child{
+  border-bottom:0;
+}
+
+.app.app-internal .batch-payable-status.pending{
+  color:#a36d13;
+  font-weight:900;
+}
+
+/* =========================================================
+   FINANZAS
+   ========================================================= */
+
+.app.app-internal .finance-module{
+  width:100%;
+  max-width:1500px;
+  margin:0 auto;
+  padding-bottom:64px;
+}
+
+.app.app-internal .finance-header{
+  margin-bottom:18px;
+}
+
+.app.app-internal .finance-header h1{
+  margin:5px 0 4px;
+  color:var(--w4-text);
+  font-size:31px;
+  letter-spacing:-.8px;
+}
+
+.app.app-internal .finance-header p{
+  color:var(--w4-muted);
+  font-size:12px;
+}
+
+.app.app-internal .finance-period{
+  gap:9px;
+}
+
+.app.app-internal .finance-period label{
+  color:#5d748b;
+  font-size:9px;
+  font-weight:850;
+}
+
+.app.app-internal .finance-period input{
+  min-height:44px;
+  border:1px solid #d8e1ea;
+  border-radius:11px;
+  background:#fff;
+}
+
+.app.app-internal .finance-kpis{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.app.app-internal .finance-kpis>article,
+.app.app-internal .finance-kpis>div{
+  min-height:92px;
+  padding:15px 16px;
+  border:1px solid var(--w4-line);
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .finance-kpis>*.profit,
+.app.app-internal .finance-kpis>*.cash{
+  border-color:#cfe9dc;
+  background:linear-gradient(180deg,#f9fffc,#edf9f3);
+}
+
+.app.app-internal .finance-kpis>*.warning{
+  border-color:#efd8a7;
+  background:linear-gradient(180deg,#fffdf8,#fff7e8);
+}
+
+.app.app-internal .finance-kpis span{
+  color:#71849a;
+  font-size:8.5px;
+  font-weight:900;
+}
+
+.app.app-internal .finance-kpis strong{
+  display:block;
+  margin-top:7px;
+  color:#12324f;
+  font-size:20px;
+  line-height:1.05;
+}
+
+.app.app-internal .finance-kpis .profit strong,
+.app.app-internal .finance-kpis .cash strong{
+  color:#1d7d54;
+}
+
+.app.app-internal .finance-reserve-board{
+  margin-bottom:16px;
+  padding:20px;
+  border:1px solid var(--w4-line);
+  border-radius:21px;
+  background:#fff;
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .finance-reserve-head{
+  margin-bottom:15px;
+}
+
+.app.app-internal .finance-reserve-head h2{
+  margin:4px 0;
+  color:var(--w4-text);
+  font-size:22px;
+  letter-spacing:-.35px;
+}
+
+.app.app-internal .finance-provider-debt-total{
+  color:#a46d12;
+  font-size:28px;
+  font-weight:900;
+}
+
+.app.app-internal .finance-reserve-grid{
+  gap:10px;
+}
+
+.app.app-internal .finance-reserve-grid>article,
+.app.app-internal .finance-reserve-grid>div{
+  min-height:84px;
+  padding:14px;
+  border:1px solid #e1e8ef;
+  border-radius:14px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .finance-reserve-grid .debt-card{
+  border-color:#ecd19b;
+  background:var(--w4-amber-soft);
+}
+
+.app.app-internal .finance-grid-layout{
+  gap:16px;
+}
+
+.app.app-internal .finance-panel{
+  overflow:hidden;
+  border:1px solid var(--w4-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .finance-panel-head{
+  padding:18px 20px;
+  border-bottom:1px solid var(--w4-line-soft);
+}
+
+.app.app-internal .finance-panel-head h2{
+  margin:4px 0 0;
+  color:var(--w4-text);
+  font-size:19px;
+}
+
+.app.app-internal .finance-table-wrap{
+  overflow:auto;
+}
+
+.app.app-internal .finance-table th{
+  padding:11px 12px;
+  background:#f5f8fb;
+  color:#75879c;
+  font-size:8.5px;
+  font-weight:900;
+}
+
+.app.app-internal .finance-table td{
+  padding:12px;
+  border-top:1px solid #edf1f5;
+  color:#294963;
+  font-size:9.5px;
+}
+
+.app.app-internal .finance-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .finance-expense-entry{
+  padding-bottom:18px;
+}
+
+.app.app-internal .finance-expense-entry form{
+  padding:16px 18px 0;
+}
+
+.app.app-internal .finance-expense-entry input,
+.app.app-internal .finance-expense-entry select,
+.app.app-internal .finance-expense-entry textarea{
+  min-height:43px;
+  border:1px solid #d8e1ea;
+  border-radius:11px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .expense-category-grid{
+  gap:10px;
+}
+
+/* =========================================================
+   ADMINISTRACIÓN
+   ========================================================= */
+
+.app.app-internal .admin-center{
+  width:100%;
+  max-width:1460px;
+  margin:0 auto;
+  padding-bottom:64px;
+}
+
+.app.app-internal .admin-center-header{
+  margin-bottom:17px;
+}
+
+.app.app-internal .admin-center-header h1{
+  margin:5px 0 4px;
+  color:var(--w4-text);
+  font-size:31px;
+  letter-spacing:-.8px;
+}
+
+.app.app-internal .admin-center-header p{
+  color:var(--w4-muted);
+  font-size:12px;
+}
+
+.app.app-internal .admin-tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-bottom:14px;
+}
+
+.app.app-internal .admin-tabs button{
+  min-height:38px;
+  padding:0 13px;
+  border:1px solid #d7e1ea;
+  border-radius:10px;
+  background:#fff;
+  color:#315474;
+  font-size:9px;
+  font-weight:850;
+  transition:.15s ease;
+}
+
+.app.app-internal .admin-tabs button.active{
+  border-color:#123f6d;
+  color:#fff;
+  background:linear-gradient(135deg,#0d3158,#174d7d);
+  box-shadow:0 8px 18px rgba(13,49,88,.14);
+}
+
+.app.app-internal .admin-search{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+  margin-bottom:13px;
+}
+
+.app.app-internal .admin-search input{
+  min-height:45px;
+  border:1px solid #d8e1ea;
+  border-radius:11px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .admin-search button{
+  min-width:90px;
+  border:0;
+  border-radius:11px;
+  color:#fff;
+  background:linear-gradient(135deg,#0d3158,#174d7d);
+  font-weight:850;
+}
+
+.app.app-internal .admin-layout{
+  display:grid;
+  grid-template-columns:minmax(330px,.72fr) minmax(0,1.35fr);
+  gap:14px;
+}
+
+.app.app-internal .admin-list-card,
+.app.app-internal .admin-editor-card,
+.app.app-internal .admin-audit-card{
+  overflow:hidden;
+  border:1px solid var(--w4-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--w4-shadow);
+}
+
+.app.app-internal .admin-card-head{
+  padding:18px 20px;
+  border-bottom:1px solid var(--w4-line-soft);
+}
+
+.app.app-internal .admin-card-head h2{
+  margin:4px 0 0;
+  color:var(--w4-text);
+  font-size:18px;
+}
+
+.app.app-internal .admin-record-list{
+  max-height:560px;
+  overflow:auto;
+}
+
+.app.app-internal .admin-record-list button{
+  width:100%;
+  min-height:52px;
+  padding:11px 13px;
+  border:0;
+  border-bottom:1px solid #edf1f5;
+  background:#fff;
+  color:#173a58;
+  text-align:left;
+  transition:.14s ease;
+}
+
+.app.app-internal .admin-record-list button:hover,
+.app.app-internal .admin-record-list button.active{
+  background:#f8fbfd;
+  box-shadow:inset 3px 0 0 var(--w4-gold);
+}
+
+.app.app-internal .admin-editor-body{
+  min-height:420px;
+  padding:20px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+}
+
+.app.app-internal .admin-form-grid{
+  gap:13px;
+}
+
+.app.app-internal .admin-form-grid input,
+.app.app-internal .admin-form-grid select,
+.app.app-internal .admin-form-grid textarea,
+.app.app-internal .admin-reason{
+  min-height:44px;
+  border:1px solid #d8e1ea;
+  border-radius:11px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .admin-readonly{
+  padding:12px;
+  border:1px solid #e4eaf0;
+  border-radius:11px;
+  background:#f6f8fb;
+}
+
+.app.app-internal .admin-editor-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:9px;
+  padding-top:14px;
+}
+
+.app.app-internal .admin-editor-actions button{
+  min-height:40px;
+  border-radius:10px;
+}
+
+.app.app-internal .admin-editor-actions .danger,
+.app.app-internal button.danger{
+  border-color:#efcbc7;
+  background:#fff4f2;
+  color:#a83d35;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width:1180px){
+  .app.app-internal .finance-kpis{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .app.app-internal .admin-layout{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:900px){
+  .app.app-internal .imports-kpis,
+  .app.app-internal .correlative-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .app.app-internal .imports-search-card{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .app.app-internal .imports-search-form{
+    width:100%;
+  }
+
+  .app.app-internal .finance-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:620px){
+  .app.app-internal .imports-topbar{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .app.app-internal .imports-count-card{
+    width:100%;
+  }
+
+  .app.app-internal .imports-kpis,
+  .app.app-internal .correlative-kpis,
+  .app.app-internal .finance-kpis{
+    grid-template-columns:1fr;
+  }
+
+  .app.app-internal .imports-search-form,
+  .app.app-internal .admin-search{
+    grid-template-columns:1fr;
+  }
+}

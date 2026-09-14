@@ -1,0 +1,784 @@
+
+/* =========================================================
+   E&R V39.7.9.8.9 · PRO WAVE 3
+   Administración · Clientes · Usuarios · Comercial
+   ========================================================= */
+
+.app.app-internal{
+  --wave3-navy:#0a2543;
+  --wave3-navy-2:#123f6d;
+  --wave3-gold:#c79732;
+  --wave3-gold-soft:#fff7e7;
+  --wave3-line:#dfe7ef;
+  --wave3-line-soft:#edf2f6;
+  --wave3-text:#102d49;
+  --wave3-muted:#7b8da2;
+  --wave3-bg:#f6f8fb;
+  --wave3-card:#fff;
+  --wave3-green:#23845b;
+  --wave3-red:#b64a43;
+  --wave3-shadow:0 14px 34px rgba(9,38,68,.07);
+  --wave3-shadow-hover:0 18px 42px rgba(9,38,68,.11);
+}
+
+/* ---------------------------------------------------------
+   SHARED HEADERS / SURFACES
+   --------------------------------------------------------- */
+
+.app.app-internal .tenant-branding-module,
+.app.app-internal .perf-shell,
+.app.app-internal .organizations-v381-module,
+.app.app-internal .subscriptions-module,
+.app.app-internal .office-users-module,
+.app.app-internal .internal-users-module,
+.app.app-internal .opc-module,
+.app.app-internal .impdir-module,
+.app.app-internal .prospects-layout{
+  width:100%;
+  max-width:1460px;
+  margin:0 auto;
+  padding-bottom:64px;
+}
+
+.app.app-internal .tenant-branding-topbar,
+.app.app-internal .organizations-v381-topbar,
+.app.app-internal .subscriptions-topbar,
+.app.app-internal .office-users-header,
+.app.app-internal .internal-users-header,
+.app.app-internal .opc-header,
+.app.app-internal .impdir-header{
+  margin-bottom:22px;
+}
+
+.app.app-internal .tenant-branding-topbar h1,
+.app.app-internal .organizations-v381-topbar h1,
+.app.app-internal .subscriptions-topbar h1,
+.app.app-internal .office-users-header h1,
+.app.app-internal .internal-users-header h1,
+.app.app-internal .opc-header h1,
+.app.app-internal .impdir-header h1{
+  margin:5px 0 4px;
+  color:var(--wave3-text);
+  font-size:31px;
+  line-height:1.08;
+  letter-spacing:-.75px;
+}
+
+.app.app-internal .tenant-branding-topbar p,
+.app.app-internal .organizations-v381-topbar p,
+.app.app-internal .subscriptions-topbar p,
+.app.app-internal .office-users-header p,
+.app.app-internal .internal-users-header p,
+.app.app-internal .opc-header p,
+.app.app-internal .impdir-header p{
+  color:var(--wave3-muted);
+  font-size:12px;
+}
+
+/* ---------------------------------------------------------
+   MI MARCA PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .tenant-branding-layout{
+  grid-template-columns:minmax(0,1fr) 410px;
+  gap:20px;
+}
+
+.app.app-internal .tenant-config-card{
+  padding:22px;
+  border:1px solid var(--wave3-line);
+  border-radius:21px;
+  background:rgba(255,255,255,.98);
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .tenant-card-head{
+  padding-bottom:16px;
+  margin-bottom:18px;
+  border-bottom:1px solid var(--wave3-line-soft);
+}
+
+.app.app-internal .tenant-card-head>span{
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:#eef4fa;
+  font-size:21px;
+}
+
+.app.app-internal .tenant-card-head small{
+  color:#a7781e;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:1.25px;
+}
+
+.app.app-internal .tenant-card-head h2{
+  color:var(--wave3-text);
+  font-size:19px;
+  letter-spacing:-.25px;
+}
+
+.app.app-internal .tenant-form-grid{
+  gap:15px;
+}
+
+.app.app-internal .tenant-form-grid input,
+.app.app-internal .tenant-footer-field textarea{
+  min-height:48px;
+  border:1px solid #d8e1ea;
+  border-radius:12px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .tenant-color-grid{
+  gap:10px;
+}
+
+.app.app-internal .tenant-color-grid label>div{
+  min-height:54px;
+  border:1px solid #dde5ed;
+  border-radius:12px;
+  background:#fafcfe;
+}
+
+.app.app-internal .tenant-save-brand{
+  min-height:46px;
+  padding:0 18px;
+  border-radius:12px;
+}
+
+.app.app-internal .tenant-brand-preview{
+  top:20px;
+  padding:18px;
+  border:1px solid var(--wave3-line);
+  border-radius:21px;
+  background:linear-gradient(180deg,#f8fafc,#f2f6fa);
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .tenant-preview-sheet{
+  border:1px solid #e3e9ef;
+  border-radius:15px;
+  box-shadow:0 16px 34px rgba(14,48,79,.11);
+}
+
+/* ---------------------------------------------------------
+   RENDIMIENTO & BONOS PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .perf-shell{
+  color:var(--wave3-text);
+}
+
+.app.app-internal .perf-hero{
+  position:relative;
+  overflow:hidden;
+  margin-bottom:18px;
+  padding:26px 28px;
+  border:1px solid rgba(21,70,112,.11);
+  border-radius:24px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 88% -20%,rgba(80,148,210,.34),transparent 38%),
+    linear-gradient(135deg,#071b32 0%,#0d355d 58%,#174d7d 100%);
+  box-shadow:0 20px 48px rgba(9,38,68,.16);
+}
+
+.app.app-internal .perf-hero h1,
+.app.app-internal .perf-hero h2,
+.app.app-internal .perf-hero strong{
+  color:#fff;
+}
+
+.app.app-internal .perf-hero p{
+  color:#c0d0e0;
+}
+
+.app.app-internal .perf-kpis{
+  gap:12px;
+  margin:0 0 18px;
+}
+
+.app.app-internal .perf-kpis>article,
+.app.app-internal .perf-kpis>div{
+  min-height:98px;
+  padding:17px 18px;
+  border:1px solid var(--wave3-line);
+  border-radius:17px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .perf-panel,
+.app.app-internal .perf-compensation-card,
+.app.app-internal .perf-auto-engine{
+  border:1px solid var(--wave3-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .perf-panel{
+  padding:20px;
+}
+
+.app.app-internal .perf-employee-card{
+  border:1px solid #e4eaf0;
+  border-radius:15px;
+  background:linear-gradient(180deg,#fff,#fbfcfd);
+  box-shadow:none;
+  transition:.17s ease;
+}
+
+.app.app-internal .perf-employee-card:hover{
+  transform:translateY(-1px);
+  border-color:#d1dce7;
+  box-shadow:0 9px 22px rgba(12,42,72,.07);
+}
+
+.app.app-internal .perf-avatar{
+  background:linear-gradient(135deg,#123f70,#0a2d52);
+  color:#fff;
+  box-shadow:0 8px 18px rgba(10,45,82,.14);
+}
+
+.app.app-internal .perf-secondary{
+  border:1px solid #d9e2ea;
+  border-radius:10px;
+  background:#fff;
+  color:#315676;
+}
+
+.app.app-internal .perf-approve{
+  border-radius:10px;
+  box-shadow:none;
+}
+
+/* ---------------------------------------------------------
+   OFICINAS / CLIENTES PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .organizations-v381-kpis,
+.app.app-internal .subscription-kpis,
+.app.app-internal .office-user-kpis,
+.app.app-internal .internal-user-kpis,
+.app.app-internal .opc-kpis,
+.app.app-internal .impdir-kpis{
+  gap:11px;
+  margin:0 0 17px;
+}
+
+.app.app-internal .organizations-v381-kpis>div,
+.app.app-internal .subscription-kpis article,
+.app.app-internal .office-user-kpis>article,
+.app.app-internal .office-user-kpis>div,
+.app.app-internal .internal-user-kpis>article,
+.app.app-internal .internal-user-kpis>div,
+.app.app-internal .opc-kpis>article,
+.app.app-internal .opc-kpis>div,
+.app.app-internal .impdir-kpis>article,
+.app.app-internal .impdir-kpis>div{
+  min-height:94px;
+  padding:16px 18px;
+  border:1px solid var(--wave3-line);
+  border-radius:17px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .organizations-v381-toolbar{
+  margin-bottom:16px;
+  padding:10px;
+  border:1px solid var(--wave3-line);
+  border-radius:15px;
+  background:#fff;
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .organizations-v381-search{
+  border:0;
+  background:#f7f9fc;
+}
+
+.app.app-internal .organizations-v381-layout{
+  grid-template-columns:minmax(0,1fr) 360px;
+  gap:16px;
+}
+
+.app.app-internal .organizations-v381-list,
+.app.app-internal .organizations-v381-detail{
+  border:1px solid var(--wave3-line);
+  border-radius:20px;
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .organizations-v381-list-head{
+  padding:19px 20px;
+}
+
+.app.app-internal .organizations-v381-table th{
+  padding:12px 14px;
+  background:#f5f8fb;
+  color:#75879c;
+}
+
+.app.app-internal .organizations-v381-table td{
+  padding:13px 14px;
+}
+
+.app.app-internal .organizations-v381-table tbody tr:hover,
+.app.app-internal .organizations-v381-table tbody tr.selected{
+  background:#fffbf2;
+}
+
+.app.app-internal .organizations-v381-detail{
+  top:20px;
+  padding:20px;
+}
+
+.app.app-internal .organizations-v381-info-grid>div{
+  min-height:58px;
+  border:1px solid #e9eef3;
+  background:#f8fafc;
+}
+
+/* ---------------------------------------------------------
+   USUARIOS Y SUSCRIPCIONES PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .subscription-search-card,
+.app.app-internal .subscription-table-card,
+.app.app-internal .office-users-card,
+.app.app-internal .internal-users-card,
+.app.app-internal .opc-panel,
+.app.app-internal .impdir-panel,
+.app.app-internal .prospects-list-card{
+  border:1px solid var(--wave3-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .subscription-search-card{
+  padding:18px 20px;
+}
+
+.app.app-internal .subscription-search-card input{
+  min-height:48px;
+  border:1px solid #d7e1ea;
+  border-radius:12px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .subscription-table-card{
+  overflow:hidden;
+}
+
+.app.app-internal .subscription-table-head{
+  padding:19px 21px;
+}
+
+.app.app-internal .subscription-table th{
+  background:#f5f8fb;
+  color:#74869b;
+  font-size:9px;
+  letter-spacing:.55px;
+}
+
+.app.app-internal .subscription-table td{
+  padding:13px 14px;
+  font-size:10.5px;
+}
+
+.app.app-internal .subscription-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .subscription-avatar{
+  border-radius:11px;
+  background:linear-gradient(135deg,#123f70,#0b2f54);
+}
+
+.app.app-internal .subscription-action{
+  border-radius:9px;
+  transition:.15s ease;
+}
+
+.app.app-internal .subscription-action:hover{
+  transform:translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+   USUARIOS DE OFICINA / INTERNOS PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .office-users-header,
+.app.app-internal .internal-users-header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.app.app-internal .office-user-create,
+.app.app-internal .internal-user-create-button{
+  min-height:45px;
+  padding:0 16px;
+  border:0;
+  border-radius:12px;
+  color:#fff;
+  background:linear-gradient(135deg,#0d3158,#174d7d);
+  box-shadow:0 10px 22px rgba(13,49,88,.15);
+  font-weight:850;
+}
+
+.app.app-internal .office-users-card-head,
+.app.app-internal .internal-users-card-head{
+  padding:18px 20px;
+  border-bottom:1px solid var(--wave3-line-soft);
+}
+
+.app.app-internal .office-users-table-wrap,
+.app.app-internal .internal-users-table-wrap{
+  border-radius:0 0 20px 20px;
+}
+
+.app.app-internal .office-users-table-wrap table,
+.app.app-internal .internal-users-table{
+  width:100%;
+}
+
+.app.app-internal .office-users-table-wrap th,
+.app.app-internal .internal-users-table th{
+  padding:11px 13px;
+  background:#f5f8fb;
+  color:#75869a;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.55px;
+}
+
+.app.app-internal .office-users-table-wrap td,
+.app.app-internal .internal-users-table td{
+  padding:13px;
+  border-top:1px solid #edf1f5;
+  color:#274963;
+  font-size:10.5px;
+}
+
+.app.app-internal .office-users-table-wrap tbody tr:hover,
+.app.app-internal .internal-users-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .internal-user-avatar{
+  border-radius:11px;
+  background:linear-gradient(135deg,#123f70,#0b2f54);
+  box-shadow:0 7px 16px rgba(12,45,78,.12);
+}
+
+/* ---------------------------------------------------------
+   CLIENTES DEL PORTAL PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .opc-header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.app.app-internal .opc-v394-existing{
+  margin-bottom:16px;
+  padding:19px 20px;
+  border:1px solid var(--wave3-line);
+  border-radius:20px;
+  background:#fff;
+  box-shadow:var(--wave3-shadow);
+}
+
+.app.app-internal .opc-v394-grid{
+  gap:10px;
+}
+
+.app.app-internal .opc-v394-card{
+  border:1px solid #e3e9ef;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fff,#fbfcfe);
+}
+
+.app.app-internal .opc-panel{
+  padding:20px;
+}
+
+.app.app-internal .opc-panel-head{
+  padding-bottom:14px;
+  margin-bottom:14px;
+  border-bottom:1px solid var(--wave3-line-soft);
+}
+
+.app.app-internal .opc-search{
+  min-height:46px;
+  border:1px solid #d8e1ea;
+  border-radius:12px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .opc-table-wrap{
+  border:1px solid #e4eaf0;
+  border-radius:14px;
+}
+
+.app.app-internal .opc-table th{
+  background:#f5f8fb;
+  color:#74869b;
+}
+
+.app.app-internal .opc-table td{
+  border-top:1px solid #edf1f5;
+}
+
+.app.app-internal .opc-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .opc-avatar{
+  background:linear-gradient(135deg,#123f70,#0b2f54);
+}
+
+/* ---------------------------------------------------------
+   IMPORTADORES PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .impdir-header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.app.app-internal .impdir-panel{
+  padding:20px;
+}
+
+.app.app-internal .impdir-panel-head{
+  padding-bottom:14px;
+  margin-bottom:14px;
+  border-bottom:1px solid var(--wave3-line-soft);
+}
+
+.app.app-internal .impdir-search{
+  min-height:46px;
+  border:1px solid #d8e1ea;
+  border-radius:12px;
+  background:#fbfcfe;
+}
+
+.app.app-internal .impdir-table-wrap{
+  border:1px solid #e4eaf0;
+  border-radius:14px;
+}
+
+.app.app-internal .impdir-table th{
+  background:#f5f8fb;
+  color:#74869b;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+
+.app.app-internal .impdir-table td{
+  border-top:1px solid #edf1f5;
+}
+
+.app.app-internal .impdir-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .impdir-name{
+  color:#133754;
+  font-weight:850;
+}
+
+.app.app-internal .impdir-pill{
+  border-radius:999px;
+}
+
+/* ---------------------------------------------------------
+   PROSPECTOS PRO
+   --------------------------------------------------------- */
+
+.app.app-internal .prospects-layout{
+  gap:16px;
+}
+
+.app.app-internal .prospects-list-card{
+  overflow:hidden;
+}
+
+.app.app-internal .prospects-list-head{
+  padding:19px 20px;
+  border-bottom:1px solid var(--wave3-line-soft);
+}
+
+.app.app-internal .prospects-table-wrap{
+  border:0;
+}
+
+.app.app-internal .prospects-table th{
+  padding:11px 13px;
+  background:#f5f8fb;
+  color:#74869b;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+
+.app.app-internal .prospects-table td{
+  padding:13px;
+  border-top:1px solid #edf1f5;
+  color:#294963;
+  font-size:10.5px;
+}
+
+.app.app-internal .prospects-table tbody tr:hover{
+  background:#fafdff;
+}
+
+.app.app-internal .prospect-open-button{
+  border:1px solid #d6e0e9;
+  border-radius:9px;
+  background:#fff;
+  color:#174b76;
+}
+
+.app.app-internal .prospect-pagination{
+  padding:14px 18px;
+  border-top:1px solid var(--wave3-line-soft);
+  background:#fbfcfe;
+}
+
+.app.app-internal .prospect-page-button{
+  min-width:34px;
+  height:34px;
+  border:1px solid #d8e1ea;
+  border-radius:9px;
+  background:#fff;
+}
+
+.app.app-internal .prospect-detail-drawer{
+  border-left:1px solid #dce5ed;
+  box-shadow:-18px 0 48px rgba(9,38,68,.14);
+}
+
+.app.app-internal .prospect-drawer-header{
+  background:linear-gradient(135deg,#081d35,#10416e);
+  color:#fff;
+}
+
+.app.app-internal .prospect-drawer-section{
+  border:1px solid #e4eaf0;
+  border-radius:14px;
+  background:#fff;
+}
+
+/* ---------------------------------------------------------
+   MODALS
+   --------------------------------------------------------- */
+
+.app.app-internal .office-user-modal,
+.app.app-internal .internal-user-modal,
+.app.app-internal .opc-modal,
+.app.app-internal .opc-v394-modal,
+.app.app-internal .impdir-modal,
+.app.app-internal .perf-modal,
+.app.app-internal .organizations-v381-create-modal{
+  border:1px solid #dfe6ed;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 28px 70px rgba(7,29,52,.22);
+}
+
+.app.app-internal .office-user-modal-backdrop,
+.app.app-internal .internal-user-modal-backdrop,
+.app.app-internal .opc-modal-backdrop,
+.app.app-internal .impdir-modal-backdrop,
+.app.app-internal .perf-modal-backdrop{
+  backdrop-filter:blur(4px);
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width:1180px){
+  .app.app-internal .tenant-branding-layout{
+    grid-template-columns:1fr;
+  }
+  .app.app-internal .tenant-brand-preview{
+    position:relative;
+    top:auto;
+  }
+  .app.app-internal .organizations-v381-layout{
+    grid-template-columns:1fr;
+  }
+  .app.app-internal .organizations-v381-detail{
+    position:relative;
+    top:auto;
+  }
+}
+
+@media (max-width:900px){
+  .app.app-internal .organizations-v381-kpis,
+  .app.app-internal .subscription-kpis,
+  .app.app-internal .office-user-kpis,
+  .app.app-internal .internal-user-kpis,
+  .app.app-internal .opc-kpis,
+  .app.app-internal .impdir-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:720px){
+  .app.app-internal .tenant-form-grid,
+  .app.app-internal .tenant-color-grid{
+    grid-template-columns:1fr;
+  }
+
+  .app.app-internal .tenant-form-grid .span-2{
+    grid-column:auto;
+  }
+
+  .app.app-internal .organizations-v381-topbar,
+  .app.app-internal .office-users-header,
+  .app.app-internal .internal-users-header,
+  .app.app-internal .opc-header,
+  .app.app-internal .impdir-header{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .app.app-internal .subscription-search-card{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .app.app-internal .subscription-search-card form{
+    max-width:none;
+    width:100%;
+  }
+}
+
+@media (max-width:560px){
+  .app.app-internal .organizations-v381-kpis,
+  .app.app-internal .subscription-kpis,
+  .app.app-internal .office-user-kpis,
+  .app.app-internal .internal-user-kpis,
+  .app.app-internal .opc-kpis,
+  .app.app-internal .impdir-kpis{
+    grid-template-columns:1fr;
+  }
+}

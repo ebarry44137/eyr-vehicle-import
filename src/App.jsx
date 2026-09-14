@@ -45,6 +45,11 @@ import "./modules/settings/configuration-pro-panels.css";
 import PerformanceBonusesPage from "./modules/performance-bonuses/PerformanceBonusesPage.jsx";
 import PerformanceCheckIn from "./modules/performance-attendance/PerformanceCheckIn.jsx";
 import CustomsPerformanceAssignment from "./modules/performance-attendance/CustomsPerformanceAssignment.jsx";
+import "./eyr-system-pro.css";
+import "./eyr-system-pro-v397987.css";
+import "./eyr-system-pro-v397988.css";
+import "./eyr-system-pro-v397989.css";
+import "./eyr-system-pro-v397990.css";
 // V39.7.7 · CUSTOMER SUPPORT
 
 function moneyGTQ(value) {
@@ -2066,6 +2071,7 @@ function App() {
     let dimensionSearchAttempts = [];
     let freightWarning = null;
     let freightExchangeRate = null;
+    let freightVehicleData = null;
 
     // V39.7.9.8.2 · El modo MANUAL conserva impuestos/base definidos por E&R,
     // pero si hay VIN válido reutiliza el motor únicamente para dimensiones/flete.
@@ -2083,6 +2089,9 @@ function App() {
         if (freightLookupError) throw freightLookupError;
 
         if (freightLookup) {
+          // V39.7.9.9.4 · Conservamos la identidad NHTSA para la cotización,
+          // sin tocar los impuestos definidos manualmente por E&R.
+          freightVehicleData = freightLookup?.vehicle || null;
           dimensionsData = freightLookup?.dimensions || null;
           freightExchangeRate = Number(
             freightLookup?.summary?.exchange_rate ||
@@ -2141,8 +2150,24 @@ function App() {
       manual_calculation: true,
 
       vehicle: {
+        ...(freightVehicleData || {}),
         vin: cleanVin,
-        model: cleanVehicleName,
+        make: freightVehicleData?.make || null,
+        model:
+          freightVehicleData?.model ||
+          cleanVehicleName,
+        trim:
+          freightVehicleData?.trim ||
+          freightVehicleData?.vehicle_trim ||
+          null,
+        year:
+          freightVehicleData?.year ||
+          freightVehicleData?.model_year ||
+          null,
+        model_year:
+          freightVehicleData?.model_year ||
+          freightVehicleData?.year ||
+          null,
       },
 
       sat: {
@@ -5641,7 +5666,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
   }
 
   return (
-    <div className="app">
+    <div className={`app ${isStandaloneImporter ? "app-importer" : "app-internal"}`}>
       <aside className="sidebar">
         <div className="brand brand-v35 brand-full-logo">
           {tenantLogoUrl ? (
@@ -5960,6 +5985,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             <InternalOperationsDashboard
               onNavigate={setActiveView}
               onOpenCustoms={openCustomsView}
+              userName={profile?.full_name || "Usuario E&R"}
+              userRole={internalRoleLabel || "Administrador"}
             />
           </>
         ) : activeView === "importer-pro-team" && canManageImporterProTeam ? (

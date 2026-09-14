@@ -153,6 +153,11 @@ function normalizeCatalogStatus(value) {
   return labels[status] || status;
 }
 
+
+  // V39.7.9.8.5 · MOTOCICLETAS CONFIGURABLES
+  // La categoría Motocicletas viene de freight_rates y usa el mismo
+  // flujo load/save que las demás tarifas. Sólo cambia su etiqueta visual.
+
 export default function ConfigurationProPanels({ supabase, isSystemAdmin = false }) {
   const [freightRates, setFreightRates] = useState([]);
   const [freightLoading, setFreightLoading] = useState(false);
@@ -541,7 +546,7 @@ export default function ConfigurationProPanels({ supabase, isSystemAdmin = false
             <h2>Tarifas de flete</h2>
             <p>
               Modificá los precios utilizados automáticamente por el cotizador
-              según el largo del vehículo.
+              según la categoría y dimensiones del vehículo.
             </p>
           </div>
         </div>
@@ -574,7 +579,14 @@ export default function ConfigurationProPanels({ supabase, isSystemAdmin = false
                         {row.active ? "Activa" : "Inactiva"}
                       </span>
                     </div>
-                    <small>{freightRangeLabel(row)}</small>
+                    <small>
+                      {String(row.category || "")
+                        .trim()
+                        .toUpperCase()
+                        .startsWith("MOTOCICLET")
+                        ? "Tarifa fija · No depende del largo"
+                        : freightRangeLabel(row)}
+                    </small>
                   </div>
 
                   <label>

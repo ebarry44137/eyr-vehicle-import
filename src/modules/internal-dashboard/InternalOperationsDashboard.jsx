@@ -126,7 +126,7 @@ function clientName(item, clientsById) {
   );
 }
 
-export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms }) {
+export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms, userName = "Usuario E&R", userRole = "Administrador" }) {
   const [cases, setCases] = useState([]);
   const [clients, setClients] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -135,6 +135,7 @@ export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms 
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [error, setError] = useState("");
+  const [globalSearch, setGlobalSearch] = useState("");
 
   async function loadDashboard() {
     setLoading(true);
@@ -258,6 +259,41 @@ export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms 
 
   return (
     <section className="eyr-ops-dashboard">
+      <section className="eyr-ops-utility">
+        <form
+          className="eyr-ops-global-search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (globalSearch.trim()) {
+              onOpenCustoms ? onOpenCustoms() : onNavigate?.("customs");
+            }
+          }}
+        >
+          <span>⌕</span>
+          <input
+            value={globalSearch}
+            onChange={(event) => setGlobalSearch(event.target.value)}
+            placeholder="Buscar expediente, cliente, VIN, BL o contenedor..."
+            aria-label="Buscar en la operación"
+          />
+        </form>
+
+        <div className="eyr-ops-utility-date">
+          <span>⌖</span>
+          <div>
+            <strong>{todayLabel}</strong>
+            <span>Puerto Barrios, Izabal</span>
+          </div>
+        </div>
+
+        <div className="eyr-ops-user-chip">
+          <span className="eyr-ops-user-avatar">{String(userName || "E").charAt(0).toUpperCase()}</span>
+          <div>
+            <strong>{userName}</strong>
+            <small>{userRole}</small>
+          </div>
+        </div>
+      </section>
       <header className="eyr-ops-hero">
         <div>
           <span className="eyr-ops-eyebrow">CENTRO DE OPERACIONES · E&R SOLUTIONS</span>
@@ -418,8 +454,8 @@ export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms 
       <section className="eyr-ops-panel eyr-ops-recent">
         <div className="eyr-ops-panel-head">
           <div>
-            <small>ACTIVIDAD RECIENTE</small>
-            <h2>Últimos expedientes aduanales</h2>
+            <small>ÚLTIMAS GESTIONES</small>
+            <h2>Actividad reciente</h2>
           </div>
 
           <div className="eyr-ops-refresh-note">
@@ -489,6 +525,36 @@ export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms 
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="eyr-ops-bottom-summary">
+        <article className="eyr-ops-summary-card">
+          <div className="eyr-ops-summary-copy">
+            <span className="eyr-ops-summary-icon">▥</span>
+            <div>
+              <small>RENDIMIENTO OPERATIVO</small>
+              <strong>{cases.length}</strong>
+              <span>expedientes visibles en el centro de operaciones</span>
+            </div>
+          </div>
+          <button className="eyr-ops-summary-link" type="button" onClick={() => onNavigate?.("performance-bonuses")}>
+            Ver rendimiento →
+          </button>
+        </article>
+
+        <article className="eyr-ops-summary-card">
+          <div className="eyr-ops-summary-copy">
+            <span className="eyr-ops-summary-icon">👥</span>
+            <div>
+              <small>CLIENTES DEL PORTAL</small>
+              <strong>{clients.filter((item) => item.active !== false).length}</strong>
+              <span>importadores / clientes activos</span>
+            </div>
+          </div>
+          <button className="eyr-ops-summary-link" type="button" onClick={() => onNavigate?.("portal-clients")}>
+            Ver clientes →
+          </button>
+        </article>
       </section>
     </section>
   );

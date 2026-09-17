@@ -10,6 +10,7 @@ export default function CustomerAutocomplete({
   onSelect,
   placeholder = "Escribí nombre o empresa...",
   required = false,
+  allowCreate = true,
 }) {
   const [query, setQuery] = useState(value || "");
   const [items, setItems] = useState([]);
@@ -186,7 +187,7 @@ export default function CustomerAutocomplete({
             </button>
           ))}
 
-          {!loading && !exact && query.trim() && (
+          {allowCreate && !loading && !exact && query.trim() && (
             <button
               type="button"
               className="customer-autocomplete-create"

@@ -137,6 +137,72 @@ export default function FinanceDashboard({ supabase }) {
     load();
   }, [fromDate, toDate]);
 
+  async function deleteExpense(item) {
+    if (!item?.id) {
+      setError("No fue posible identificar el gasto.");
+      return;
+    }
+
+    const amount = Number(item.amount_gtq || 0).toLocaleString(
+      "es-GT",
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }
+    );
+
+    const confirmed = window.confirm(
+      [
+        "¿Eliminar este egreso?",
+        "",
+        "Fecha: " + (item.expense_date || "—"),
+        "Descripción: " + (item.description || "—"),
+        "Beneficiario: " + (item.payee || "—"),
+        "Monto: Q " + amount,
+        "",
+        "Esta acción eliminará el registro financiero.",
+      ].join("\n")
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+    setMessage("");
+
+    try {
+      const { data, error: deleteError } = await supabase
+        .from("finance_expenses")
+        .delete()
+        .eq("id", item.id)
+        .select("id");
+
+      if (deleteError) throw deleteError;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error(
+          "Supabase no eliminó el egreso. Verificá los permisos de eliminación."
+        );
+      }
+
+      setMessage(
+        "Egreso eliminado correctamente: " +
+        (item.description || item.category || "Gasto") +
+        " · Q " +
+        amount
+      );
+
+      await load();
+    } catch (err) {
+      console.error("FINANCE EXPENSE DELETE ERROR:", err);
+
+      setError(
+        err?.message ||
+        "No fue posible eliminar el egreso."
+      );
+    }
+  }
+
+
   async function addExpense(event) {
     event.preventDefault();
     setError("");
@@ -407,14 +473,38 @@ export default function FinanceDashboard({ supabase }) {
 
         <div className="finance-table-wrap">
           <table className="finance-table">
-            <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Beneficiario</th><th>Forma</th><th>Monto</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Beneficiario</th><th>Forma</th><th>Monto</th><th style={{textAlign:"center"}}>Acciones</th></tr></thead>
             <tbody>
               {expenses.map((item) => (
                 <tr key={item.id}>
                   <td>{item.expense_date}</td><td>{item.category}</td><td>{item.description}</td><td>{item.payee || "—"}</td><td>{item.payment_method || "—"}</td><td><strong>{q(item.amount_gtq)}</strong></td>
+                  <td style={{textAlign:"center"}}>
+                    <button
+                      type="button"
+                      onClick={() => deleteExpense(item)}
+                      title="Eliminar egreso"
+                      aria-label={"Eliminar egreso " + (item.description || "")}
+                      style={{
+                        border: "1px solid #fecaca",
+                        background: "#fff1f2",
+                        color: "#dc2626",
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "9px",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "15px",
+                        lineHeight: 1,
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </td>
                 </tr>
               ))}
-              {expenses.length === 0 && <tr><td colSpan="6" className="finance-empty">No hay gastos registrados en el período.</td></tr>}
+              {expenses.length === 0 && <tr><td colSpan="7" className="finance-empty">No hay gastos registrados en el período.</td></tr>}
             </tbody>
           </table>
         </div>

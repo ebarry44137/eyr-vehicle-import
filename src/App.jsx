@@ -5987,6 +5987,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               onOpenCustoms={openCustomsView}
               userName={profile?.full_name || "Usuario E&R"}
               userRole={internalRoleLabel || "Administrador"}
+              isAdmin={internalRole === "ADMIN"}
             />
           </>
         ) : activeView === "importer-pro-team" && canManageImporterProTeam ? (

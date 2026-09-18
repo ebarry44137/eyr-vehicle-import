@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import "./internal-dashboard.css";
+import ExecutiveBusinessSummary from "./ExecutiveBusinessSummary.jsx";
 
 const TERMINAL_WORDS = ["ENTREGADO", "DELIVERED", "FINALIZADO", "COMPLETADO"];
 
@@ -126,7 +127,9 @@ function clientName(item, clientsById) {
   );
 }
 
-export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms, userName = "Usuario E&R", userRole = "Administrador" }) {
+export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms, userName = "Usuario E&R", userRole = "Administrador" ,
+  isAdmin = false,
+}) {
   const [cases, setCases] = useState([]);
   const [clients, setClients] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -356,6 +359,8 @@ export default function InternalOperationsDashboard({ onNavigate, onOpenCustoms,
           </div>
         </article>
       </section>
+
+      <ExecutiveBusinessSummary onNavigate={onNavigate} isAdmin={isAdmin} />
 
       <section className="eyr-ops-main-grid">
         <article className="eyr-ops-panel eyr-ops-priority">

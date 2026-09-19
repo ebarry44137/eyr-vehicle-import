@@ -283,21 +283,44 @@ export default function FinanceDashboard({ supabase }) {
     net_result_gtq: 0,
   };
 
+  console.log("🔥 FINANCE SUMMARY REAL:", summary);
+
   const reserveTotal = Number(reserves?.total_pending_gtq || 0);
   const providerDebtTotal = Number(reserves?.total_provider_debt_gtq || 0);
-  // V39.6.22.5
-  // Disponible real DEL PERÍODO:
-  // dinero cobrado - salidas reales - gastos - apartados operativos pendientes.
-  // finance_period_summary ya devuelve cash_result_gtq =
-  // cobrado - salidas reales - gastos.
-  const grossProfit = Number(s.gross_profit_gtq || 0);
-  const generalExpenses = Number(s.general_expenses_gtq || 0);
+  // V39.6.22.7 · DISPONIBLE REAL BASADO EN FLUJO DE CAJA
+//
+// cash_result_gtq representa:
+// dinero cobrado
+// - pagos reales realizados a proveedores
+// - gastos generales
+//
+// Al resultado de caja únicamente le restamos el apartado
+// operativo que todavía permanece comprometido.
+const grossProfit = Number(s.gross_profit_gtq || 0);
+const generalExpenses = Number(s.general_expenses_gtq || 0);
+const cashResult = Number(s.cash_result_gtq || 0);
 
-  // V39.6.22.6
-  // Disponible real según criterio E&R:
-  // Utilidad bruta - gastos generales - apartado operativo.
-  const availableAfterReserves =
-    grossProfit - generalExpenses - reserveTotal;
+const availableAfterReserves =
+  cashResult - reserveTotal;
+
+  console.log("🔥 CONCILIACION FINANZAS:", {
+  desde: fromDate,
+  hasta: toDate,
+
+  cobrado: Number(s.collected_gtq || 0),
+
+  costosDirectos: Number(s.direct_costs_gtq || 0),
+  pagosProveedores: Number(s.supplier_payments_gtq || 0),
+  salidasCajaDirectas: Number(s.cash_direct_outflows_gtq || 0),
+
+  gastosGenerales: Number(s.general_expenses_gtq || 0),
+
+  cashResult: Number(s.cash_result_gtq || 0),
+
+  apartadoPendiente: reserveTotal,
+
+  disponibleCalculado: availableAfterReserves,
+});
 
   const expenseByCategory = useMemo(() => {
     return expenses.reduce((acc, item) => {
@@ -344,7 +367,7 @@ export default function FinanceDashboard({ supabase }) {
         <article className={availableAfterReserves >= 0 ? "profit" : "danger"}>
           <span>Disponible real</span>
           <strong>{q(availableAfterReserves)}</strong>
-          <small>Utilidad bruta - gastos generales - apartado operativo</small>
+          <small>Cobrado - salidas reales - gastos - apartado operativo</small>
         </article>
       </section>
 

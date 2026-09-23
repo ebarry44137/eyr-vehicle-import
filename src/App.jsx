@@ -38,6 +38,7 @@ import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.j
 import "./modules/customs/portal-customs-requests-v39621.css";
 import CustomerSupportPage from "./modules/customer-support/CustomerSupportPage.jsx";
 import InternalOperationsDashboard from "./modules/internal-dashboard/InternalOperationsDashboard.jsx";
+import CrmCommercialPage from "./modules/crm/CrmCommercialPage.jsx";
 import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.jsx";
 import "./modules/internal-mobile-nav/internal-mobile-nav.css";
 import ConfigurationProPanels from "./modules/settings/ConfigurationProPanels.jsx";
@@ -932,6 +933,10 @@ function App() {
   });
   const quoteRef = useRef(null);
   const [quoteCode, setQuoteCode] = useState("");
+  // V39.9.6 · CRM usa la cotización PRO ORIGINAL de App.jsx
+  const [crmOriginalQuoteBridge, setCrmOriginalQuoteBridge] = useState(null);
+  // V39.9.7.5 CRM REFRESH SIGNAL
+  const [crmRefreshSignal, setCrmRefreshSignal] = useState(0);
 
   // V37 · Cotización comercial E&R
   const [commercialQuoteContext, setCommercialQuoteContext] = useState(null);
@@ -2610,9 +2615,70 @@ function App() {
     setShowQuoteModal(true);
   }
 
-  function closeQuoteModal() {
+  async function closeQuoteModal() {
     if (quoteGenerating) return;
+
+    // V39.9.7.4 · CONFIRMAR AL CERRAR PRO
+    const crmBridgeAtClose = crmOriginalQuoteBridge;
     setShowQuoteModal(false);
+
+    // V39.9.6 CRM MODAL CLOSE + V39.9.7.4
+    if (crmBridgeAtClose) {
+      setSelectedProspect(null);
+      setActiveView("crm-commercial");
+
+      if (crmBridgeAtClose.whatsappOpened && crmBridgeAtClose.leadId) {
+        const sentConfirmed = window.confirm(
+          "¿La cotización ya fue enviada al cliente por WhatsApp?\n\n" +
+          "Aceptar: Sí, ya la envié.\n" +
+          "Cancelar: Todavía no."
+        );
+
+        if (sentConfirmed) {
+          try {
+            const { data: crmLeadNow, error: crmLeadNowError } = await supabase
+              .from("crm_leads")
+              .select("id,stage_code")
+              .eq("id", crmBridgeAtClose.leadId)
+              .single();
+
+            if (crmLeadNowError) throw crmLeadNowError;
+
+            if (crmLeadNow?.stage_code === "QUOTING") {
+              const { data: moved, error: moveError } = await supabase.rpc(
+                "crm_move_lead_stage_v3990",
+                {
+                  p_lead_id: crmBridgeAtClose.leadId,
+                  p_stage_code: "PROPOSAL_SENT",
+                  p_note:
+                    "Cotización " +
+                    (quoteCode || "CRM") +
+                    " enviada al cliente por WhatsApp",
+                }
+              );
+
+              if (moveError) throw moveError;
+              if (moved?.ok === false) {
+                throw new Error(
+                  "No se pudo pasar a Propuesta enviada. Falta: " +
+                  (moved?.missing_fields || []).join(", ")
+                );
+              }
+              // V39.9.7.5 CRM REFRESH SIGNAL
+              setCrmRefreshSignal((value) => value + 1);
+            }
+          } catch (err) {
+            console.error(err);
+            setError(
+              err?.message ||
+                "La cotización se cerró, pero no fue posible actualizar el seguimiento CRM."
+            );
+          }
+        }
+      }
+
+      setCrmOriginalQuoteBridge(null);
+    }
   }
 
   function quoteNumber() {
@@ -2620,6 +2686,60 @@ function App() {
   }
 
   async function saveCurrentQuotation() {
+    // V39.9.6 CRM ORIGINAL PRO SAVE
+    // Cuando la PRO original fue abierta desde CRM, guardamos/actualizamos
+    // la misma commercial_quote vinculada al lead. El flujo histórico
+    // quotation-manager queda intacto para el resto del sistema.
+    if (crmOriginalQuoteBridge?.leadId) {
+      const publicCosts = {
+        include_freight: Boolean(quoteForm.include_freight),
+        document_collection_gtq: quoteDocumentCollection,
+        port_expenses_gtq: quotePortExpenses,
+        professional_fees_gtq: quoteProfessionalFees,
+        other_charge_gtq: 0,
+        other_charge_concept: "Otros servicios",
+        crane_usd: quoteCraneUsd,
+      };
+      const totals = {
+        total_guatemala_gtq: quoteGuatemalaTotal,
+        exchange_rate: quoteExchangeRate || null,
+        total_guatemala_usd: quoteGuatemalaUsd,
+        freight_usd: quoteFreightUsd,
+        crane_usd: quoteCraneUsd,
+        total_usd: quoteGrandTotalUsd,
+        total_gtq: quoteGrandTotalGtq,
+      };
+      const calculationSnapshot = {
+        ...(result || {}),
+        calculation_status: result?.calculation_status || result?.summary?.calculation_status || "READY",
+      };
+
+      const { data: saved, error: crmSaveError } = await supabase.rpc(
+        "save_crm_commercial_quote_v3994",
+        {
+          p_lead_id: crmOriginalQuoteBridge.leadId,
+          p_status: "FINALIZED",
+          p_quote_code: quoteNumber(),
+          p_client_name: crmOriginalQuoteBridge.name || "Cliente",
+          p_client_phone: crmOriginalQuoteBridge.phone || "",
+          p_vin: vehicle?.vin || crmOriginalQuoteBridge.vin || "",
+          p_vehicle_label: [vehicle?.model_year,vehicle?.make,vehicle?.model,vehicle?.trim].filter(Boolean).join(" "),
+          p_exchange_rate: quoteExchangeRate || null,
+          p_snapshot: calculationSnapshot,
+          p_public_costs: publicCosts,
+          p_internal_costs: crmOriginalQuoteBridge.existingQuote?.internal_costs || {},
+          p_totals: totals,
+          p_validity_days: crmOriginalQuoteBridge.existingQuote?.validity_days || 15,
+          p_notes: crmOriginalQuoteBridge.existingQuote?.notes || null,
+        }
+      );
+      if (crmSaveError) throw crmSaveError;
+      const row = Array.isArray(saved) ? saved[0] : saved;
+      if (row?.quote_code && row.quote_code !== quoteCode) setQuoteCode(row.quote_code);
+      setCrmOriginalQuoteBridge(prev => prev ? {...prev, existingQuote:{...(prev.existingQuote||{}),...(row||{})}} : prev);
+      return row || crmOriginalQuoteBridge.existingQuote || { quote_code: quoteNumber() };
+    }
+
     const payload = {
       quote_code: quoteNumber(),
       calculation_method:
@@ -3140,7 +3260,7 @@ function App() {
           estimated_arrival_date: importManagementDetail.estimated_arrival_date || null,
           notes: importManagementDetail.notes || null,
           updated_at: new Date().toISOString(),
-          updated_by: user?.id || null,
+          updated_by: session?.user?.id || null,
         })
         .eq("id", importManagementDetail.id)
         .select()
@@ -4135,15 +4255,22 @@ async function openCustomsDetail(item) {
         });
       }
 
-      const recipientPhone = normalizeWhatsAppNumber(quoteRecipient?.phone);
+      const recipientPhone = normalizeWhatsAppNumber(quoteRecipient?.phone || crmOriginalQuoteBridge?.phone);
       if (recipientPhone) {
-        const clientName = String(quoteRecipient?.name || "cliente").trim();
+        const clientName = String(quoteRecipient?.name || crmOriginalQuoteBridge?.name || "cliente").trim();
         const message =
           `Hola ${clientName}, te compartimos la cotización de importación para tu ` +
           `${[vehicle?.model_year, vehicle?.make, vehicle?.model, vehicle?.trim].filter(Boolean).join(" ")} ` +
           `(VIN ${vehicle?.vin || "—"}). La imagen ya fue generada; adjuntala en este chat para enviarla al cliente.`;
 
         window.open(buildWhatsAppUrl(recipientPhone, message), "_blank", "noopener,noreferrer");
+        if (crmOriginalQuoteBridge?.leadId) {
+          setCrmOriginalQuoteBridge((prev) =>
+            prev ? { ...prev, whatsappOpened: true } : prev
+          );
+        }
+
+
       }
     } catch (err) {
       console.error(err);
@@ -5814,6 +5941,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             </button>
           )}
 
+          {!isStandaloneImporter && (
+            <button
+              className={`nav-item ${activeView === "crm-commercial" ? "active" : ""}`}
+              onClick={() => setActiveView("crm-commercial")}
+            >
+              <span>💼</span>
+              CRM Comercial
+            </button>
+          )}
+
           {!isWhiteLabelClient && (
           <button
             className={`nav-item ${activeView === "prospects" ? "active" : ""}`}
@@ -5974,6 +6111,140 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
       <main className="main">
         {activeView === "performance-bonuses" && performanceAccessV3981 ? (
           <PerformanceBonusesPage supabase={supabase} invokeFunction={invokeFunction} />
+        ) : activeView === "crm-commercial" && !isStandaloneImporter ? (
+          <CrmCommercialPage
+            supabase={supabase}
+            userId={session?.user?.id || null}
+            userName={profile?.full_name || "Usuario E&R"}
+            refreshSignal={crmRefreshSignal}
+            onOpenQuote={async (lead) => {
+              try {
+                const crmVin=String(lead?.vin||"").trim().toUpperCase();
+                if(!crmVin) throw new Error("El lead necesita VIN antes de cotizar.");
+
+                const data=await ejecutarDecode(crmVin,true,{
+                  calculation_method:"SAT",
+                  invoice_value_usd:null,
+                });
+                const ready=data?.calculation_status==="READY" || data?.summary?.calculation_status==="READY";
+                if(!ready) throw new Error("Este vehículo todavía requiere revisión antes de cotizar.");
+
+                setResult(data);
+                setSelectedProspect({
+                  full_name:lead?.full_name||"Cliente",
+                  phone:lead?.phone||"",
+                  contact_key:null,
+                  id:null,
+                });
+                const freightReady=!data?.freight_requires_review && Number(data?.freight?.price_usd||0)>0;
+                setQuoteForm({
+                  include_freight:freightReady,
+                  document_collection_gtq:"",
+                  port_expenses_gtq:"",
+                  professional_fees_gtq:"",
+                  crane_usd:"",
+                });
+                setQuoteCode(makeQuoteCode(crmVin));
+                setCrmOriginalQuoteBridge({
+                  leadId:lead?.id,
+                  vin:crmVin,
+                  name:lead?.full_name||"Cliente",
+                  phone:lead?.phone||"",
+                  contactKey:null,
+                  existingQuote:null,
+                });
+                // V39.9.6.2b · renderizar la PRO original
+                setActiveView("new");
+                setShowQuoteModal(true);
+              } catch(err) {
+                console.error("CRM ORIGINAL PRO NEW:",err);
+                setError(err?.message||"No fue posible preparar la cotización.");
+              }
+            }}
+            onOpenLinkedQuote={async (lead) => {
+              try {
+                if(!lead?.quote_id) throw new Error("Este lead no tiene cotización vinculada.");
+                const {data:quote,error:quoteError}=await supabase
+                  .from("commercial_quotes").select("*").eq("id",lead.quote_id).single();
+                if(quoteError) throw quoteError;
+
+                const snapshot=quote?.calculation_snapshot||{};
+                setResult(snapshot);
+                setSelectedProspect({
+                  full_name:lead?.full_name||quote?.client_name||"Cliente",
+                  phone:lead?.phone||quote?.client_phone||"",
+                  contact_key:quote?.contact_key||null,
+                  id:null,
+                });
+
+                const pc=quote?.public_costs||{};
+                const freightValue=Number(snapshot?.freight?.price_usd||snapshot?.freight?.freight_usd||quote?.totals?.freight_usd||0);
+                setQuoteForm({
+                  include_freight: pc.include_freight ?? (freightValue>0),
+                  document_collection_gtq: pc.document_collection_gtq ?? pc.document_collection ?? "",
+                  port_expenses_gtq: pc.port_expenses_gtq ?? pc.port_expenses ?? "",
+                  professional_fees_gtq: pc.professional_fees_gtq ?? pc.professional_fees ?? "",
+                  crane_usd: pc.crane_usd ?? quote?.totals?.crane_usd ?? "",
+                });
+                setQuoteCode(quote?.quote_code||lead?.quote_code||makeQuoteCode(lead?.vin));
+                setCrmOriginalQuoteBridge({
+                  leadId:lead?.id,
+                  vin:lead?.vin||quote?.vin||"",
+                  name:lead?.full_name||quote?.client_name||"Cliente",
+                  phone:lead?.phone||quote?.client_phone||"",
+                  contactKey:quote?.contact_key||null,
+                  existingQuote:quote,
+                });
+                // V39.9.6.2b · renderizar la PRO original
+                setActiveView("new");
+                setShowQuoteModal(true);
+              } catch(err) {
+                console.error("CRM ORIGINAL PRO OPEN:",err);
+                setError(err?.message||"No fue posible abrir la cotización vinculada.");
+              }
+            }}
+            onSendLinkedQuoteWhatsApp={async (lead) => {
+              try {
+                if(!lead?.quote_id) throw new Error("Este lead no tiene cotización vinculada.");
+                const {data:quote,error:quoteError}=await supabase
+                  .from("commercial_quotes").select("*").eq("id",lead.quote_id).single();
+                if(quoteError) throw quoteError;
+                const snapshot=quote?.calculation_snapshot||{};
+                setResult(snapshot);
+                setSelectedProspect({
+                  full_name:lead?.full_name||quote?.client_name||"Cliente",
+                  phone:lead?.phone||quote?.client_phone||"",
+                  contact_key:quote?.contact_key||null,
+                  id:null,
+                });
+                const pc=quote?.public_costs||{};
+                const freightValue=Number(snapshot?.freight?.price_usd||quote?.totals?.freight_usd||0);
+                setQuoteForm({
+                  include_freight:pc.include_freight ?? (freightValue>0),
+                  document_collection_gtq:pc.document_collection_gtq ?? pc.document_collection ?? "",
+                  port_expenses_gtq:pc.port_expenses_gtq ?? pc.port_expenses ?? "",
+                  professional_fees_gtq:pc.professional_fees_gtq ?? pc.professional_fees ?? "",
+                  crane_usd:pc.crane_usd ?? quote?.totals?.crane_usd ?? "",
+                });
+                setQuoteCode(quote?.quote_code||lead?.quote_code||makeQuoteCode(lead?.vin));
+                setCrmOriginalQuoteBridge({
+                  leadId:lead?.id,
+                  vin:lead?.vin||quote?.vin||"",
+                  name:lead?.full_name||quote?.client_name||"Cliente",
+                  phone:lead?.phone||quote?.client_phone||"",
+                  contactKey:quote?.contact_key||null,
+                  existingQuote:quote,
+                });
+                // V39.9.6.2b · renderizar la PRO original
+                setActiveView("new");
+                setShowQuoteModal(true);
+              } catch(err) {
+                console.error("CRM ORIGINAL PRO WHATSAPP:",err);
+                setError(err?.message||"No fue posible abrir la cotización para WhatsApp.");
+              }
+            }}
+
+          />
         ) : activeView === "dashboard" && !isStandaloneImporter ? (
           <>
             {internalJobTitle === "DIGITADOR" && (
@@ -6034,6 +6305,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             logo={eyrSolutionsLogo}
             buildWhatsAppUrl={buildWhatsAppUrl}
             onBack={() => {
+              if (commercialQuoteContext?.source === "CRM") {
+                setCommercialQuoteContext(null);
+                setActiveView("crm-commercial");
+                return;
+              }
+
               const previousProspect = commercialQuoteContext?.prospect || null;
               setActiveView("prospects");
               setSelectedProspect(previousProspect);
@@ -6042,7 +6319,27 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               }
               loadProspects(prospectSearch);
             }}
-            onFinalized={async () => {
+            onFinalized={async (quoteRow) => {
+              if (
+                commercialQuoteContext?.source === "CRM" &&
+                commercialQuoteContext?.crmLeadId &&
+                quoteRow?.id
+              ) {
+                const { error: crmLinkError } = await supabase
+                  .from("crm_leads")
+                  .update({
+                    quote_id: quoteRow.id,
+                    quote_code:
+                      quoteRow.quote_code ||
+                      commercialQuoteContext?.quoteCode ||
+                      null,
+                    updated_by: session?.user?.id || null,
+                  })
+                  .eq("id", commercialQuoteContext.crmLeadId);
+
+                if (crmLinkError) throw crmLinkError;
+              }
+
               if (commercialQuoteContext?.query?.contact_key) {
                 await loadProspectQueries(commercialQuoteContext.query.contact_key);
               }
@@ -10647,7 +10944,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
                 <div className="quote-sticky-buttons">
                   <button className="secondary-button" onClick={closeQuoteModal}>Cancelar</button>
-                  {quoteRecipient?.phone && (
+                  {(quoteRecipient?.phone || crmOriginalQuoteBridge?.phone) && (
                     <button className="whatsapp-action quote-whatsapp-send" onClick={downloadQuoteAndOpenWhatsApp} disabled={quoteGenerating}>
                       <span className="whatsapp-icon">💬</span>
                       {quoteGenerating ? "Generando..." : "Descargar y abrir WhatsApp"}

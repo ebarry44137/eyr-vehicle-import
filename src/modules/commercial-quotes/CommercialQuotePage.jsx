@@ -61,23 +61,22 @@ export default function CommercialQuotePage({
     include_freight:
       !result?.freight_requires_review && n(freight?.price_usd) > 0,
 
-    document_collection_charge_gtq: "",
-    port_expenses_charge_gtq: "",
-    professional_fees_charge_gtq: "",
-    other_charge_gtq: "",
-    other_charge_concept: "Otros servicios",
-    crane_charge_usd: "",
+    document_collection_charge_gtq: context?.existingQuote?.public_costs?.document_collection_gtq ?? "",
+    port_expenses_charge_gtq: context?.existingQuote?.public_costs?.port_expenses_gtq ?? "",
+    professional_fees_charge_gtq: context?.existingQuote?.public_costs?.professional_fees_gtq ?? "",
+    other_charge_gtq: context?.existingQuote?.public_costs?.other_charge_gtq ?? "",
+    other_charge_concept: context?.existingQuote?.public_costs?.other_charge_concept || "Otros servicios",
+    crane_charge_usd: context?.existingQuote?.public_costs?.crane_usd ?? "",
 
-    document_collection_cost_gtq: "",
-    port_expenses_cost_gtq: "",
-    professional_cost_gtq: "",
-    other_cost_gtq: "",
-    crane_cost_usd: "",
+    document_collection_cost_gtq: context?.existingQuote?.internal_costs?.document_collection_cost_gtq ?? "",
+    port_expenses_cost_gtq: context?.existingQuote?.internal_costs?.port_expenses_cost_gtq ?? "",
+    professional_cost_gtq: context?.existingQuote?.internal_costs?.professional_cost_gtq ?? "",
+    other_cost_gtq: context?.existingQuote?.internal_costs?.other_cost_gtq ?? "",
+    crane_cost_usd: context?.existingQuote?.internal_costs?.crane_cost_usd ?? "",
     freight_cost_usd: n(freight?.price_usd) || "",
 
-    validity_days: 5,
-    notes:
-      "Cotización sujeta a validación final de SAT, naviera, puerto y gastos operativos al momento de efectuar la importación.",
+    validity_days: context?.existingQuote?.validity_days ?? 5,
+    notes: context?.existingQuote?.notes ?? "Cotización sujeta a validación final de SAT, naviera, puerto y gastos operativos al momento de efectuar la importación.",
   });
 
   const calc = useMemo(() => {
@@ -202,26 +201,48 @@ export default function CommercialQuotePage({
     setError("");
     setMessage("");
     try {
-      const { data, error: rpcError } = await supabase.rpc(
-        "save_commercial_quote_v37",
-        payload(status)
-      );
+      const isCrmQuote = context?.source === "CRM";
+      const basePayload = payload(status);
+      const rpcName = isCrmQuote
+        ? "save_crm_commercial_quote_v3994"
+        : "save_commercial_quote_v37";
+      const rpcPayload = isCrmQuote
+        ? {
+            p_lead_id: context?.crmLeadId,
+            p_quote_code: basePayload.p_quote_code,
+            p_status: status,
+            p_client_name: basePayload.p_client_name,
+            p_client_phone: basePayload.p_client_phone,
+            p_vin: basePayload.p_vin,
+            p_vehicle_label: basePayload.p_vehicle_label,
+            p_exchange_rate: basePayload.p_exchange_rate,
+            p_snapshot: basePayload.p_snapshot,
+            p_public_costs: basePayload.p_public_costs,
+            p_internal_costs: basePayload.p_internal_costs,
+            p_totals: basePayload.p_totals,
+            p_validity_days: basePayload.p_validity_days,
+            p_notes: basePayload.p_notes,
+          }
+        : basePayload;
+
+      const { data, error: rpcError } = await supabase.rpc(rpcName, rpcPayload);
       if (rpcError) throw rpcError;
       const row = Array.isArray(data) ? data[0] : data;
       if (row?.quote_code) setQuoteCode(row.quote_code);
-      setMessage(
-        status === "FINALIZED"
-          ? "Cotización finalizada y congelada correctamente."
-          : "Borrador guardado."
-      );
+      setMessage(status === "FINALIZED"
+        ? "Cotización finalizada y congelada correctamente."
+        : "Borrador guardado.");
+
       if (status === "FINALIZED") {
-        try {
-          await supabase.rpc("admin_mark_quote_generated", {
-            p_query_id: query.id,
-            p_quote_code: row?.quote_code || quoteCode,
-          });
-        } catch (markErr) {
-          console.warn("QUOTE MARK GENERATED:", markErr);
+        if (!isCrmQuote) {
+          try {
+            await supabase.rpc("admin_mark_quote_generated", {
+              p_query_id: query.id,
+              p_quote_code: row?.quote_code || quoteCode,
+            });
+          } catch (markErr) {
+            console.warn("QUOTE MARK GENERATED:", markErr);
+          }
         }
         onFinalized?.(row || { quote_code: quoteCode });
       }
@@ -287,7 +308,7 @@ export default function CommercialQuotePage({
           <p>{vehicleLabel} · {query.vin || vehicle.vin}</p>
         </div>
         <div className="commercial-quote-top-actions">
-          <button className="secondary" onClick={onBack}>← Volver a Prospectos</button>
+          <button className="secondary" onClick={onBack}>{context?.source === "CRM" ? "← Volver al CRM" : "← Volver a Prospectos"}</button>
           <button onClick={() => save("DRAFT")} disabled={saving}>Guardar borrador</button>
         </div>
       </header>
@@ -306,7 +327,9 @@ export default function CommercialQuotePage({
               <div><span>Cliente</span><strong>{prospect.full_name || query.full_name || "—"}</strong></div>
               <div><span>VIN</span><strong>{query.vin || vehicle.vin || "—"}</strong></div>
               <div><span>Línea SAT</span><strong>{result?.sat?.line || result?.sat?.selected_match?.line || query.sat_line || "—"}</strong></div>
-              <div><span>Tributos</span><strong>{gtq(calc.baseTaxes)}</strong></div>
+              <div><span>IVA</span><strong>{gtq(taxes?.iva_gtq || 0)}</strong></div>
+              <div><span>IPRIMA</span><strong>{gtq(taxes?.iprima_gtq || 0)}</strong></div>
+              <div><span>Placas</span><strong>{gtq(taxes?.plates_gtq || 0)}</strong></div>
               <div><span>Flete calculado</span><strong>{calc.freightClientUSD ? usd(calc.freightClientUSD) : "—"}</strong></div>
               <div><span>Tipo de cambio</span><strong>{calc.exchangeRate ? calc.exchangeRate.toFixed(4) : "—"}</strong></div>
             </div>
@@ -354,41 +377,103 @@ export default function CommercialQuotePage({
 
         <aside className="commercial-preview-column">
           <div className="commercial-preview-sticky">
-            <div className="commercial-preview-label">VISTA DEL CLIENTE</div>
-            <div className="commercial-quote-sheet" ref={quoteRef}>
-              <header>
+            <div className="commercial-preview-label">VISTA DEL CLIENTE · PRO</div>
+            <div className="commercial-quote-sheet commercial-quote-sheet-pro" ref={quoteRef}>
+              <header className="cq-pro-hero">
                 <img src={logo} alt="E&R Solutions" />
-                <div className="sheet-meta"><span>COTIZACIÓN</span><strong>{quoteCode}</strong><small>{new Date().toLocaleDateString("es-GT")}</small></div>
+                <div className="sheet-meta">
+                  <span>COTIZACIÓN</span>
+                  <strong>{quoteCode}</strong>
+                  <small>{new Date().toLocaleDateString("es-GT")}</small>
+                  <b>Vigencia · {form.validity_days} días</b>
+                </div>
               </header>
-              <div className="sheet-client"><span>CLIENTE</span><strong>{prospect.full_name || query.full_name || "Cliente"}</strong></div>
-              <div className="sheet-vehicle"><small>VEHÍCULO</small><h2>{vehicleLabel}</h2><span>VIN {query.vin || vehicle.vin || "—"}</span></div>
 
-              <section className="sheet-costs">
-                <div><span>Tributos estimados</span><strong>{gtq(calc.baseTaxes)}</strong></div>
-                {n(form.document_collection_charge_gtq)>0 && <div><span>Recolección de documentos</span><strong>{gtq(form.document_collection_charge_gtq)}</strong></div>}
-                {n(form.port_expenses_charge_gtq)>0 && <div><span>Gastos portuarios / operativos</span><strong>{gtq(form.port_expenses_charge_gtq)}</strong></div>}
-                {n(form.professional_fees_charge_gtq)>0 && <div><span>Honorarios E&R</span><strong>{gtq(form.professional_fees_charge_gtq)}</strong></div>}
-                {n(form.other_charge_gtq)>0 && <div><span>{form.other_charge_concept || "Otros servicios"}</span><strong>{gtq(form.other_charge_gtq)}</strong></div>}
-                <div className="sheet-total"><span>TOTAL GUATEMALA</span><strong>{gtq(calc.clientGuatemalaGTQ)}</strong></div>
+              <section className="cq-pro-client">
+                <div><small>CLIENTE</small><strong>{prospect.full_name || query.full_name || "Cliente"}</strong></div>
+                <div><small>PROPUESTA E&R</small><strong>Importación y gestión aduanal</strong></div>
               </section>
 
-              {form.include_freight && (
-                <section className="sheet-transport">
-                  <small>TRANSPORTE MARÍTIMO</small>
-                  <div><span>Flete</span><strong>{usd(calc.freightClientUSD)}</strong></div>
-                  {calc.craneClientUSD>0 && <div><span>Grúa</span><strong>{usd(calc.craneClientUSD)}</strong></div>}
-                  <div className="sheet-total"><span>TOTAL TRANSPORTE</span><strong>{usd(calc.clientTransportUSD)}</strong></div>
-                </section>
-              )}
+              <section className="cq-pro-vehicle">
+                <div className="cq-pro-vehicle-main">
+                  <small>VEHÍCULO</small>
+                  <h2>{vehicleLabel}</h2>
+                  <span>VIN · {query.vin || vehicle.vin || "—"}</span>
+                </div>
+                <div className="cq-pro-vehicle-data">
+                  <span>Línea SAT<strong>{result?.sat?.line || result?.sat?.selected_match?.line || query.sat_line || "—"}</strong></span>
+                  <span>Motor<strong>{vehicle?.engine_liters ? `${vehicle.engine_liters}L` : "—"}{vehicle?.cylinders ? ` · ${vehicle.cylinders} cil.` : ""}</strong></span>
+                  <span>Tracción<strong>{vehicle?.drive_type || "—"}</strong></span>
+                </div>
+              </section>
 
-              {calc.clientGrandUSD !== null && (
-                <div className="sheet-grand-total"><span>TOTAL GENERAL ESTIMADO</span><strong>{usd(calc.clientGrandUSD)}</strong><small>Conversión referencial con TC {calc.exchangeRate.toFixed(4)}</small></div>
-              )}
+              <section className="cq-pro-cost-grid">
+                <article className="cq-pro-card">
+                  <small>COSTOS EN GUATEMALA</small>
+                  <div><span>IVA</span><strong>{gtq(taxes?.iva_gtq || 0)}</strong></div>
+                  <div><span>IPRIMA</span><strong>{gtq(taxes?.iprima_gtq || 0)}</strong></div>
+                  {n(taxes?.plates_gtq)>0 && <div><span>Placas</span><strong>{gtq(taxes?.plates_gtq)}</strong></div>}
+                  {n(form.document_collection_charge_gtq)>0 && <div><span>Recolección de documentos</span><strong>{gtq(form.document_collection_charge_gtq)}</strong></div>}
+                  {n(form.port_expenses_charge_gtq)>0 && <div><span>Gastos portuarios / operativos</span><strong>{gtq(form.port_expenses_charge_gtq)}</strong></div>}
+                  {n(form.professional_fees_charge_gtq)>0 && <div><span>Honorarios E&R</span><strong>{gtq(form.professional_fees_charge_gtq)}</strong></div>}
+                  {n(form.other_charge_gtq)>0 && <div><span>{form.other_charge_concept || "Otros servicios"}</span><strong>{gtq(form.other_charge_gtq)}</strong></div>}
+                  <div className="cq-pro-subtotal"><span>TOTAL GUATEMALA</span><strong>{gtq(calc.clientGuatemalaGTQ)}</strong></div>
+                </article>
 
-              <footer>
+                {form.include_freight ? (
+                  <article className="cq-pro-card cq-pro-freight">
+                    <small>TRANSPORTE MARÍTIMO</small>
+                    <div><span>Categoría</span><strong>{freight?.category || "—"}</strong></div>
+                    <div><span>Flete marítimo</span><strong>{usd(calc.freightClientUSD)}</strong></div>
+                    {calc.craneClientUSD>0 && <div><span>Grúa</span><strong>{usd(calc.craneClientUSD)}</strong></div>}
+                    <div className="cq-pro-subtotal"><span>TOTAL TRANSPORTE</span><strong>{usd(calc.clientTransportUSD)}</strong></div>
+                  </article>
+                ) : (
+                  <article className="cq-pro-card cq-pro-freight">
+                    <small>MODALIDAD DE SERVICIO</small>
+                    <h3>SOLO GESTIÓN ADUANAL</h3>
+                    <p>Esta propuesta no incluye transporte marítimo.</p>
+                  </article>
+                )}
+              </section>
+
+              <section className="cq-pro-grand">
+                <div><span>Total costos Guatemala</span><strong>{gtq(calc.clientGuatemalaGTQ)}</strong></div>
+                {form.include_freight && <div><span>Transporte marítimo</span><strong>{usd(calc.clientTransportUSD)}</strong></div>}
+                {calc.clientGrandUSD !== null && <div className="cq-pro-grand-main"><span>TOTAL GENERAL ESTIMADO</span><strong>{usd(calc.clientGrandUSD)}</strong><small>Conversión referencial · TC {calc.exchangeRate.toFixed(4)}</small></div>}
+              </section>
+
+              <section className="cq-pro-info">
+                <article>
+                  <h3>✓ NUESTRO SERVICIO INCLUYE</h3>
+                  <ul>
+                    <li>Asesoría y acompañamiento durante el proceso</li>
+                    <li>Coordinación de transporte y documentación</li>
+                    <li>Gestión aduanal en Guatemala</li>
+                    <li>Pago y gestión de IVA e IPRIMA</li>
+                    <li>Gestión de placas y requisitos de circulación</li>
+                    <li>Soporte hasta la entrega del vehículo</li>
+                  </ul>
+                </article>
+                <article>
+                  <h3>🚀 ¿CÓMO INICIAR?</h3>
+                  <ol>
+                    <li>Confirmás la propuesta</li>
+                    <li>Realizás el pago inicial</li>
+                    <li>Formalizamos tu expediente</li>
+                    <li>Iniciamos la coordinación</li>
+                  </ol>
+                </article>
+              </section>
+
+              <section className="cq-pro-important">
+                <strong>IMPORTANTE</strong>
                 <p>{form.notes}</p>
-                <strong>Vigencia: {form.validity_days} días</strong>
-                <span>E&R Solutions · Agencia Aduanal</span>
+              </section>
+
+              <footer className="cq-pro-footer">
+                <strong>E&R Solutions · Agencia Aduanal</strong>
+                <span>Tu importación, coordinada de principio a fin.</span>
               </footer>
             </div>
 

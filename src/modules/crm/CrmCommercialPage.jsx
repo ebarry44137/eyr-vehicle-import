@@ -47,6 +47,74 @@ function CrmCommercialPage({supabase,userId,userName="Usuario E&R",onOpenQuote,o
   setStages(s.data||[]);setLeads(l.data||[]);setTasks(t.data||[]);setContacts(c.data||[]);setAdvisors(a.data||[]);setQuoteTotals(q.data||[]);setWaConversations(w.data||[]);
  }catch(e){setError(e?.message||"No fue posible cargar CRM Comercial.")}finally{setLoading(false)}},[supabase]);
  useEffect(()=>{load()},[load]);
+
+ // V39.9.17 WHATSAPP REALTIME
+ useEffect(()=>{
+  let active=true;
+  const selectedConversationId=waSelected?.id||null;
+
+  const sortMessages=(rows)=>[...rows].sort((a,b)=>new Date(a.message_at||a.created_at||0)-new Date(b.message_at||b.created_at||0));
+  const sortConversations=(rows)=>[...rows].sort((a,b)=>new Date(b.last_message_at||b.updated_at||0)-new Date(a.last_message_at||a.updated_at||0));
+
+  const channel=supabase
+   .channel(`crm-whatsapp-realtime-${userId||"session"}-${selectedConversationId||"none"}`)
+   .on("postgres_changes",{event:"*",schema:"public",table:"crm_whatsapp_conversations"},(payload)=>{
+    if(!active)return;
+    const row=payload.new;
+    if(payload.eventType==="DELETE"){
+     setWaConversations(prev=>prev.filter(c=>c.id!==payload.old?.id));
+     if(payload.old?.id===selectedConversationId){setWaSelected(null);setWaMessages([])}
+     return;
+    }
+    if(!row?.id)return;
+    setWaConversations(prev=>{
+     const exists=prev.some(c=>c.id===row.id);
+     const next=exists?prev.map(c=>c.id===row.id?{...c,...row}:c):[row,...prev];
+     return sortConversations(next);
+    });
+    if(row.id===selectedConversationId){
+     setWaSelected(prev=>prev?{...prev,...row}:row);
+    }
+   })
+   .on("postgres_changes",{event:"*",schema:"public",table:"crm_whatsapp_messages"},async(payload)=>{
+    if(!active)return;
+    const row=payload.new;
+    const oldRow=payload.old;
+    const conversationId=row?.conversation_id||oldRow?.conversation_id;
+    if(conversationId!==selectedConversationId)return;
+
+    if(payload.eventType==="INSERT"){
+     setWaMessages(prev=>{
+      if(prev.some(m=>m.id===row.id||(row.external_message_id&&m.external_message_id===row.external_message_id)))return prev;
+      return sortMessages([...prev,row]);
+     });
+     if(row.direction==="IN"){
+      const {error:readError}=await supabase.rpc("crm_whatsapp_mark_read_v39915",{p_conversation_id:selectedConversationId});
+      if(!readError&&active){
+       setWaConversations(prev=>prev.map(c=>c.id===selectedConversationId?{...c,unread_count:0}:c));
+       setWaSelected(prev=>prev?.id===selectedConversationId?{...prev,unread_count:0}:prev);
+      }
+     }
+     return;
+    }
+
+    if(payload.eventType==="UPDATE"){
+     setWaMessages(prev=>sortMessages(prev.map(m=>m.id===row.id?{...m,...row}:m)));
+     return;
+    }
+
+    if(payload.eventType==="DELETE"){
+     setWaMessages(prev=>prev.filter(m=>m.id!==oldRow?.id));
+    }
+   })
+   .subscribe();
+
+  return()=>{
+   active=false;
+   supabase.removeChannel(channel);
+  };
+ },[supabase,userId,waSelected?.id]);
+
  // V39.9.7.5 CRM REFRESH SIGNAL
  useEffect(()=>{if(refreshSignal>0)load()},[refreshSignal,load]);
  const contactsById=useMemo(()=>Object.fromEntries(contacts.map(c=>[c.id,c])),[contacts]);

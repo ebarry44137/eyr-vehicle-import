@@ -798,6 +798,8 @@ function App() {
       path.startsWith("/o/")
     ) return "internal";
     if (path === "/cotizador" || path.startsWith("/cotizador/")) return "public";
+    if (path === "/politica-de-privacidad") return "privacy";
+    if (path === "/eliminacion-de-datos") return "deletion";
     return "landing";
   };
 
@@ -1456,7 +1458,11 @@ function App() {
         ? "internal"
         : path.startsWith("/cotizador")
           ? "public"
-          : "landing"
+          : path === "/politica-de-privacidad"
+            ? "privacy"
+            : path === "/eliminacion-de-datos"
+              ? "deletion"
+              : "landing"
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -4836,6 +4842,126 @@ async function openCustomsDetail(item) {
   }, [tenantBranding?.primary_color, tenantBranding?.secondary_color, tenantBranding?.accent_color]);
 
 
+  if (siteMode === "privacy" || siteMode === "deletion") {
+    const isPrivacy = siteMode === "privacy";
+    return (
+      <div className="public-site legal-public-page">
+        <header className="public-nav">
+          <button className="public-brand public-brand-logo" onClick={() => navigateSite("/")}>
+            <img src={eyrSolutionsLogo} alt="E&R Solutions Agencia Aduanal" />
+          </button>
+          <nav>
+            <button className="public-login-link" onClick={() => navigateSite("/")}>Inicio</button>
+            <button className="public-nav-quote" onClick={() => navigateSite("/cotizador")}>Cotizador</button>
+          </nav>
+        </header>
+
+        <main className="legal-page-shell">
+          <article className="legal-card">
+            <span className="legal-kicker">E&amp;R SOLUTIONS</span>
+            <h1>{isPrivacy ? "Política de Privacidad" : "Eliminación de Datos de Usuario"}</h1>
+            <p className="legal-updated">Última actualización: 24 de septiembre de 2026</p>
+
+            {isPrivacy ? (
+              <>
+                <p>
+                  En E&amp;R Solutions respetamos la privacidad de nuestros usuarios. Esta política explica
+                  qué información podemos recopilar cuando utilizás nuestro sitio web, cotizador,
+                  plataforma CRM y canales de comunicación, y cómo la utilizamos y protegemos.
+                </p>
+                <h2>1. Información que recopilamos</h2>
+                <p>
+                  Podemos recopilar datos que proporcionás directamente, como nombre, correo electrónico,
+                  número de teléfono, información relacionada con solicitudes de cotización, vehículos,
+                  VIN y comunicaciones enviadas a través de nuestros canales de atención.
+                </p>
+                <h2>2. Uso de la información</h2>
+                <p>
+                  Utilizamos la información para atender consultas, preparar y dar seguimiento a
+                  cotizaciones, prestar servicios relacionados con logística e importación de vehículos,
+                  gestionar relaciones comerciales y mantener la seguridad y funcionamiento de la plataforma.
+                </p>
+                <h2>3. WhatsApp y servicios de Meta</h2>
+                <p>
+                  Cuando una persona se comunica con E&amp;R Solutions mediante WhatsApp, podemos procesar
+                  su número de teléfono, nombre de perfil, contenido de los mensajes y datos técnicos
+                  necesarios para administrar la conversación y brindar atención. La integración utiliza
+                  servicios oficiales de WhatsApp Business Platform de Meta.
+                </p>
+                <h2>4. Protección y conservación</h2>
+                <p>
+                  Aplicamos medidas razonables para proteger la información contra acceso, alteración o
+                  divulgación no autorizados. Conservamos los datos únicamente durante el tiempo necesario
+                  para los fines comerciales, operativos, legales y de seguridad aplicables.
+                </p>
+                <h2>5. Compartición de información</h2>
+                <p>
+                  No vendemos datos personales. Podemos utilizar proveedores tecnológicos necesarios para
+                  operar nuestros servicios y cumplir obligaciones legales, sujetos a sus respectivos
+                  términos y medidas de seguridad.
+                </p>
+                <h2>6. Derechos y solicitudes</h2>
+                <p>
+                  Podés solicitar acceso, corrección o eliminación de tus datos personales. Para solicitar
+                  eliminación, consultá nuestra página de Eliminación de Datos de Usuario.
+                </p>
+                <h2>7. Contacto</h2>
+                <p>
+                  Para consultas sobre privacidad podés escribir a
+                  <a href="mailto:ebarrientos@eyrsolutionsgt.com"> ebarrientos@eyrsolutionsgt.com</a>.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  Si utilizaste los servicios digitales de E&amp;R Solutions y deseás solicitar la
+                  eliminación de tus datos personales asociados, podés hacerlo siguiendo estas instrucciones.
+                </p>
+                <h2>Cómo solicitar la eliminación</h2>
+                <p>
+                  Enviá un correo a
+                  <a href="mailto:ebarrientos@eyrsolutionsgt.com"> ebarrientos@eyrsolutionsgt.com</a>
+                  con el asunto <strong>“Solicitud de eliminación de datos”</strong>.
+                </p>
+                <p>
+                  Incluí tu nombre y el número de teléfono o correo electrónico utilizado para comunicarte
+                  con E&amp;R Solutions. No incluyás contraseñas, códigos de acceso ni información financiera sensible.
+                </p>
+                <h2>Qué haremos con la solicitud</h2>
+                <p>
+                  Verificaremos la información necesaria para identificar los registros correspondientes y
+                  procesaremos la eliminación de los datos que puedan ser eliminados, salvo aquellos que
+                  debamos conservar para cumplir obligaciones legales, fiscales, contractuales, de seguridad
+                  o para resolver controversias.
+                </p>
+                <h2>Datos relacionados con WhatsApp</h2>
+                <p>
+                  Si la solicitud corresponde a conversaciones gestionadas mediante nuestra integración con
+                  WhatsApp Business Platform, identificaremos los registros asociados disponibles en nuestros
+                  sistemas y procesaremos la solicitud conforme a lo indicado anteriormente.
+                </p>
+              </>
+            )}
+
+            <div className="legal-actions">
+              {!isPrivacy && (
+                <button className="public-login-link" onClick={() => navigateSite("/politica-de-privacidad")}>
+                  Ver Política de Privacidad
+                </button>
+              )}
+              {isPrivacy && (
+                <button className="public-login-link" onClick={() => navigateSite("/eliminacion-de-datos")}>
+                  Eliminación de datos
+                </button>
+              )}
+              <button className="public-nav-quote" onClick={() => navigateSite("/")}>Volver al inicio</button>
+            </div>
+          </article>
+        </main>
+      </div>
+    );
+  }
+
   if (siteMode === "landing") {
     return (
       <div className="public-site">
@@ -4955,6 +5081,11 @@ async function openCustomsDetail(item) {
             <img src={eyrSolutionsLogo} alt="E&R Solutions Agencia Aduanal" />
           </div>
           <span>Herramienta de estimación para importación de vehículos a Guatemala.</span>
+          <div className="public-footer-legal">
+            <button onClick={() => navigateSite("/politica-de-privacidad")}>Política de Privacidad</button>
+            <span>•</span>
+            <button onClick={() => navigateSite("/eliminacion-de-datos")}>Eliminación de Datos</button>
+          </div>
         </footer>
       </div>
     );

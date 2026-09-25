@@ -42,6 +42,7 @@ import CrmCommercialPage from "./modules/crm/CrmCommercialPage.jsx";
 import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.jsx";
 import "./modules/internal-mobile-nav/internal-mobile-nav.css";
 import ConfigurationProPanels from "./modules/settings/ConfigurationProPanels.jsx";
+import WhatsAppCoexistencePanel from "./modules/settings/WhatsAppCoexistencePanel.jsx";
 import "./modules/settings/configuration-pro-panels.css";
 import PerformanceBonusesPage from "./modules/performance-bonuses/PerformanceBonusesPage.jsx";
 import PerformanceCheckIn from "./modules/performance-attendance/PerformanceCheckIn.jsx";
@@ -9094,6 +9095,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </div>
               </form>
             </section>
+
+            {/* V39.9.18 WHATSAPP COEXISTENCE */}
+            {isSystemAdmin && <WhatsAppCoexistencePanel />}
 
             {/* V39.7.9.6 · RESTAURAR CONFIGURACIÓN PRO */}
             <ConfigurationProPanels

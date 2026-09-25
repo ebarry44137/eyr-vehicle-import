@@ -9,3 +9,7 @@
 .wa-coexist-result{margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.wa-coexist-result>div{padding:12px;border-radius:12px;background:#fff;border:1px solid rgba(20,47,74,.09);display:flex;flex-direction:column;gap:5px}.wa-coexist-result code{overflow-wrap:anywhere}
 .wa-coexist-actions{margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}.wa-coexist-actions small{color:#748597}
 @media(max-width:760px){.wa-coexist-head{grid-template-columns:auto 1fr}.wa-coexist-badge{grid-column:1/-1;width:max-content}.wa-coexist-result{grid-template-columns:1fr}}
+
+.wa-coexist-diagnostics{margin-top:14px;padding:14px;border:1px solid rgba(20,47,74,.09);border-radius:14px;background:#fff}
+.wa-coexist-diagnostics-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.wa-coexist-diagnostics-head span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#7b8b9b;font-weight:800}.wa-coexist-diagnostics-head strong{font-size:12px;color:#38526b}
+.wa-coexist-event-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto}.wa-coexist-event{padding:10px;border-radius:10px;background:#f7fafc}.wa-coexist-event>div{display:flex;justify-content:space-between;gap:10px}.wa-coexist-event>div strong{font-size:12px;color:#24394c}.wa-coexist-event>div span{font-size:11px;color:#7b8b9b}.wa-coexist-event code{display:block;margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:#526679}

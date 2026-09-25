@@ -16,7 +16,17 @@ export default function WhatsAppCoexistencePanel() {
   const [status, setStatus] = useState("READY");
   const [detail, setDetail] = useState("Listo para iniciar una prueba segura de WhatsApp Business App Coexistence.");
   const [session, setSession] = useState(null);
+  const [events, setEvents] = useState([]);
   const receivedFinish = useRef(false);
+
+  function addDiagnostic(kind, payload = {}) {
+    const safePayload = payload && typeof payload === "object" ? { ...payload } : { value: payload };
+    if (safePayload.code) safePayload.code = "[authorization code received]";
+    setEvents((current) => [
+      ...current.slice(-11),
+      { at: new Date().toLocaleTimeString("es-GT"), kind, payload: safePayload },
+    ]);
+  }
 
   useEffect(() => {
     let active = true;
@@ -54,6 +64,10 @@ export default function WhatsAppCoexistencePanel() {
 
       const data = payload.data || {};
       const eventName = String(payload.event || data.event || "").toUpperCase();
+      addDiagnostic(eventName || "WA_EMBEDDED_SIGNUP", {
+        version: payload.version ?? null,
+        data,
+      });
 
       if (eventName.includes("FINISH")) {
         receivedFinish.current = true;
@@ -92,12 +106,17 @@ export default function WhatsAppCoexistencePanel() {
     receivedFinish.current = false;
     setLaunching(true);
     setSession(null);
+    setEvents([]);
     setStatus("OPENING");
     setDetail("Abriendo el registro insertado de Meta…");
 
     window.FB.login(
       (response) => {
         setLaunching(false);
+        addDiagnostic("FB_LOGIN_CALLBACK", {
+          hasAuthCode: Boolean(response?.authResponse?.code),
+          status: response?.status || null,
+        });
 
         if (receivedFinish.current) return;
 
@@ -115,6 +134,7 @@ export default function WhatsAppCoexistencePanel() {
         response_type: "code",
         override_default_response_type: true,
         extras: {
+          setup: {},
           featureType: "whatsapp_business_app_onboarding",
           sessionInfoVersion: "3",
         },
@@ -144,7 +164,7 @@ export default function WhatsAppCoexistencePanel() {
       </div>
 
       <div className="wa-coexist-safety">
-        <strong>🛡️ Modo seguro V39.9.18</strong>
+        <strong>🛡️ Modo seguro V39.9.18.1</strong>
         <span>Esta fase no cambia el canal activo, no guarda tokens y no reemplaza el número de prueba.</span>
       </div>
 
@@ -158,6 +178,23 @@ export default function WhatsAppCoexistencePanel() {
           <div><span>WABA ID</span><code>{session.wabaId || "No informado"}</code></div>
           <div><span>Phone Number ID</span><code>{session.phoneNumberId || "No informado"}</code></div>
           <div><span>Evento Meta</span><code>{session.event || "FINISH"}</code></div>
+        </div>
+      )}
+
+      {events.length > 0 && (
+        <div className="wa-coexist-diagnostics">
+          <div className="wa-coexist-diagnostics-head">
+            <span>Diagnóstico Embedded Signup</span>
+            <strong>{events.length} evento{events.length === 1 ? "" : "s"}</strong>
+          </div>
+          <div className="wa-coexist-event-list">
+            {events.map((item, index) => (
+              <div className="wa-coexist-event" key={`${item.at}-${index}`}>
+                <div><strong>{item.kind}</strong><span>{item.at}</span></div>
+                <code>{JSON.stringify(item.payload, null, 2)}</code>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

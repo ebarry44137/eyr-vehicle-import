@@ -142,15 +142,15 @@ function CrmCommercialPage({supabase,userId,userName="Usuario E&R",onOpenQuote,o
  if(Number(stages.find(x=>x.code===lead.stage_code)?.position)===8){
   // V39.9.10.1 INTERNAL OPS USERS
   // Mismo criterio oficial de Usuarios Internos: misma organización + ADMIN/OPERADOR + activos.
-  supabase.from("profiles")
-   .select("id,full_name,email,role,job_title,active,organization_id")
-   .eq("organization_id",lead.organization_id)
-   .in("role",["ADMIN","OPERADOR"])
-   .eq("active",true)
-   .order("full_name",{ascending:true})
+  // V39.9.18.8.1 · responsables operativos vía RPC controlado
+  supabase.rpc("crm_get_operations_users_v399188")
    .then(({data,error})=>{
     if(!error)setOpsUsers(data||[]);
-    else setOpsUsers([]);
+    else {
+      console.error("CRM OPS USERS V399188:",error);
+      setOpsUsers([]);
+      setError(error?.message||"No fue posible cargar responsables operativos.");
+    }
    });
  }setEdit({...emptyEdit,...lead,full_name:c.full_name||"",phone:c.phone||c.whatsapp_phone||"",email:c.email||""});setDetailLoading(true);setError("");const qs=lead.vin?supabase.from("commercial_quotes").select("id,quote_code,status,client_name,vin,vehicle_label,created_at,finalized_at").eq("vin",lead.vin).order("created_at",{ascending:false}).limit(10):Promise.resolve({data:[],error:null});const [a,t,q]=await Promise.all([supabase.from("crm_activities").select("*").eq("lead_id",lead.id).order("created_at",{ascending:false}),supabase.from("crm_tasks").select("*").eq("lead_id",lead.id).order("created_at",{ascending:false}),qs]);if(a.error)setError(a.error.message);if(t.error)setError(t.error.message);if(q.error)setError(q.error.message);setActivities(a.data||[]);setDetailTasks(t.data||[]);setLeadQuotes(q.data||[]);setDetailLoading(false)}
  async function identifyVin(){const vin=String(edit.vin||"").trim().toUpperCase().replace(/\s+/g,"");if(vin.length!==17){setError("El VIN debe contener 17 caracteres.");return}setVinLoading(true);setError("");try{const {data,error:e}=await supabase.functions.invoke("identify-vin",{body:{vin}});if(e)throw e;if(!data?.success)throw new Error(data?.error||"No fue posible identificar el vehículo.");const v=data.vehicle||{};setEdit(x=>({...x,vin,vehicle_year:v.model_year||x.vehicle_year,vehicle_make:v.make||x.vehicle_make,vehicle_model:v.model||x.vehicle_model,vehicle_trim:v.trim||v.series||x.vehicle_trim,vehicle_label:[v.model_year,v.make,v.model,v.trim||v.series].filter(Boolean).join(" ")||x.vehicle_label}));setNotice("VIN identificado. Revisá los datos y guardá la ficha.")}catch(e){setError(e?.message||"No fue posible identificar el VIN.")}finally{setVinLoading(false)}}

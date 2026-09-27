@@ -2698,18 +2698,9 @@ function App() {
     // la misma commercial_quote vinculada al lead. El flujo histórico
     // quotation-manager queda intacto para el resto del sistema.
     if (crmOriginalQuoteBridge?.leadId) {
-      // V39.9.18.4 · DIGITADOR PRO: no invocar RPC exclusivo de Administración
-      // El RPC save_crm_commercial_quote_v3994 está protegido en BD para Administración.
-      // DIGITADOR puede generar/descargar/compartir la PRO ya preparada sin intentar
-      // escribir mediante ese RPC administrativo. No se cambian permisos de BD.
-      if (internalJobTitle === "DIGITADOR") {
-        return (
-          crmOriginalQuoteBridge.existingQuote || {
-            quote_code: quoteNumber(),
-          }
-        );
-      }
-
+      // V39.9.18.7 · DIGITADOR PRO PERSISTENTE
+      // ADMIN y OPERADOR+DIGITADOR usan el mismo guardado CRM real.
+      // La autorización fina vive en save_crm_commercial_quote_v3994.
       const publicCosts = {
         include_freight: Boolean(quoteForm.include_freight),
         document_collection_gtq: quoteDocumentCollection,
@@ -6322,7 +6313,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               try {
                 if(!lead?.quote_id) throw new Error("Este lead no tiene cotización vinculada.");
                 const {data:quote,error:quoteError}=await supabase
-                  .from("commercial_quotes").select("*").eq("id",lead.quote_id).single();
+                  .rpc("crm_get_linked_quote_v399188",{p_lead_id:lead.id})
+                  .single();
                 if(quoteError) throw quoteError;
 
                 const snapshot=quote?.calculation_snapshot||{};
@@ -6364,7 +6356,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               try {
                 if(!lead?.quote_id) throw new Error("Este lead no tiene cotización vinculada.");
                 const {data:quote,error:quoteError}=await supabase
-                  .from("commercial_quotes").select("*").eq("id",lead.quote_id).single();
+                  .rpc("crm_get_linked_quote_v399188",{p_lead_id:lead.id})
+                  .single();
                 if(quoteError) throw quoteError;
                 const snapshot=quote?.calculation_snapshot||{};
                 setResult(snapshot);

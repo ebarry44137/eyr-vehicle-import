@@ -2698,6 +2698,18 @@ function App() {
     // la misma commercial_quote vinculada al lead. El flujo histórico
     // quotation-manager queda intacto para el resto del sistema.
     if (crmOriginalQuoteBridge?.leadId) {
+      // V39.9.18.4 · DIGITADOR PRO: no invocar RPC exclusivo de Administración
+      // El RPC save_crm_commercial_quote_v3994 está protegido en BD para Administración.
+      // DIGITADOR puede generar/descargar/compartir la PRO ya preparada sin intentar
+      // escribir mediante ese RPC administrativo. No se cambian permisos de BD.
+      if (internalJobTitle === "DIGITADOR") {
+        return (
+          crmOriginalQuoteBridge.existingQuote || {
+            quote_code: quoteNumber(),
+          }
+        );
+      }
+
       const publicCosts = {
         include_freight: Boolean(quoteForm.include_freight),
         document_collection_gtq: quoteDocumentCollection,
@@ -3119,6 +3131,7 @@ function App() {
     }
   }
 
+  // V39.9.18.6 CUSTOMS ONLY OPERATIONS
   function openImportManagementsView() {
     setActiveView("imports");
     setSelectedImportManagement(null);
@@ -4419,7 +4432,19 @@ async function openCustomsDetail(item) {
       setQuoteGenerating(true);
 
       // Guardamos/actualizamos la cotización antes de generar la imagen.
-      await saveCurrentQuotation();
+      // V39.9.18.3 · DIGITADOR PNG: descarga no depende del guardado previo
+      // ADMIN/OPERADOR conserva exactamente el flujo estable existente.
+      // Para DIGITADOR, si el guardado CRM es rechazado por permisos,
+      // la generación/descarga visual de la cotización PRO debe continuar.
+      if (internalJobTitle === "DIGITADOR") {
+        try {
+          await saveCurrentQuotation();
+        } catch (saveErr) {
+          console.error("DIGITADOR QUOTE PRE-SAVE ERROR:", saveErr);
+        }
+      } else {
+        await saveCurrentQuotation();
+      }
 
       await waitForQuoteImages(quoteRef.current);
 
@@ -6872,7 +6897,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         <td><strong>{item.management_code}</strong><small>{new Date(item.created_at).toLocaleDateString("es-GT")}</small></td>
                         <td><strong>{item.client_name}</strong><small>{item.phone || "Sin teléfono"}</small></td>
                         <td><strong>{[item.model_year,item.make,item.model,item.vehicle_trim].filter(Boolean).join(" ")}</strong><small>{item.vin}</small></td>
-                        <td><strong>{item.quote_code || "—"}</strong><small>{item.freight_usd ? `Flete ${moneyUSD(item.freight_usd)}` : "Sin flete"}</small></td>
+                        <td><strong>{item.quote_code || "—"}</strong><small>{item.service_mode==="CUSTOMS_ONLY"?"🛃 Solo gestión aduanal":(item.freight_usd?`Flete ${moneyUSD(item.freight_usd)}`:"Sin flete")}</small></td>
                         <td><span className="import-status">{String(item.status || "").replaceAll("_"," ")}</span></td>
                         <td><strong>{item.responsible || "Sin asignar"}</strong></td>
                         <td><button className="prospect-open-button" onClick={() => openImportManagementDetail(item)}>Ver →</button></td>
@@ -6896,7 +6921,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <span className="section-label">VEHÍCULO</span>
                       <h3>{[importManagementDetail.model_year,importManagementDetail.make,importManagementDetail.model,importManagementDetail.vehicle_trim].filter(Boolean).join(" ")}</h3>
                       <p>VIN · {importManagementDetail.vin}</p>
-                      <div><span>Cotización</span><strong>{importManagementDetail.quote_code || "—"}</strong></div>
+                      <div><span>Cotización</span><strong>{importManagementDetail.quote_code || "—"}</strong></div>{importManagementDetail.service_mode==="CUSTOMS_ONLY"&&<div><span>Tipo de servicio</span><strong>🛃 SOLO GESTIÓN ADUANAL</strong></div>}
                     </section>
 
                     <section className="import-progress-card">
@@ -6905,9 +6930,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         <option value="COTIZADO">Cotizado</option>
                         <option value="CLIENTE_CONFIRMÓ">Cliente confirmó</option>
                         <option value="PAGO_INICIAL">Pago inicial</option>
-                        <option value="POR_RECOGER">Vehículo por recoger</option>
+                        {importManagementDetail.service_mode!=="CUSTOMS_ONLY"&&<><option value="POR_RECOGER">Vehículo por recoger</option>
                         <option value="TRÁNSITO_A_PUERTO">En tránsito a puerto</option>
-                        <option value="EMBARCADO">Embarcado</option>
+                        <option value="EMBARCADO">Embarcado</option></>}
                         <option value="TRÁNSITO_MARÍTIMO">En tránsito marítimo</option>
                         <option value="ARRIBÓ_GUATEMALA">Arribó a Guatemala</option>
                         <option value="CONTROL_ADUANAL">Control aduanal</option>

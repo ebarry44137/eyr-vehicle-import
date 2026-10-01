@@ -1,3 +1,5 @@
+// V39.9.18.9.4 · CRM PRO REVIEW BRIDGE
+// V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN
 import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { supabase } from "./supabaseClient";
@@ -650,6 +652,102 @@ function QuoteTikTokIcon() {
   );
 }
 
+// V39.9.18.9.1 · SEMÁFOROS CONTROL ADUANAL
+function customsOperationalLightV3991891(item) {
+  if (item?.delivered_at) {
+    return { status: "FINALIZADO", hours: 0, elapsed: "Finalizado" };
+  }
+
+  if (String(item?.priority || "").toUpperCase() === "URGENTE") {
+    return { status: "URGENTE", hours: 0, elapsed: "Prioridad urgente" };
+  }
+
+  const raw = item?.last_movement_at || item?.updated_at || item?.created_at;
+  const ms = raw ? new Date(raw).getTime() : Date.now();
+  const hours = Math.max(0, (Date.now() - ms) / 3600000);
+
+  const status =
+    hours >= 120 ? "URGENTE" :
+    hours >= 72 ? "ATENCIÓN" :
+    "EN TIEMPO";
+
+  const whole = Math.floor(hours);
+  const days = Math.floor(whole / 24);
+  const rest = whole % 24;
+  return { status, hours, elapsed: days > 0 ? `${days}d ${rest}h sin movimiento` : `${rest}h sin movimiento` };
+}
+
+// V39.9.18.9 · TIEMPO LIBRE DE ALMACENAJE
+const CUSTOMS_STORAGE_DEPOTS_V399189 = {
+  CHIQUITA: { label: "Chiquita", freeDays: 7 },
+  SANTO_TOMAS: { label: "Santo Tomás", freeDays: 5 },
+  ALDEGUA: { label: "ALDEGUA", freeDays: 8 },
+};
+
+function customsStorageInfoV399189(detail) {
+  const depot = CUSTOMS_STORAGE_DEPOTS_V399189[detail?.storage_depot];
+  const emptied = detail?.emptied_at ? String(detail.emptied_at).slice(0, 10) : "";
+
+  if (!depot || !emptied) {
+    return {
+      active: false,
+      depotLabel: depot?.label || "",
+      freeDays: depot?.freeDays || null,
+      status: "PENDIENTE",
+      statusLabel: !depot ? "Seleccioná depósito" : "Pendiente de vaciado",
+    };
+  }
+
+  const [y, m, d] = emptied.split("-").map(Number);
+  // Guatemala es UTC-6 todo el año. 06:00 UTC = 00:00 Guatemala.
+  const storageStartsMs = Date.UTC(y, m - 1, d, 6, 0, 0) + depot.freeDays * 86400000;
+  const freeUntilMs = storageStartsMs - 1000;
+  const nowMs = Date.now();
+  const remainingMs = storageStartsMs - nowMs;
+  const remainingHours = remainingMs / 3600000;
+
+  let status = "EN TIEMPO";
+  if (detail?.port_exit_at) status = "FINALIZADO";
+  else if (remainingMs <= 0) status = "VENCIDO";
+  else if (remainingHours <= 24) status = "URGENTE";
+  else if (remainingHours <= 48) status = "ATENCION";
+
+  const absMs = Math.abs(remainingMs);
+  const totalHours = Math.floor(absMs / 3600000);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+
+  const formatGT = (ms) =>
+    new Intl.DateTimeFormat("es-GT", {
+      timeZone: "America/Guatemala",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date(ms));
+
+  return {
+    active: true,
+    depotLabel: depot.label,
+    freeDays: depot.freeDays,
+    status,
+    statusLabel:
+      status === "ATENCION" ? "ATENCIÓN" :
+      status === "VENCIDO" ? "TIEMPO LIBRE VENCIDO" :
+      status,
+    freeUntil: formatGT(freeUntilMs),
+    storageStarts: formatGT(storageStartsMs),
+    remainingLabel:
+      status === "FINALIZADO"
+        ? "Contador detenido por salida del puerto"
+        : remainingMs > 0
+          ? `${days}d ${hours}h restantes`
+          : `${days}d ${hours}h excedidos`,
+  };
+}
+
 const CUSTOMS_STAGES = [
   ["docs_collected_at", "Documentos recogidos"],
   ["emptied_at", "Vaciado"],
@@ -929,6 +1027,9 @@ function App() {
   const [quoteGenerating, setQuoteGenerating] = useState(false);
   const [quoteForm, setQuoteForm] = useState({
     include_freight: true,
+    // V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN
+    // Vacío = usar tarifa automática calculada.
+    freight_usd: "",
     document_collection_gtq: "",
     port_expenses_gtq: "",
     professional_fees_gtq: "",
@@ -2613,6 +2714,8 @@ function App() {
 
     setQuoteForm({
       include_freight: freightReady,
+      // Vacío conserva la tarifa automática de Configuración.
+      freight_usd: "",
       document_collection_gtq: "",
       port_expenses_gtq: "",
       professional_fees_gtq: "",
@@ -2703,6 +2806,10 @@ function App() {
       // La autorización fina vive en save_crm_commercial_quote_v3994.
       const publicCosts = {
         include_freight: Boolean(quoteForm.include_freight),
+        freight_calculated_usd: quoteFreightCalculatedUsd,
+        freight_quoted_usd: quoteFreightUsd,
+        freight_manually_adjusted:
+          quoteFreightHasOverride && quoteFreightUsd !== quoteFreightCalculatedUsd,
         document_collection_gtq: quoteDocumentCollection,
         port_expenses_gtq: quotePortExpenses,
         professional_fees_gtq: quoteProfessionalFees,
@@ -2819,7 +2926,11 @@ function App() {
           professional_fees_gtq: quoteProfessionalFees, total_guatemala_gtq: quoteGuatemalaTotal,
         },
         freight: {
-          category: freight?.category ?? null, price_usd: quoteFreightUsd, crane_usd: quoteCraneUsd,
+          category: freight?.category ?? null,
+          price_usd: quoteFreightUsd,
+          calculated_price_usd: quoteFreightCalculatedUsd,
+          manually_adjusted: quoteFreightHasOverride && quoteFreightUsd !== quoteFreightCalculatedUsd,
+          crane_usd: quoteCraneUsd,
           length_inches: dimensions?.length_inches ?? summary?.length_inches ?? null,
           dimension_model: dimensions?.dimension_model ?? summary?.dimension_model ?? null,
         },
@@ -3906,7 +4017,7 @@ async function openCustomsDetail(item) {
 
       const allowedKeys = [
         "client_name", "phone", "email", "vin", "bl", "container_number",
-        "shipping_line", "responsible", "priority",
+        "shipping_line", "storage_depot", "responsible", "priority",
         "docs_collected_at", "emptied_at", "da_at", "corroboration_at",
         "digitization_started_at", "review_started_at",
         "declaration_signed_at", "iva_form_sent_at", "iva_paid_at",
@@ -4458,6 +4569,45 @@ async function openCustomsDetail(item) {
     }
   }
 
+  // V39.9.18.9.4 · CRM PRO REVIEW BRIDGE · continuidad después de resolver SAT/dimensiones
+  useEffect(() => {
+    if (!crmOriginalQuoteBridge?.pendingReview) return;
+    if (activeView !== "new") return;
+    const ready =
+      result?.calculation_status === "READY" ||
+      result?.summary?.calculation_status === "READY";
+    if (!ready) return;
+
+    const crmVin = String(
+      crmOriginalQuoteBridge?.vin || result?.vehicle?.vin || ""
+    ).trim().toUpperCase();
+    const freightReady =
+      !result?.freight_requires_review &&
+      Number(result?.freight?.price_usd || 0) > 0;
+
+    setQuoteForm((prev) => ({
+      ...prev,
+      include_freight: freightReady,
+      freight_usd: "",
+      document_collection_gtq: "",
+      port_expenses_gtq: "",
+      professional_fees_gtq: "",
+      crane_usd: "",
+    }));
+    setQuoteCode(makeQuoteCode(crmVin || null));
+    setCrmOriginalQuoteBridge((prev) =>
+      prev ? { ...prev, pendingReview: false } : prev
+    );
+    setShowQuoteModal(true);
+  }, [
+    result?.calculation_status,
+    result?.summary?.calculation_status,
+    result?.freight_requires_review,
+    result?.freight?.price_usd,
+    activeView,
+    crmOriginalQuoteBridge?.pendingReview,
+  ]);
+
   function handleKeyDown(event) {
     if (
       event.key === "Enter" &&
@@ -4484,12 +4634,25 @@ async function openCustomsDetail(item) {
     quoteDocumentCollection +
     quotePortExpenses +
     quoteProfessionalFees;
+  // V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN
+  // calculated = tarifa base proveniente del motor/configuración.
+  // quoteFreightUsd = valor final cobrado únicamente en esta cotización.
+  const quoteFreightCalculatedUsd = Number(
+    freight?.calculated_price_usd ?? freight?.price_usd ?? 0
+  );
   const quoteFreightAvailable =
     !result?.freight_requires_review &&
-    Number(freight?.price_usd || 0) > 0;
+    quoteFreightCalculatedUsd > 0;
+  const quoteFreightOverrideRaw = String(quoteForm.freight_usd ?? "").trim();
+  const quoteFreightHasOverride =
+    quoteFreightOverrideRaw !== "" &&
+    Number.isFinite(Number(quoteFreightOverrideRaw)) &&
+    Number(quoteFreightOverrideRaw) >= 0;
   const quoteFreightUsd =
     quoteForm.include_freight
-      ? Number(freight?.price_usd || 0)
+      ? (quoteFreightHasOverride
+          ? Number(quoteFreightOverrideRaw)
+          : quoteFreightCalculatedUsd)
       : 0;
   const quoteCraneUsd =
     quoteForm.include_freight
@@ -6267,42 +6430,56 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             refreshSignal={crmRefreshSignal}
             onOpenQuote={async (lead) => {
               try {
+                // V39.9.18.9.4 · CRM PRO REVIEW BRIDGE
                 const crmVin=String(lead?.vin||"").trim().toUpperCase();
                 if(!crmVin) throw new Error("El lead necesita VIN antes de cotizar.");
-
+                setError("");
                 const data=await ejecutarDecode(crmVin,true,{
                   calculation_method:"SAT",
                   invoice_value_usd:null,
                 });
-                const ready=data?.calculation_status==="READY" || data?.summary?.calculation_status==="READY";
-                if(!ready) throw new Error("Este vehículo todavía requiere revisión antes de cotizar.");
+                if(!data?.success) throw new Error(data?.error||"No fue posible consultar el vehículo.");
+
+                const ready=data?.calculation_status==="READY" ||
+                  data?.summary?.calculation_status==="READY";
 
                 setResult(data);
+                setVin(crmVin);
                 setSelectedProspect({
-                  full_name:lead?.full_name||"Cliente",
-                  phone:lead?.phone||"",
+                  full_name:lead?.full_name||lead?.client_name||"Cliente",
+                  phone:lead?.phone||lead?.client_phone||"",
                   contact_key:null,
                   id:null,
                 });
-                const freightReady=!data?.freight_requires_review && Number(data?.freight?.price_usd||0)>0;
-                setQuoteForm({
+                setCrmOriginalQuoteBridge({
+                  leadId:lead?.id,
+                  vin:crmVin,
+                  name:lead?.full_name||lead?.client_name||"Cliente",
+                  phone:lead?.phone||lead?.client_phone||"",
+                  contactKey:null,
+                  existingQuote:null,
+                  pendingReview:!ready,
+                });
+
+                setActiveView("new");
+
+                if(!ready){
+                  setShowQuoteModal(false);
+                  return;
+                }
+
+                const freightReady=!data?.freight_requires_review &&
+                  Number(data?.freight?.price_usd||0)>0;
+                setQuoteForm((prev)=>({
+                  ...prev,
                   include_freight:freightReady,
+                  freight_usd:"",
                   document_collection_gtq:"",
                   port_expenses_gtq:"",
                   professional_fees_gtq:"",
                   crane_usd:"",
-                });
+                }));
                 setQuoteCode(makeQuoteCode(crmVin));
-                setCrmOriginalQuoteBridge({
-                  leadId:lead?.id,
-                  vin:crmVin,
-                  name:lead?.full_name||"Cliente",
-                  phone:lead?.phone||"",
-                  contactKey:null,
-                  existingQuote:null,
-                });
-                // V39.9.6.2b · renderizar la PRO original
-                setActiveView("new");
                 setShowQuoteModal(true);
               } catch(err) {
                 console.error("CRM ORIGINAL PRO NEW:",err);
@@ -6330,6 +6507,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 const freightValue=Number(snapshot?.freight?.price_usd||snapshot?.freight?.freight_usd||quote?.totals?.freight_usd||0);
                 setQuoteForm({
                   include_freight: pc.include_freight ?? (freightValue>0),
+                  freight_usd: freightValue > 0 ? String(freightValue) : "",
                   document_collection_gtq: pc.document_collection_gtq ?? pc.document_collection ?? "",
                   port_expenses_gtq: pc.port_expenses_gtq ?? pc.port_expenses ?? "",
                   professional_fees_gtq: pc.professional_fees_gtq ?? pc.professional_fees ?? "",
@@ -6371,6 +6549,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 const freightValue=Number(snapshot?.freight?.price_usd||quote?.totals?.freight_usd||0);
                 setQuoteForm({
                   include_freight:pc.include_freight ?? (freightValue>0),
+                  freight_usd: freightValue > 0 ? String(freightValue) : "",
                   document_collection_gtq:pc.document_collection_gtq ?? pc.document_collection ?? "",
                   port_expenses_gtq:pc.port_expenses_gtq ?? pc.port_expenses ?? "",
                   professional_fees_gtq:pc.professional_fees_gtq ?? pc.professional_fees ?? "",
@@ -7184,7 +7363,16 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               <article className="urgent">
                 <span>Urgentes</span>
                 <strong>
-                  {customsCases.filter((item) => item.traffic_light === "URGENTE").length}
+                  {customsCases.filter((item) => customsOperationalLightV3991891(item).status === "URGENTE").length}
+                </strong>
+              </article>
+              <article className="urgent">
+                <span>Almacenaje crítico</span>
+                <strong>
+                  {customsCases.filter((item) => {
+                    const s = customsStorageInfoV399189(item).status;
+                    return s === "URGENTE" || s === "VENCIDO";
+                  }).length}
                 </strong>
               </article>
             </section>
@@ -7310,7 +7498,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <th>Naviera</th>
                       <th>Estado</th>
                       <th>Progreso</th>
-                      <th>Semáforo</th>
+                      <th>Almacenaje</th>
+                          <th>Semáforo</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -7375,14 +7564,70 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                           </div>
                         </td>
                         <td>
+                          {(() => {
+                            const storage = customsStorageInfoV399189(item);
+                            const icon =
+                              storage.status === "VENCIDO" ? "⛔" :
+                              storage.status === "URGENTE" ? "🔴" :
+                              storage.status === "ATENCION" ? "🟡" :
+                              storage.status === "FINALIZADO" ? "✅" :
+                              storage.active ? "🟢" : "⚪";
+                            // V39.9.18.9.2 · ALMACENAJE VISUAL
+                            const palette =
+                              storage.status === "VENCIDO"
+                                ? { bg: "#fee2e2", fg: "#991b1b", border: "#fecaca" }
+                                : storage.status === "URGENTE"
+                                ? { bg: "#fff1f2", fg: "#be123c", border: "#fecdd3" }
+                                : storage.status === "ATENCION"
+                                ? { bg: "#fef3c7", fg: "#92400e", border: "#fde68a" }
+                                : storage.status === "FINALIZADO"
+                                ? { bg: "#e0f2fe", fg: "#075985", border: "#bae6fd" }
+                                : storage.active
+                                ? { bg: "#dcfce7", fg: "#166534", border: "#bbf7d0" }
+                                : { bg: "#f3f4f6", fg: "#4b5563", border: "#e5e7eb" };
+
+                            return (
+                              <div style={{ minWidth: "178px", lineHeight: 1.2 }}>
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", gap: "5px",
+                                  padding: "5px 9px", borderRadius: "999px",
+                                  background: palette.bg, color: palette.fg,
+                                  border: `1px solid ${palette.border}`,
+                                  fontSize: "11px", fontWeight: 800,
+                                  letterSpacing: ".02em", whiteSpace: "nowrap"
+                                }}>
+                                  {icon} {storage.statusLabel}
+                                </span>
+                                {storage.active ? (
+                                  <div style={{ marginTop: "6px" }}>
+                                    <strong style={{ display: "block", fontSize: "12px", color: "#111827" }}>
+                                      {storage.remainingLabel}
+                                    </strong>
+                                    <small style={{ display: "block", marginTop: "2px", fontSize: "10.5px", color: "#6b7280", fontWeight: 600 }}>
+                                      {storage.depotLabel}
+                                    </small>
+                                    <small style={{ display: "block", marginTop: "2px", fontSize: "10px", color: "#6b7280", whiteSpace: "nowrap" }}>
+                                      Libre hasta {storage.freeUntil}
+                                    </small>
+                                  </div>
+                                ) : (
+                                  <small style={{ display: "block", marginTop: "5px", color: "#6b7280", fontSize: "10.5px" }}>
+                                    Depósito / Vaciado pendiente
+                                  </small>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td>
                           <span
                             className={`customs-light ${String(
-                              item.traffic_light || "EN TIEMPO"
+                              customsOperationalLightV3991891(item).status
                             )
                               .toLowerCase()
                               .replace(/\s+/g, "-")}`}
                           >
-                            {item.traffic_light || "EN TIEMPO"}
+                            {customsOperationalLightV3991891(item).status}
                           </span>
                         </td>
                         <td>
@@ -7954,12 +8199,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       </strong>
                     </article>
                     <article>
-                      <span>Días sin movimiento</span>
-                      <strong>{customsDetail.days_without_movement ?? 0}</strong>
+                      <span>Tiempo sin movimiento</span>
+                      <strong>{customsOperationalLightV3991891(customsDetail).elapsed}</strong>
                     </article>
                     <article>
                       <span>Semáforo</span>
-                      <strong>{customsDetail.traffic_light}</strong>
+                      <strong>{customsOperationalLightV3991891(customsDetail).status}</strong>
                     </article>
                   </div>
 
@@ -8117,6 +8362,106 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   </section>
 
 <section className="customs-detail-section">
+                    <div className="customs-section-title">
+                      <span>🚢</span>
+                      <div>
+                        <strong>Tiempo libre de almacenaje</strong>
+                        <small>
+                          El día de Vaciado cuenta como Día 1 desde las 00:00.
+                        </small>
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const storage = customsStorageInfoV399189(customsDetail);
+                      const statusStyles = {
+                        "EN TIEMPO": { background: "#e8f7ee", border: "#8fd3a8", color: "#166534" },
+                        ATENCION: { background: "#fff8db", border: "#f2cf66", color: "#854d0e" },
+                        URGENTE: { background: "#feecec", border: "#f2a3a3", color: "#991b1b" },
+                        VENCIDO: { background: "#ffe4e6", border: "#fb7185", color: "#9f1239" },
+                        FINALIZADO: { background: "#eef2f7", border: "#b8c2cf", color: "#334155" },
+                        PENDIENTE: { background: "#f8fafc", border: "#cbd5e1", color: "#475569" },
+                      };
+                      const tone = statusStyles[storage.status] || statusStyles.PENDIENTE;
+
+                      return (
+                        <>
+                          <div className="customs-form-grid detail-selects">
+                            <label>
+                              <span>Depósito</span>
+                              <select
+                                value={customsDetail.storage_depot || ""}
+                                onChange={(e) =>
+                                  setCustomsDetail((p) => ({
+                                    ...p,
+                                    storage_depot: e.target.value || null,
+                                  }))
+                                }
+                              >
+                                <option value="">— Seleccionar depósito —</option>
+                                <option value="CHIQUITA">Chiquita · 7 días libres</option>
+                                <option value="SANTO_TOMAS">Santo Tomás · 5 días libres</option>
+                                <option value="ALDEGUA">ALDEGUA · 8 días libres</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Vaciado</span>
+                              <input
+                                type="text"
+                                readOnly
+                                value={
+                                  customsDetail.emptied_at
+                                    ? String(customsDetail.emptied_at).slice(0, 10)
+                                    : "Pendiente"
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <div
+                            style={{
+                              marginTop: "14px",
+                              padding: "16px",
+                              borderRadius: "14px",
+                              border: `1px solid ${tone.border}`,
+                              background: tone.background,
+                              color: tone.color,
+                              display: "grid",
+                              gap: "8px",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                              <strong>{storage.statusLabel}</strong>
+                              <strong>{storage.remainingLabel || "Esperando datos"}</strong>
+                            </div>
+
+                            {storage.active && (
+                              <>
+                                <div>
+                                  <strong>{storage.depotLabel}</strong> · {storage.freeDays} días libres
+                                </div>
+                                <div>
+                                  Libre hasta: <strong>{storage.freeUntil}</strong>
+                                </div>
+                                <small>
+                                  Almacenaje inicia: {storage.storageStarts}
+                                </small>
+                              </>
+                            )}
+
+                            {!storage.active && (
+                              <small>
+                                Seleccioná el depósito y registrá la fecha de Vaciado para iniciar el contador.
+                              </small>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </section>
+
+                  <section className="customs-detail-section">
                     <div className="customs-section-title">
                       <span>01</span>
                       <div>
@@ -10723,6 +11068,58 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     onChange={(e) => setQuoteForm((p) => ({ ...p, professional_fees_gtq: e.target.value }))}
                   />
                 </label>
+                {/* V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN */}
+                <label>
+                  <span>Flete para esta cotización (USD)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={
+                      quoteForm.include_freight
+                        ? String(quoteFreightCalculatedUsd || "0.00")
+                        : "No aplica sin flete"
+                    }
+                    value={quoteForm.freight_usd ?? ""}
+                    disabled={!quoteForm.include_freight || !quoteFreightAvailable}
+                    onChange={(e) =>
+                      setQuoteForm((p) => ({
+                        ...p,
+                        freight_usd: e.target.value,
+                      }))
+                    }
+                  />
+                  {quoteForm.include_freight && quoteFreightAvailable && (
+                    <small style={{ display: "block", marginTop: "5px", color: "#6b7280" }}>
+                      Tarifa calculada: {moneyUSD(quoteFreightCalculatedUsd)}
+                      {quoteFreightHasOverride &&
+                       quoteFreightUsd !== quoteFreightCalculatedUsd
+                        ? " · Ajuste local: " + moneyUSD(quoteFreightUsd)
+                        : " · Sin ajuste"}
+                    </small>
+                  )}
+                  {quoteFreightHasOverride && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setQuoteForm((p) => ({ ...p, freight_usd: "" }))
+                      }
+                      style={{
+                        marginTop: "6px",
+                        border: 0,
+                        padding: 0,
+                        background: "transparent",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Restablecer tarifa calculada
+                    </button>
+                  )}
+                </label>
+
                 <label>
                   <span>Grúa (USD)</span>
                   <input

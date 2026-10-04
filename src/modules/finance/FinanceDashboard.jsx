@@ -56,43 +56,137 @@ export default function FinanceDashboard({ supabase }) {
     opening_cash_gtq: "",
   });
 
+  // V39.9.18.10G.1 · CLOSING PRO PREVIEW UI
+  // Vista segura: el servidor determina apertura y movimientos.
+  const [closingPreview, setClosingPreview] = useState(null);
+  const [closingPreviewError, setClosingPreviewError] = useState("");
+
+  // V39.9.18.10H.1 · FINANCE PRO TOP DASHBOARD
+  // Fuente de verdad de liquidez/banco. Separada del P&L por rango.
+  const [bankDashboard, setBankDashboard] = useState(null);
+  const [bankDashboardError, setBankDashboardError] = useState("");
+
+  // V39.9.18.10H.2.1 · POST-CLOSING CURRENT PERIOD
+  // El dashboard operativo empieza después del último cierre ACTIVE del motor BANK.
+  const [currentPeriodFrom, setCurrentPeriodFrom] = useState(fromDate);
+
   async function load() {
     setLoading(true);
     setError("");
 
     try {
-      const { data: summaryRows, error: summaryError } = await supabase.rpc(
-        "finance_period_summary",
-        {
-          p_from: fromDate,
-          p_to: toDate,
-        }
-      );
-      if (summaryError) throw summaryError;
+      // ============================================================
+      // V39.9.18.10E.3 · BANK DIAGNOSTIC
+      // Diagnóstico autenticado solamente.
+      // NO modifica registros, cierres ni KPIs.
+      // ============================================================
+      const { data: bankDiagnosticRows, error: bankDiagnosticError } =
+        await supabase.rpc("finance_bank_dashboard");
 
-      const { data: reserveRows, error: reserveError } = await supabase.rpc(
-        "finance_operational_reserves_v396223",
-        { p_from: fromDate, p_to: toDate }
-      );
-      if (reserveError) throw reserveError;
+      if (bankDiagnosticError) {
+        setBankDashboard(null);
+        setBankDashboardError(
+          bankDiagnosticError?.message ||
+            "No fue posible cargar el estado bancario."
+        );
+        console.error(
+          "🏦 V39.9.18.10E.3 · BANK DIAGNOSTIC ERROR:",
+          bankDiagnosticError
+        );
+      } else {
+        const bankDiagnostic = Array.isArray(bankDiagnosticRows)
+          ? bankDiagnosticRows[0]
+          : bankDiagnosticRows;
 
-      const { data: caseRows, error: caseError } = await supabase
-        .from("finance_case_overview")
-        .select("*")
-        .gte("notice_date", fromDate)
-        .lte("notice_date", toDate)
-        .order("notice_date", { ascending: false });
+        setBankDashboard(bankDiagnostic || null);
+        setBankDashboardError("");
 
-      if (caseError) throw caseError;
+        console.group("🏦 V39.9.18.10E.3 · BANK DIAGNOSTIC");
+        console.log("Diagnóstico completo:", bankDiagnostic);
 
-      const { data: expenseRows, error: expenseError } = await supabase
-        .from("finance_expenses")
-        .select("*")
-        .gte("expense_date", fromDate)
-        .lte("expense_date", toDate)
-        .order("expense_date", { ascending: false });
+        console.table({
+          "Saldo conciliado": Number(
+            bankDiagnostic?.reconciliation_balance_gtq || 0
+          ),
+          "Cobros expedientes BANK": Number(
+            bankDiagnostic?.case_collections_gtq || 0
+          ),
+          "Cobros declaraciones BANK": Number(
+            bankDiagnostic?.declaration_collections_gtq || 0
+          ),
+          "Total cobros BANK": Number(
+            bankDiagnostic?.total_collections_gtq || 0
+          ),
+          "Gastos generales BANK": Number(
+            bankDiagnostic?.general_expenses_gtq || 0
+          ),
+          "Pagos proveedores BANK": Number(
+            bankDiagnostic?.supplier_payments_gtq || 0
+          ),
+          "Total salidas BANK": Number(
+            bankDiagnostic?.total_bank_outflows_gtq || 0
+          ),
+          "Movimiento neto BANK": Number(
+            bankDiagnostic?.net_bank_movement_gtq || 0
+          ),
+          "Saldo bancario calculado": Number(
+            bankDiagnostic?.calculated_bank_balance_gtq || 0
+          ),
+          "Compromisos pendientes": Number(
+            bankDiagnostic?.pending_commitments_gtq || 0
+          ),
+          "Disponible bancario": Number(
+            bankDiagnostic?.available_bank_gtq || 0
+          ),
+        });
 
-      if (expenseError) throw expenseError;
+        console.groupEnd();
+      }
+
+      // ============================================================
+      // V39.9.18.10F.4 + 10G.1 · NEXT CLOSING PREVIEW
+      // Simulación autenticada del próximo cierre.
+      // NO inserta cierres ni modifica movimientos.
+      // ============================================================
+      const { data: closingPreviewRows, error: closingPreviewRpcError } =
+        await supabase.rpc("finance_next_closing_preview");
+
+      if (closingPreviewRpcError) {
+        setClosingPreview(null);
+        setClosingPreviewError(
+          closingPreviewRpcError?.message ||
+            "No fue posible simular el próximo cierre."
+        );
+        console.error(
+          "🧪 V39.9.18.10F.4 · NEXT CLOSING PREVIEW ERROR:",
+          closingPreviewRpcError
+        );
+      } else {
+        const nextClosingPreview = Array.isArray(closingPreviewRows)
+          ? closingPreviewRows[0]
+          : closingPreviewRows;
+
+        setClosingPreview(nextClosingPreview || null);
+        setClosingPreviewError("");
+
+        console.group("🧪 V39.9.18.10F.4 · NEXT CLOSING PREVIEW");
+        console.log("Preview completo:", nextClosingPreview);
+        console.table({
+          "Modo checkpoint": nextClosingPreview?.checkpoint_mode || "—",
+          "Corte desde": nextClosingPreview?.cutoff_from || "—",
+          "Corte simulado": nextClosingPreview?.cutoff_to || "—",
+          "Saldo inicial BANK": Number(nextClosingPreview?.opening_bank_gtq || 0),
+          "Cantidad total cobros": Number(nextClosingPreview?.total_collections_count || 0),
+          "Total cobros BANK": Number(nextClosingPreview?.total_collections_gtq || 0),
+          "Cantidad total salidas": Number(nextClosingPreview?.total_bank_outflows_count || 0),
+          "Total salidas BANK": Number(nextClosingPreview?.total_bank_outflows_gtq || 0),
+          "Movimiento neto BANK": Number(nextClosingPreview?.net_bank_movement_gtq || 0),
+          "Saldo bancario proyectado": Number(nextClosingPreview?.projected_bank_balance_gtq || 0),
+          "Compromisos pendientes": Number(nextClosingPreview?.pending_commitments_gtq || 0),
+          "Disponible bancario proyectado": Number(nextClosingPreview?.projected_available_bank_gtq || 0),
+        });
+        console.groupEnd();
+      }
 
       const { data: closingRows, error: closingError } = await supabase
         .from("finance_closings")
@@ -101,6 +195,101 @@ export default function FinanceDashboard({ supabase }) {
         .limit(24);
 
       if (closingError) throw closingError;
+
+      // V39.9.18.10H.2.1 · POST-CLOSING CURRENT PERIOD
+      const latestBankClosing = (closingRows || [])
+        .filter((item) => item?.status === "ACTIVE" && item?.bank_cutoff_to)
+        .sort(
+          (a, b) =>
+            new Date(b.bank_cutoff_to).getTime() -
+            new Date(a.bank_cutoff_to).getTime()
+        )[0];
+
+      const nextPeriodFrom = latestBankClosing?.period_end
+        ? (() => {
+            const [y, m, d] = latestBankClosing.period_end.split("-").map(Number);
+            const next = new Date(Date.UTC(y, m - 1, d + 1));
+            return next.toISOString().slice(0, 10);
+          })()
+        : fromDate;
+
+      setCurrentPeriodFrom(nextPeriodFrom);
+
+      const operationalFrom = nextPeriodFrom > fromDate ? nextPeriodFrom : fromDate;
+      const hasOpenAccountingDays = operationalFrom <= toDate;
+
+      let summaryRows = null;
+      let summaryError = null;
+
+      if (hasOpenAccountingDays) {
+        const summaryResponse = await supabase.rpc(
+          "finance_period_summary",
+          {
+            p_from: operationalFrom,
+            p_to: toDate,
+          }
+        );
+        summaryRows = summaryResponse.data;
+        summaryError = summaryResponse.error;
+      } else {
+        summaryRows = {
+          billed_gtq: 0,
+          collected_gtq: 0,
+          receivable_gtq: 0,
+          direct_costs_gtq: 0,
+          gross_profit_gtq: 0,
+          general_expenses_gtq: 0,
+          net_result_gtq: 0,
+          supplier_payments_gtq: 0,
+          duca_accrued_cost_gtq: 0,
+          cash_direct_outflows_gtq: 0,
+          cash_result_gtq: 0,
+        };
+      }
+
+      if (summaryError) throw summaryError;
+
+      const { data: reserveRows, error: reserveError } = await supabase.rpc(
+        "finance_operational_reserves_v396223",
+        { p_from: fromDate, p_to: toDate }
+      );
+      if (reserveError) throw reserveError;
+
+      let caseRows = [];
+      let caseError = null;
+
+      if (hasOpenAccountingDays) {
+        const caseResponse = await supabase
+          .from("finance_case_overview")
+          .select("*")
+          .gte("notice_date", operationalFrom)
+          .lte("notice_date", toDate)
+          .order("notice_date", { ascending: false });
+
+        caseRows = caseResponse.data || [];
+        caseError = caseResponse.error;
+      }
+
+      if (caseError) throw caseError;
+
+      let expenseRows = [];
+      let expenseError = null;
+
+      if (hasOpenAccountingDays) {
+        const expenseResponse = await supabase
+          .from("finance_expenses")
+          .select("*")
+          .gte("expense_date", operationalFrom)
+          .lte("expense_date", toDate)
+          .order("expense_date", { ascending: false });
+
+        expenseRows = expenseResponse.data || [];
+        expenseError = expenseResponse.error;
+      }
+
+      if (expenseError) throw expenseError;
+
+
 
       setSummary(Array.isArray(summaryRows) ? summaryRows[0] : summaryRows);
       setReserves((Array.isArray(reserveRows) ? reserveRows[0] : reserveRows) || {
@@ -244,32 +433,113 @@ export default function FinanceDashboard({ supabase }) {
     }
   }
 
+  // V39.9.18.10G.2 · SAFE CLOSING CONFIRMATION
   async function createClosing() {
     setError("");
     setMessage("");
 
     try {
+      // 1) Preview fresco justo antes de confirmar.
+      const { data: freshPreviewRows, error: freshPreviewError } =
+        await supabase.rpc("finance_next_closing_preview");
+
+      if (freshPreviewError) throw freshPreviewError;
+
+      const freshPreview = Array.isArray(freshPreviewRows)
+        ? freshPreviewRows[0]
+        : freshPreviewRows;
+
+      if (!freshPreview) {
+        throw new Error("No fue posible obtener la simulación bancaria del cierre.");
+      }
+
+      // Refresca también lo visible para que la confirmación y la pantalla
+      // representen el mismo snapshot previo.
+      setClosingPreview(freshPreview);
+      setClosingPreviewError("");
+
+      const money = (value) =>
+        Number(value || 0).toLocaleString("es-GT", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+
+      const checkpointLabel =
+        freshPreview.checkpoint_mode === "PREVIOUS_CLOSING"
+          ? "Último cierre"
+          : freshPreview.checkpoint_mode === "RECONCILIATION"
+            ? "Conciliación bancaria"
+            : freshPreview.checkpoint_mode || "—";
+
+      const confirmed = window.confirm(
+        [
+          "¿Confirmar cierre financiero?",
+          "",
+          "Período: " + fromDate + " → " + toDate,
+          "Tipo: " + closingForm.closing_type,
+          "Punto de partida: " + checkpointLabel,
+          "",
+          "Saldo inicial BANK: Q " + money(freshPreview.opening_bank_gtq),
+          "Entradas BANK: Q " + money(freshPreview.total_collections_gtq),
+          "Salidas BANK: Q " + money(freshPreview.total_bank_outflows_gtq),
+          "Movimiento neto BANK: Q " + money(freshPreview.net_bank_movement_gtq),
+          "",
+          "Saldo bancario a cerrar: Q " +
+            money(freshPreview.projected_bank_balance_gtq),
+          "Compromisos pendientes: Q " +
+            money(freshPreview.pending_commitments_gtq),
+          "Disponible no comprometido: Q " +
+            money(freshPreview.projected_available_bank_gtq),
+          "",
+          "Este cierre creará un nuevo checkpoint financiero.",
+          "Los movimientos incluidos no volverán a consumirse en el siguiente cierre.",
+          "",
+          "¿Deseás continuar?",
+        ].join("\n")
+      );
+
+      if (!confirmed) return;
+
+      // 2) El servidor vuelve a calcular el resultado definitivo bajo
+      //    el bloqueo transaccional de V39.9.18.10F.5.
       const { data, error: rpcError } = await supabase.rpc(
         "create_finance_closing",
         {
           p_type: closingForm.closing_type,
           p_from: fromDate,
           p_to: toDate,
-          p_opening_cash: Number(closingForm.opening_cash_gtq || 0),
+
+          // Compatibilidad con la firma legacy.
+          // El backend 10F.5 IGNORA este valor para gobernar la apertura.
+          p_opening_cash: Number(freshPreview.opening_bank_gtq || 0),
         }
       );
 
       if (rpcError) throw rpcError;
 
       const row = Array.isArray(data) ? data[0] : data;
+
+      if (!row?.id || !row?.closing_code) {
+        throw new Error(
+          "El servidor no devolvió un cierre válido. Revisá antes de volver a intentar."
+        );
+      }
+
       setMessage(
-        `Cierre ${row?.closing_code || ""} generado. Saldo final: ${q(
-          row?.closing_cash_gtq
+        `Cierre ${row.closing_code} generado correctamente. Saldo bancario final: ${q(
+          row.closing_cash_gtq
         )}`
       );
+
+      // 3) load() debe cambiar el preview de RECONCILIATION
+      //    a PREVIOUS_CLOSING después del primer cierre nuevo.
       await load();
     } catch (err) {
-      setError(err?.message || "No fue posible generar el cierre.");
+      console.error("FINANCE SAFE CLOSING ERROR:", err);
+      setError(
+        err?.message ||
+          "No fue posible generar el cierre financiero."
+      );
     }
   }
 
@@ -302,6 +572,15 @@ const cashResult = Number(s.cash_result_gtq || 0);
 
 const availableAfterReserves =
   cashResult - reserveTotal;
+
+  // V39.9.18.10H.1 · FINANCE PRO TOP DASHBOARD
+  const bankOpening = Number(bankDashboard?.reconciliation_balance_gtq || 0);
+  const bankCollections = Number(bankDashboard?.total_collections_gtq || 0);
+  const bankOutflows = Number(bankDashboard?.total_bank_outflows_gtq || 0);
+  const bankNetMovement = Number(bankDashboard?.net_bank_movement_gtq || 0);
+  const bankBalance = Number(bankDashboard?.calculated_bank_balance_gtq || 0);
+  const bankCommitments = Number(bankDashboard?.pending_commitments_gtq || 0);
+  const bankAvailable = Number(bankDashboard?.available_bank_gtq || 0);
 
   console.log("🔥 CONCILIACION FINANZAS:", {
   desde: fromDate,
@@ -339,6 +618,9 @@ const availableAfterReserves =
         </div>
 
         <div className="finance-period">
+          <div style={{width:"100%",fontSize:"10px",fontWeight:900,letterSpacing:".08em",color:"#64748b",marginBottom:"3px"}}>
+            📚 CONSULTA HISTÓRICA / RANGO
+          </div>
           <label>
             <span>Desde</span>
             <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
@@ -354,33 +636,141 @@ const availableAfterReserves =
       {message && <div className="finance-message success">{message}</div>}
       {error && <div className="finance-message error">{error}</div>}
 
-      <section className="finance-kpis">
-        <article><span>Facturado</span><strong>{q(s.billed_gtq)}</strong><small>Acuerdos con clientes</small></article>
-        <article className="cash"><span>Cobrado</span><strong>{q(s.collected_gtq)}</strong><small>Dinero recibido</small></article>
-        <article className="warning"><span>Por cobrar</span><strong>{q(s.receivable_gtq)}</strong><small>Cartera pendiente</small></article>
-        <article><span>Costos directos</span><strong>{q(s.direct_costs_gtq)}</strong><small>Gestiones / terceros</small></article>
-        <article className="profit"><span>Utilidad bruta</span><strong>{q(s.gross_profit_gtq)}</strong><small>Facturado - costos directos</small></article>
-        <article><span>Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong><small>Personal, renta, servicios...</small></article>
-        <article className={Number(s.net_result_gtq || 0) >= 0 ? "profit" : "danger"}><span>Utilidad neta</span><strong>{q(s.net_result_gtq)}</strong><small>Utilidad bruta - gastos generales</small></article>
-        <article><span>Pagos a proveedores</span><strong>{q(s.supplier_payments_gtq || 0)}</strong><small>Salidas reales por cuentas a pagar</small></article>
-        <article className="warning"><span>Apartado operativo</span><strong>{q(reserveTotal)}</strong><small>DUCA usadas + despachos pendientes</small></article>
-        <article className={availableAfterReserves >= 0 ? "profit" : "danger"}>
-          <span>Disponible real</span>
-          <strong>{q(availableAfterReserves)}</strong>
-          <small>Cobrado - salidas reales - gastos - apartado operativo</small>
-        </article>
+      {/* V39.9.18.10H.2.1 · POST-CLOSING CURRENT PERIOD */}
+      <div className="finance-message" style={{ marginBottom: "14px" }}>
+        <strong>📍 Período financiero actual:</strong>{" "}
+        {currentPeriodFrom <= toDate
+          ? `${currentPeriodFrom} → ${toDate}`
+          : "Sin movimientos contables nuevos después del último cierre"}
+        {" · "}
+        <span>Saldo de arrastre BANK: {q(bankBalance)}</span>
+      </div>
+
+      {/* V39.9.18.10H.3 · FINANCE VISUAL SEPARATION */}
+      <section style={{
+        marginBottom:"18px",
+        padding:"18px",
+        border:"1px solid #dbe4ee",
+        borderRadius:"18px",
+        background:"rgba(255,255,255,.58)"
+      }}>
+        <div style={{marginBottom:"12px"}}>
+          <span className="finance-eyebrow">📊 PERÍODO FINANCIERO ACTUAL</span>
+          <h2 style={{margin:"4px 0 2px",fontSize:"20px"}}>Actividad desde el último cierre</h2>
+          <p style={{margin:0,color:"#64748b",fontSize:"12px"}}>
+            Solo muestra actividad contable nueva. Los movimientos incluidos en FIN-2026-0003 permanecen en el historial.
+          </p>
+        </div>
+
+        <section className="finance-kpis">
+          <article>
+            <span>Facturado desde último cierre</span>
+            <strong>{q(s.billed_gtq)}</strong>
+            <small>Facturación nueva del período abierto</small>
+          </article>
+
+          <article className="warning">
+            <span>Por cobrar</span>
+            <strong>{q(s.receivable_gtq)}</strong>
+            <small>Cartera pendiente del período abierto</small>
+          </article>
+
+          <article>
+            <span>Costos desde último cierre</span>
+            <strong>{q(s.direct_costs_gtq)}</strong>
+            <small>Costos nuevos del período abierto</small>
+          </article>
+
+          <article className="profit">
+            <span>Utilidad bruta</span>
+            <strong>{q(s.gross_profit_gtq)}</strong>
+            <small>Facturado nuevo - costos nuevos</small>
+          </article>
+
+          <article>
+            <span>Gastos desde último cierre</span>
+            <strong>{q(s.general_expenses_gtq)}</strong>
+            <small>Gastos nuevos del período abierto</small>
+          </article>
+
+          <article className={Number(s.net_result_gtq || 0) >= 0 ? "profit" : "danger"}>
+            <span>Utilidad neta desde último cierre</span>
+            <strong>{q(s.net_result_gtq)}</strong>
+            <small>Resultado del período abierto</small>
+          </article>
+        </section>
       </section>
+
+      <section style={{
+        marginBottom:"18px",
+        padding:"18px",
+        border:"1px solid #bfdbfe",
+        borderRadius:"18px",
+        background:"linear-gradient(135deg, rgba(239,246,255,.9), rgba(255,255,255,.72))"
+      }}>
+        <div style={{marginBottom:"12px"}}>
+          <span className="finance-eyebrow">🏦 ESTADO BANCARIO</span>
+          <h2 style={{margin:"4px 0 2px",fontSize:"20px"}}>Banco desde el último checkpoint</h2>
+          <p style={{margin:0,color:"#64748b",fontSize:"12px"}}>
+            El saldo de arrastre ya contiene todo lo ocurrido antes del último cierre. Aquí solo se suman o restan movimientos BANK nuevos.
+          </p>
+        </div>
+
+        <section className="finance-kpis">
+          <article className="cash">
+            <span>Entradas BANK nuevas</span>
+            <strong>{q(bankCollections)}</strong>
+            <small>Cobros posteriores al checkpoint</small>
+          </article>
+
+          <article>
+            <span>Salidas BANK nuevas</span>
+            <strong>{q(bankOutflows)}</strong>
+            <small>Gastos y pagos posteriores al checkpoint</small>
+          </article>
+
+          <article className={bankNetMovement >= 0 ? "profit" : "danger"}>
+            <span>Movimiento neto BANK</span>
+            <strong>{q(bankNetMovement)}</strong>
+            <small>Entradas nuevas - salidas nuevas</small>
+          </article>
+
+          <article className="cash">
+            <span>Saldo bancario actual</span>
+            <strong>{q(bankBalance)}</strong>
+            <small>Saldo de arrastre + movimiento BANK nuevo</small>
+          </article>
+
+          <article className="warning">
+            <span>Compromisos pendientes</span>
+            <strong>{q(bankCommitments)}</strong>
+            <small>Obligaciones no pagadas; todavía no reducen el banco</small>
+          </article>
+
+          <article className={bankAvailable >= 0 ? "profit" : "danger"}>
+            <span>Disponible no comprometido</span>
+            <strong>{q(bankAvailable)}</strong>
+            <small>Saldo bancario - compromisos pendientes</small>
+          </article>
+        </section>
+      </section>
+
+      {bankDashboardError && (
+        <div className="finance-message error">
+          Estado bancario no disponible: {bankDashboardError}
+        </div>
+      )}
 
       <section className="finance-reserve-board">
         <div className="finance-reserve-head">
           <div>
-            <span className="finance-eyebrow">OBLIGACIONES Y DINERO APARTADO</span>
-            <h2>Apartados operativos y deuda pendiente</h2>
-            <p>La deuda total muestra todo lo que todavía debemos a proveedores. El apartado operativo solo reserva lo ya consumido por gestiones activas y evita confundir deuda futura con dinero que debe quedar inmovilizado hoy.</p>
+            <span className="finance-eyebrow">DETALLE OPERATIVO DE OBLIGACIONES</span>
+            <h2>Compromisos y servicios pendientes</h2>
+            <p>El saldo bancario y el disponible superior usan el nuevo motor BANK. Este bloque conserva el desglose operativo para identificar de dónde provienen las obligaciones pendientes.</p>
           </div>
           <div className="finance-provider-debt-total">
-            <small>DEUDA TOTAL PROVEEDORES</small>
-            <strong>{q(providerDebtTotal)}</strong>
+            <small>COMPROMISOS PENDIENTES</small>
+            <strong>{q(bankCommitments)}</strong>
           </div>
         </div>
 
@@ -404,9 +794,9 @@ const availableAfterReserves =
           </article>
 
           <article>
-            <span>🔒 Apartado operativo total</span>
-            <strong>{q(reserveTotal)}</strong>
-            <small>Dinero comprometido por servicios ya consumidos</small>
+            <span>🔒 Compromisos pendientes</span>
+            <strong>{q(bankCommitments)}</strong>
+            <small>Total pendiente usado por el motor bancario</small>
           </article>
 
         </div>
@@ -543,39 +933,179 @@ const availableAfterReserves =
         onChanged={load}
       />
 
+      {/* V39.9.18.10G.1 · CLOSING PRO PREVIEW UI */}
       <section className="finance-closing-section">
         <div className="finance-closing-builder">
           <div>
-            <span>CIERRE DE CAJA</span>
-            <h2>Generar cierre</h2>
-            <p>El saldo final podrá utilizarse como saldo inicial del siguiente período.</p>
+            <span>CIERRE FINANCIERO PRO</span>
+            <h2>Próximo cierre bancario</h2>
+            <p>
+              El saldo inicial y los movimientos BANK son determinados por el servidor
+              desde el último checkpoint confiable. Los compromisos se muestran aparte:
+              no reducen el saldo bancario hasta que realmente se pagan.
+            </p>
           </div>
 
           <div className="closing-controls">
-            <label><span>Tipo</span><select value={closingForm.closing_type} onChange={(e)=>setClosingForm((p)=>({...p,closing_type:e.target.value}))}><option value="QUINCENAL">Quincenal</option><option value="MENSUAL">Mensual</option></select></label>
-            <label><span>Saldo inicial (Q)</span><input type="number" step="0.01" value={closingForm.opening_cash_gtq} onChange={(e)=>setClosingForm((p)=>({...p,opening_cash_gtq:e.target.value}))}/></label>
-            <button onClick={createClosing}>Generar cierre →</button>
+            <label>
+              <span>Tipo</span>
+              <select
+                value={closingForm.closing_type}
+                onChange={(e) =>
+                  setClosingForm((p) => ({
+                    ...p,
+                    closing_type: e.target.value,
+                  }))
+                }
+              >
+                <option value="QUINCENAL">Quincenal</option>
+                <option value="MENSUAL">Mensual</option>
+              </select>
+            </label>
+
+            <div>
+              <span style={{display:"block",fontSize:"12px",fontWeight:700,marginBottom:"6px"}}>
+                Punto de partida
+              </span>
+              <strong>
+                {closingPreview?.checkpoint_mode === "PREVIOUS_CLOSING"
+                  ? "Último cierre"
+                  : closingPreview?.checkpoint_mode === "RECONCILIATION"
+                    ? "Conciliación bancaria"
+                    : "—"}
+              </strong>
+            </div>
+
+            <button
+              type="button"
+              onClick={createClosing}
+              disabled={loading || !closingPreview || Boolean(closingPreviewError)}
+              title={
+                closingPreviewError
+                  ? "El preview bancario presenta un error."
+                  : !closingPreview
+                    ? "Esperando simulación bancaria."
+                    : "Revisar y confirmar el cierre financiero."
+              }
+            >
+              {loading ? "Procesando…" : "Generar cierre →"}
+            </button>
           </div>
 
-          <div className="closing-preview">
-            <div><span>Saldo inicial</span><strong>{q(closingForm.opening_cash_gtq)}</strong></div>
-            <div><span>+ Cobrado</span><strong>{q(s.collected_gtq)}</strong></div>
-            <div><span>- Salidas operativas reales</span><strong>{q(s.cash_direct_outflows_gtq ?? s.direct_costs_gtq)}</strong></div>
-            <div><span className="closing-subnote">Incluye pagos a proveedores: {q(s.supplier_payments_gtq || 0)}</span><strong></strong></div>
-            <div><span>- Gastos generales</span><strong>{q(s.general_expenses_gtq)}</strong></div>
-            <div><span>Saldo de caja estimado</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number((s.cash_direct_outflows_gtq ?? s.direct_costs_gtq) || 0) - Number(s.general_expenses_gtq || 0))}</strong></div>
-            <div><span>- Apartado operativo pendiente</span><strong>{q(reserveTotal)}</strong></div>
-            <div className="closing-total"><span>Disponible no comprometido</span><strong>{q(Number(closingForm.opening_cash_gtq || 0) + Number(s.collected_gtq || 0) - Number((s.cash_direct_outflows_gtq ?? s.direct_costs_gtq) || 0) - Number(s.general_expenses_gtq || 0) - reserveTotal)}</strong></div>
-          </div>
+          {closingPreviewError && (
+            <div className="finance-message error">
+              No se puede habilitar el cierre: {closingPreviewError}
+            </div>
+          )}
+
+          {!closingPreview && !closingPreviewError && (
+            <div className="finance-empty">
+              Calculando simulación bancaria…
+            </div>
+          )}
+
+          {closingPreview && (
+            <div className="closing-preview">
+              <div>
+                <span>🏦 Saldo inicial BANK</span>
+                <strong>{q(closingPreview.opening_bank_gtq)}</strong>
+              </div>
+
+              <div>
+                <span>+ Cobros BANK</span>
+                <strong>{q(closingPreview.total_collections_gtq)}</strong>
+              </div>
+
+              <div>
+                <span className="closing-subnote">
+                  {Number(closingPreview.total_collections_count || 0)} movimiento(s):
+                  {" "}
+                  {Number(closingPreview.case_collections_count || 0)} expediente(s) +
+                  {" "}
+                  {Number(closingPreview.declaration_collections_count || 0)} declaración(es)
+                </span>
+                <strong></strong>
+              </div>
+
+              <div>
+                <span>- Salidas BANK</span>
+                <strong>{q(closingPreview.total_bank_outflows_gtq)}</strong>
+              </div>
+
+              <div>
+                <span className="closing-subnote">
+                  {Number(closingPreview.total_bank_outflows_count || 0)} movimiento(s):
+                  {" "}
+                  {Number(closingPreview.general_expenses_count || 0)} gasto(s) +
+                  {" "}
+                  {Number(closingPreview.supplier_payments_count || 0)} pago(s) a proveedores
+                </span>
+                <strong></strong>
+              </div>
+
+              <div>
+                <span>Movimiento neto BANK</span>
+                <strong>{q(closingPreview.net_bank_movement_gtq)}</strong>
+              </div>
+
+              <div>
+                <span>Saldo bancario proyectado</span>
+                <strong>{q(closingPreview.projected_bank_balance_gtq)}</strong>
+              </div>
+
+              <div>
+                <span>- Compromisos pendientes</span>
+                <strong>{q(closingPreview.pending_commitments_gtq)}</strong>
+              </div>
+
+              <div className="closing-total">
+                <span>Disponible no comprometido</span>
+                <strong>{q(closingPreview.projected_available_bank_gtq)}</strong>
+              </div>
+
+              <div>
+                <span className="closing-subnote">
+                  Corte técnico desde: {closingPreview.cutoff_from
+                    ? new Date(closingPreview.cutoff_from).toLocaleString("es-GT")
+                    : "—"}
+                </span>
+                <strong></strong>
+              </div>
+
+              <div>
+                <span className="closing-subnote">
+                  Simulación al: {closingPreview.cutoff_to
+                    ? new Date(closingPreview.cutoff_to).toLocaleString("es-GT")
+                    : "—"}
+                </span>
+                <strong></strong>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="finance-closing-history">
-          <div className="finance-panel-head"><div><span>HISTORIAL</span><h2>Cierres realizados</h2></div></div>
-          {closings.length === 0 && <div className="finance-empty">Todavía no hay cierres.</div>}
+          <div className="finance-panel-head">
+            <div><span>HISTORIAL</span><h2>Cierres realizados</h2></div>
+          </div>
+
+          {closings.length === 0 && (
+            <div className="finance-empty">Todavía no hay cierres.</div>
+          )}
+
           {closings.map((item) => (
             <article key={item.id}>
-              <div><strong>{item.closing_code}</strong><span>{item.closing_type} · {item.period_start} → {item.period_end}</span></div>
-              <div><small>SALDO FINAL</small><strong>{q(item.closing_cash_gtq)}</strong></div>
+              <div>
+                <strong>{item.closing_code}</strong>
+                <span>
+                  {item.closing_type} · {item.period_start} → {item.period_end}
+                  {item.status === "VOID" ? " · ANULADO" : ""}
+                </span>
+              </div>
+              <div>
+                <small>SALDO FINAL</small>
+                <strong>{q(item.closing_cash_gtq)}</strong>
+              </div>
             </article>
           ))}
         </div>

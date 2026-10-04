@@ -43,6 +43,7 @@ import InternalOperationsDashboard from "./modules/internal-dashboard/InternalOp
 import CrmCommercialPage from "./modules/crm/CrmCommercialPage.jsx";
 import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.jsx";
 import "./modules/internal-mobile-nav/internal-mobile-nav.css";
+import "./modules/layout/module-splash-pro.css";
 import ConfigurationProPanels from "./modules/settings/ConfigurationProPanels.jsx";
 import WhatsAppCoexistencePanel from "./modules/settings/WhatsAppCoexistencePanel.jsx";
 import "./modules/settings/configuration-pro-panels.css";
@@ -702,8 +703,16 @@ function customsStorageInfoV399189(detail) {
   // Guatemala es UTC-6 todo el año. 06:00 UTC = 00:00 Guatemala.
   const storageStartsMs = Date.UTC(y, m - 1, d, 6, 0, 0) + depot.freeDays * 86400000;
   const freeUntilMs = storageStartsMs - 1000;
-  const nowMs = Date.now();
-  const remainingMs = storageStartsMs - nowMs;
+  // V39.9.18.12 · STORAGE OVERAGE AFTER PORT EXIT
+  // Si ya salió del puerto, congelamos el cálculo en la fecha/hora real de salida.
+  // Así podemos conservar el resultado final del tiempo libre y mostrar el exceso real.
+  const portExitMs = detail?.port_exit_at
+    ? new Date(detail.port_exit_at).getTime()
+    : null;
+  const calculationMs =
+    Number.isFinite(portExitMs) && portExitMs > 0 ? portExitMs : Date.now();
+
+  const remainingMs = storageStartsMs - calculationMs;
   const remainingHours = remainingMs / 3600000;
 
   let status = "EN TIEMPO";
@@ -716,6 +725,12 @@ function customsStorageInfoV399189(detail) {
   const totalHours = Math.floor(absMs / 3600000);
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
+
+  // Para almacenaje vencido reportamos días calendario iniciados de exceso.
+  // Ej.: 1 hora vencida = 1 día excedido; 25 horas = 2 días excedidos.
+  const exceededDays = remainingMs < 0
+    ? Math.max(1, Math.ceil(Math.abs(remainingMs) / 86400000))
+    : 0;
 
   const formatGT = (ms) =>
     new Intl.DateTimeFormat("es-GT", {
@@ -741,7 +756,9 @@ function customsStorageInfoV399189(detail) {
     storageStarts: formatGT(storageStartsMs),
     remainingLabel:
       status === "FINALIZADO"
-        ? "Contador detenido por salida del puerto"
+        ? remainingMs < 0
+          ? `${exceededDays} día${exceededDays === 1 ? "" : "s"} excedido${exceededDays === 1 ? "" : "s"} de almacenaje`
+          : "Salió del puerto dentro del tiempo libre"
         : remainingMs > 0
           ? `${days}d ${hours}h restantes`
           : `${days}d ${hours}h excedidos`,
@@ -862,6 +879,105 @@ function getVehicleDisplayVersion(vehicle, sat) {
 
   return satVersion || "Versión no especificada";
 }
+
+// V39.9.18.11 · MODULE SPLASH PRO
+const MODULE_SPLASH_META_V3991811 = {
+  dashboard: { icon: "▦", label: "Dashboard", eyebrow: "CENTRO DE OPERACIONES" },
+  new: { icon: "＋", label: "Nueva Cotización", eyebrow: "COTIZADOR INTELIGENTE" },
+  quotations: { icon: "▤", label: "Cotizaciones", eyebrow: "GESTIÓN COMERCIAL" },
+  branding: { icon: "🎨", label: "Mi Marca", eyebrow: "IDENTIDAD DE OFICINA" },
+  "performance-bonuses": { icon: "📊", label: "Rendimiento & Bonos", eyebrow: "DESEMPEÑO DEL EQUIPO" },
+  organizations: { icon: "🏢", label: "Oficinas / Clientes", eyebrow: "ADMINISTRACIÓN SAAS" },
+  subscriptions: { icon: "♙", label: "Usuarios y Suscripciones", eyebrow: "ADMINISTRACIÓN DEL SISTEMA" },
+  "internal-users": { icon: "♟", label: "Usuarios Internos", eyebrow: "GESTIÓN DE ACCESOS" },
+  "office-users": { icon: "👥", label: "Usuarios de Oficina", eyebrow: "GESTIÓN DE EQUIPO" },
+  "portal-clients": { icon: "👥", label: "Clientes del Portal", eyebrow: "PORTAL DEL CLIENTE" },
+  importers: { icon: "🚢", label: "Importadores", eyebrow: "GESTIÓN DE IMPORTADORES" },
+  "crm-commercial": { icon: "💼", label: "CRM Comercial", eyebrow: "GESTIÓN COMERCIAL" },
+  prospects: { icon: "◎", label: "Prospectos", eyebrow: "OPORTUNIDADES COMERCIALES" },
+  imports: { icon: "🚢", label: "Gestiones de Importación", eyebrow: "OPERACIÓN INTERNACIONAL" },
+  customs: { icon: "▣", label: "Control Aduanal", eyebrow: "OPERACIÓN ADUANAL" },
+  declarations: { icon: "📄", label: "Declaraciones", eyebrow: "GESTIÓN ADUANERA" },
+  correlatives: { icon: "📑", label: "Correlativos DUCA", eyebrow: "CONTROL DOCUMENTAL" },
+  finance: { icon: "💰", label: "Finanzas", eyebrow: "CONTROL FINANCIERO" },
+  "admin-center": { icon: "🛠", label: "Administración", eyebrow: "CENTRO ADMINISTRATIVO" },
+  settings: { icon: "⚙", label: "Configuración", eyebrow: "CONFIGURACIÓN DEL SISTEMA" },
+  "importer-dashboard": { icon: "▦", label: "Dashboard", eyebrow: "PORTAL IMPORTADOR" },
+  "importer-customs-records": { icon: "🛃", label: "Mis Gestiones Aduanales", eyebrow: "PORTAL IMPORTADOR" },
+  "importer-pro-team": { icon: "👥", label: "Mi Equipo", eyebrow: "IMPORTADOR PRO" },
+  "importer-pro-expenses": { icon: "💰", label: "Costos PRO", eyebrow: "IMPORTADOR PRO" },
+  "importer-pro-analytics": { icon: "📊", label: "Estadísticas", eyebrow: "IMPORTADOR PRO" },
+  "importer-pro-reminders": { icon: "🔔", label: "Agenda PRO", eyebrow: "IMPORTADOR PRO" },
+  "importer-pro-files": { icon: "📁", label: "Documentos & Fotos", eyebrow: "IMPORTADOR PRO" },
+  "commercial-quote": { icon: "🧾", label: "Cotización Comercial", eyebrow: "GESTIÓN COMERCIAL" },
+};
+
+function ModuleSplashProV3991811({ activeView, logo, brandName }) {
+  // V39.9.18.11.2 · DYNAMIC SPLASH ROTATION
+  const [visible, setVisible] = useState(false);
+  const [renderedView, setRenderedView] = useState(activeView);
+  const [splashStyle, setSplashStyle] = useState("techno");
+  const splashSequenceRef = useRef(0);
+  const firstRunRef = useRef(true);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const duration = reducedMotion ? 180 : 1650;
+
+    setRenderedView(activeView);
+
+    const styles = ["techno", "premium", "hybrid"];
+    const nextStyle = styles[splashSequenceRef.current % styles.length];
+    splashSequenceRef.current += 1;
+    setSplashStyle(nextStyle);
+
+    setVisible(true);
+
+    const timer = window.setTimeout(() => setVisible(false), duration);
+    firstRunRef.current = false;
+
+    return () => window.clearTimeout(timer);
+  }, [activeView]);
+
+  const meta =
+    MODULE_SPLASH_META_V3991811[renderedView] ||
+    { icon: "◆", label: "E&R Solutions", eyebrow: "SISTEMA OPERATIVO" };
+
+  return (
+    <div
+      className={`module-splash-pro-v3991811 splash-style-${splashStyle} ${visible ? "is-visible" : ""}`}
+      aria-hidden={!visible}
+    >
+      {/* V39.9.18.11.1 · MODULE SPLASH CINEMATIC */}
+      {/* V39.9.18.11.2 · DYNAMIC SPLASH ROTATION · TECHNO / PREMIUM / HYBRID */}
+      <div className="module-splash-premium-beam" />
+      <div className="module-splash-hybrid-grid" />
+      <div className="module-splash-pro-orbit orbit-one" />
+      <div className="module-splash-pro-orbit orbit-two" />
+      <div className="module-splash-pro-particles" aria-hidden="true">
+        <i /><i /><i /><i /><i /><i />
+      </div>
+      <div className="module-splash-pro-glow" />
+      <div className="module-splash-pro-content">
+        <div className="module-splash-pro-brand">
+          <img src={logo} alt="" />
+          <span>{brandName || "E&R Solutions"}</span>
+        </div>
+
+        <div className="module-splash-pro-divider" />
+
+        <div className="module-splash-pro-icon" aria-hidden="true">{meta.icon}</div>
+        <div className="module-splash-pro-eyebrow">{meta.eyebrow}</div>
+        <h2>{meta.label}</h2>
+
+        <div className="module-splash-pro-loader" aria-hidden="true">
+          <span />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   // V22.1 · Landing pública + cotizador + sistema interno
   // Todas las Edge Functions reciben explícitamente el JWT de la sesión activa.
@@ -6105,6 +6221,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
   return (
     <div className={`app ${isStandaloneImporter ? "app-importer" : "app-internal"}`}>
+      {/* V39.9.18.11 · MODULE SPLASH PRO */}
+      <ModuleSplashProV3991811
+        activeView={activeView}
+        logo={eyrSolutionsLogo}
+        brandName="E&R Solutions"
+      />
       <aside className="sidebar">
         <div className="brand brand-v35 brand-full-logo">
           {tenantLogoUrl ? (

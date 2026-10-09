@@ -4479,6 +4479,18 @@ async function openCustomsDetail(item) {
         backgroundColor: "#f4f7fb",
         useCORS: true,
         logging: false,
+        // V39.9.18.16: la captura usa un viewport fijo de escritorio.
+        // Evita que media queries del modal alteren la hoja al clonar el DOM.
+        windowWidth: 1440,
+        windowHeight: Math.max(1600, quoteRef.current.scrollHeight),
+        onclone: (clonedDocument) => {
+          const clonedQuote = clonedDocument.querySelector('.quote-preview.tenant-quote-preview');
+          if (clonedQuote) {
+            clonedQuote.style.setProperty('width', '1040px', 'important');
+            clonedQuote.style.setProperty('min-width', '1040px', 'important');
+            clonedQuote.style.setProperty('max-width', '1040px', 'important');
+          }
+        },
       });
 
       const link = document.createElement("a");
@@ -4501,11 +4513,27 @@ async function openCustomsDetail(item) {
           `${[vehicle?.model_year, vehicle?.make, vehicle?.model, vehicle?.trim].filter(Boolean).join(" ")} ` +
           `(VIN ${vehicle?.vin || "—"}). La imagen ya fue generada; adjuntala en este chat para enviarla al cliente.`;
 
-        window.open(buildWhatsAppUrl(recipientPhone, message), "_blank", "noopener,noreferrer");
+        // EYR CRM GUARDAR PARA ENVIAR V39.9.18.17
+        // Solo CRM: descarga el PNG sin abrir una ventana externa.
+        // Fuera del CRM se conserva el comportamiento original de WhatsApp.
         if (crmOriginalQuoteBridge?.leadId) {
+          // V39.9.18.17.1: conservar la confirmación al cerrar PRO sin abrir WhatsApp.
           setCrmOriginalQuoteBridge((prev) =>
             prev ? { ...prev, whatsappOpened: true } : prev
           );
+          const notice = document.createElement("div");
+          notice.setAttribute("role", "status");
+          notice.textContent = "Cotización guardada y lista para enviar. PNG descargado.";
+          Object.assign(notice.style, {
+            position: "fixed", bottom: "24px", right: "24px", zIndex: "2147483647",
+            background: "#0b6840", color: "#fff", padding: "14px 18px",
+            borderRadius: "12px", boxShadow: "0 10px 28px rgba(0,0,0,.2)",
+            fontSize: "14px", fontWeight: "700", maxWidth: "360px"
+          });
+          document.body.appendChild(notice);
+          setTimeout(() => notice.remove(), 4500);
+        } else {
+          window.open(buildWhatsAppUrl(recipientPhone, message), "_blank", "noopener,noreferrer");
         }
 
 
@@ -4671,6 +4699,18 @@ async function openCustomsDetail(item) {
         backgroundColor: "#f4f7fb",
         useCORS: true,
         logging: false,
+        // V39.9.18.16: la captura usa un viewport fijo de escritorio.
+        // Evita que media queries del modal alteren la hoja al clonar el DOM.
+        windowWidth: 1440,
+        windowHeight: Math.max(1600, quoteRef.current.scrollHeight),
+        onclone: (clonedDocument) => {
+          const clonedQuote = clonedDocument.querySelector('.quote-preview.tenant-quote-preview');
+          if (clonedQuote) {
+            clonedQuote.style.setProperty('width', '1040px', 'important');
+            clonedQuote.style.setProperty('min-width', '1040px', 'important');
+            clonedQuote.style.setProperty('max-width', '1040px', 'important');
+          }
+        },
       });
 
       const link = document.createElement("a");
@@ -11619,7 +11659,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   {(quoteRecipient?.phone || crmOriginalQuoteBridge?.phone) && (
                     <button className="whatsapp-action quote-whatsapp-send" onClick={downloadQuoteAndOpenWhatsApp} disabled={quoteGenerating}>
                       <span className="whatsapp-icon">💬</span>
-                      {quoteGenerating ? "Generando..." : "Descargar y abrir WhatsApp"}
+                      {quoteGenerating ? "Generando..." : crmOriginalQuoteBridge?.leadId ? "Guardar para enviar" : "Descargar y abrir WhatsApp"}
                     </button>
                   )}
                   <button className="primary-button" onClick={downloadQuoteImage} disabled={quoteGenerating}>

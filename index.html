@@ -30,7 +30,8 @@
       href="/branding/apple-touch-icon.png"
     />
 
-    <link rel="manifest" href="/site.webmanifest" />
+    <link id="app-manifest" rel="manifest" href="/site.webmanifest" />
+    <meta id="app-apple-title" name="apple-mobile-web-app-title" content="E&R Solutions" />
 
     <meta property="og:title" content="E&R Solutions | Gestión Aduanal" />
     <meta
@@ -46,6 +47,15 @@
     <script>
       (() => {
         const EYR_TITLE = "E&R Solutions | Gestión Aduanal";
+        const USA_ROUTE = /^\/usa(?:\/|$)/;
+        const IS_USA = USA_ROUTE.test(window.location.pathname);
+        if (IS_USA) {
+          const manifest = document.getElementById("app-manifest");
+          if (manifest) manifest.href = "/usa.webmanifest";
+          const appleTitle = document.getElementById("app-apple-title");
+          if (appleTitle) appleTitle.content = "E&R USA";
+          document.title = "E&R USA | Recepción de Vehículos";
+        }
         const EYR_FAVICON = "/branding/favicon-32.png";
         const EYR_SHORTCUT = "/favicon.ico";
         const EYR_APPLE = "/branding/apple-touch-icon.png";
@@ -305,6 +315,11 @@
         }
 
         function updateBrowserBrand() {
+          if (IS_USA) {
+            document.title = "E&R USA | Recepción de Vehículos";
+            restoreEyrIcons();
+            return;
+          }
           const route = getRouteType();
           const brandName = getCurrentBrandName();
 

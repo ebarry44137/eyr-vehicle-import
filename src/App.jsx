@@ -37,6 +37,8 @@ import { buildQuoteCode } from "./utils/quoteCode";
 import OfficePortalClientsPage from "./modules/office-portal-clients/OfficePortalClientsPage.jsx";
 import ImportersPage from "./modules/importers/ImportersPage.jsx";
 import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
+// EYR-USA-V39.9.19.1
+import UsaYardPage from "./modules/usa-yard/UsaYardPage.jsx";
 import "./modules/customs/portal-customs-requests-v39621.css";
 import CustomerSupportPage from "./modules/customer-support/CustomerSupportPage.jsx";
 import InternalOperationsDashboard from "./modules/internal-dashboard/InternalOperationsDashboard.jsx";
@@ -6436,7 +6438,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
           {canUseTenantImports && (
           <button
-            className={`nav-item ${isStandaloneImporter ? (activeView === "importer-customs-records" ? "active" : "") : (activeView === "imports" ? "active" : "")}`}
+            className={`nav-item ${isStandaloneImporter ? (activeView === "importer-customs-records" ? "active" : "") : (["imports","usa-yard"].includes(activeView) ? "active" : "")}`}
             onClick={isStandaloneImporter ? () => setActiveView("importer-customs-records") : openImportManagementsView}
           >
             <span>{isStandaloneImporter ? "🛃" : "🚢"}</span>
@@ -7181,12 +7183,15 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               </div>
             </section>
           </section>
+        ) : activeView === "usa-yard" ? (
+          <section className="imports-module"><button className="secondary-button" onClick={openImportManagementsView}>← Volver a Gestiones de Importación</button><UsaYardPage /></section>
         ) : activeView === "imports" ? (
           <section className="imports-module">
             <header className="topbar imports-topbar">
               <div>
                 <span className="eyebrow">OPERACIÓN INTERNACIONAL</span>
                 <h1>Gestiones de Importación</h1>
+                <button type="button" className="secondary-button" onClick={() => setActiveView("usa-yard")}>🇺🇸 Recepción USA</button>
                 <p>Seguimiento de clientes que confirmaron su importación con E&amp;R.</p>
               </div>
               <div className="imports-count-card">

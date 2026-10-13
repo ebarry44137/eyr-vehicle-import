@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./internal-users.css";
+import UsaYardAdminPanel from "../usa-yard/UsaYardAdminPanel";
 
 export default function InternalUsersPage({
   invokeFunction,
@@ -365,6 +366,8 @@ export default function InternalUsersPage({
           </table>
         </div>
       </section>
+
+      <UsaYardAdminPanel />
 
       {showCreate && (
         <div

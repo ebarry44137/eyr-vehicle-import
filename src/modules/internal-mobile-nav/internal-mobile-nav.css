@@ -23,3 +23,13 @@
   .app:has(.customs-detail-modal)~.imn-dock,.app:has(.customs-detail-modal) .imn-dock{display:none!important}
 }
 @media(max-width:390px){.imn-dock{left:6px;right:6px}.imn-more-sheet{left:7px;right:7px}.imn-more-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V39.9.19.5.4: el dock y el panel se renderizan en document.body. */
+@media (max-width:900px){
+ body > .imn-dock{z-index:2147483000!important;pointer-events:auto!important}
+ body > .imn-backdrop{z-index:2147483001!important}
+ body > .imn-more-sheet{z-index:2147483002!important}
+ body > .imn-more-sheet.open{visibility:visible!important}
+ body > .imn-more-sheet:not(.open){visibility:hidden!important}
+ body > .imn-dock .imn-item{touch-action:manipulation!important}
+}

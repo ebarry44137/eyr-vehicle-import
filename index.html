@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>E&amp;R Solutions | Gestión Aduanal</title>
+    <title>E&amp;R Solutions | GestiÃ³n Aduanal</title>
 
     <meta
       name="description"
-      content="Cotizador inteligente y plataforma de gestión aduanal."
+      content="Cotizador inteligente y plataforma de gestiÃ³n aduanal."
     />
     <meta name="theme-color" content="#082f57" />
 
@@ -33,10 +33,10 @@
     <link id="app-manifest" rel="manifest" href="/site.webmanifest" />
     <meta id="app-apple-title" name="apple-mobile-web-app-title" content="E&R Solutions" />
 
-    <meta property="og:title" content="E&R Solutions | Gestión Aduanal" />
+    <meta property="og:title" content="E&R Solutions | GestiÃ³n Aduanal" />
     <meta
       property="og:description"
-      content="Cotizador inteligente y plataforma de gestión aduanal."
+      content="Cotizador inteligente y plataforma de gestiÃ³n aduanal."
     />
     <meta property="og:type" content="website" />
   </head>
@@ -46,7 +46,7 @@
 
     <script>
       (() => {
-        const EYR_TITLE = "E&R Solutions | Gestión Aduanal";
+        const EYR_TITLE = "E&R Solutions | GestiÃ³n Aduanal";
         const USA_ROUTE = /^\/usa(?:\/|$)/;
         const IS_USA = USA_ROUTE.test(window.location.pathname);
         if (IS_USA) {
@@ -54,7 +54,7 @@
           if (manifest) manifest.href = "/usa.webmanifest";
           const appleTitle = document.getElementById("app-apple-title");
           if (appleTitle) appleTitle.content = "E&R USA";
-          document.title = "E&R USA | Recepción de Vehículos";
+          document.title = "E&R USA | RecepciÃ³n de VehÃ­culos";
         }
         const EYR_FAVICON = "/branding/favicon-32.png";
         const EYR_SHORTCUT = "/favicon.ico";
@@ -99,7 +99,7 @@
           /*
            * White Label antes del login.
            * La pantalla contiene:
-           *   "Bienvenido a Trámites Shaddai"
+           *   "Bienvenido a TrÃ¡mites Shaddai"
            */
           const headings = Array.from(
             document.querySelectorAll("h1, h2, h3")
@@ -252,7 +252,7 @@
 
           /*
            * 3. Login White Label:
-           * buscamos imágenes dentro de las zonas de autenticación.
+           * buscamos imÃ¡genes dentro de las zonas de autenticaciÃ³n.
            */
           const authLogo = document.querySelector(
             [
@@ -272,8 +272,8 @@
           }
 
           /*
-           * 4. Último fallback:
-           * primera imagen visible del login, pero únicamente en /o/ o /portal.
+           * 4. Ãšltimo fallback:
+           * primera imagen visible del login, pero Ãºnicamente en /o/ o /portal.
            */
           if (["office", "portal"].includes(getRouteType())) {
             const nonEyrImage = visibleImages.find((img) => {
@@ -316,7 +316,7 @@
 
         function updateBrowserBrand() {
           if (IS_USA) {
-            document.title = "E&R USA | Recepción de Vehículos";
+            document.title = "E&R USA | RecepciÃ³n de VehÃ­culos";
             restoreEyrIcons();
             return;
           }
@@ -324,7 +324,7 @@
           const brandName = getCurrentBrandName();
 
           /*
-           * En la página pública/general mantenemos E&R.
+           * En la pÃ¡gina pÃºblica/general mantenemos E&R.
            */
           if (!brandName || isEyrName(brandName)) {
             if (route !== "portal") {
@@ -341,7 +341,7 @@
           const suffix =
             route === "portal"
               ? "Portal de Clientes"
-              : "Gestión Aduanal";
+              : "GestiÃ³n Aduanal";
 
           const signature =
             `${route}|${brandName}|${logoUrl}`;
@@ -389,7 +389,7 @@
           }
 
           /*
-           * React/Supabase puede pintar el branding después del primer render.
+           * React/Supabase puede pintar el branding despuÃ©s del primer render.
            */
           [100, 300, 700, 1200, 2000].forEach((delay) => {
             window.setTimeout(updateBrowserBrand, delay);
@@ -397,7 +397,7 @@
         });
 
         /*
-         * También reaccionamos a navegación SPA.
+         * TambiÃ©n reaccionamos a navegaciÃ³n SPA.
          */
         window.addEventListener("popstate", scheduleRefresh);
 
@@ -416,5 +416,9 @@
     </script>
 
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+
+
+
+</body>
 </html>

@@ -14,3 +14,24 @@
 .eyr-usa-preview-card>button{position:absolute;top:6px;right:6px;display:grid;place-items:center;border:0;border-radius:50%;width:27px;height:27px;padding:0;background:#fff;color:#a72222;box-shadow:0 1px 8px #0004;font-size:21px;line-height:1;cursor:pointer}
 .eyr-usa-preview-card>button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:700px){.eyr-usa-pending-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.eyr-usa-preview-card img{height:130px}}
+
+
+/* EYR USA 39.9.19.5.3 · Galería interna y carrusel */
+.eyr-usa-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;margin-top:14px}
+.eyr-usa-gallery-tile{min-width:0;text-align:left;border:1px solid #d9e5f1;background:#f8fafc;border-radius:12px;padding:7px;cursor:pointer;color:#123456}
+.eyr-usa-gallery-tile:hover,.eyr-usa-gallery-tile:focus-visible{border-color:#2264a1;box-shadow:0 3px 12px #173e6726}
+.eyr-usa-gallery-thumb{height:135px;border-radius:8px;background:#e6eef7;overflow:hidden;display:grid;place-items:center;color:#62768b;font-size:12px}
+.eyr-usa-gallery-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.eyr-usa-gallery-tile strong{display:block;margin-top:7px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eyr-usa-gallery-tile small{display:block;color:#60788e;font-size:11px}
+.eyr-usa-gallery-error{color:#a72828}
+.eyr-usa-gallery-overlay{position:fixed;inset:0;z-index:2147483600;background:rgba(4,15,31,.95);display:flex;align-items:center;justify-content:center;padding:12px;color:white}
+.eyr-usa-gallery-dialog{width:100%;max-width:1200px}
+.eyr-usa-gallery-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.eyr-usa-gallery-top button,.eyr-usa-gallery-stage button{border:0;border-radius:9px;background:#f3f6fb;color:#102c4d;cursor:pointer;padding:10px 14px;font-size:18px}
+.eyr-usa-gallery-stage{display:flex;align-items:center;gap:8px}
+.eyr-usa-gallery-stage>button{font-size:28px}
+.eyr-usa-gallery-large{flex:1;min-width:0;height:min(73vh,760px);display:grid;place-items:center}
+.eyr-usa-gallery-large img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.eyr-usa-gallery-caption{text-align:center;margin-top:10px;font-size:12px;overflow-wrap:anywhere}
+@media(max-width:600px){.eyr-usa-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.eyr-usa-gallery-thumb{height:115px}.eyr-usa-gallery-stage>button{padding:7px 9px}.eyr-usa-gallery-large{height:65vh}}

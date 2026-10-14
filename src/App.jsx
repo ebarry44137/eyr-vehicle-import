@@ -818,6 +818,8 @@ function emptyCustomsForm() {
 
     document_collection_gtq: "",
     port_expenses_gtq: "",
+    port_crane_gtq: "",
+    other_expenses_gtq: "",
     professional_fees_gtq: "",
     other_charges_gtq: "",
     other_charges_note: "",
@@ -1150,6 +1152,8 @@ function App() {
     freight_usd: "",
     document_collection_gtq: "",
     port_expenses_gtq: "",
+    port_crane_gtq: "",
+    other_expenses_gtq: "",
     professional_fees_gtq: "",
     crane_usd: "",
   });
@@ -2930,6 +2934,8 @@ function App() {
           quoteFreightHasOverride && quoteFreightUsd !== quoteFreightCalculatedUsd,
         document_collection_gtq: quoteDocumentCollection,
         port_expenses_gtq: quotePortExpenses,
+        port_crane_gtq: quotePortCrane,
+        other_expenses_gtq: quoteOtherExpenses,
         professional_fees_gtq: quoteProfessionalFees,
         other_charge_gtq: 0,
         other_charge_concept: "Otros servicios",
@@ -3001,6 +3007,8 @@ function App() {
       plates_gtq: taxes?.plates_gtq ?? 0,
       document_collection_gtq: quoteDocumentCollection,
       port_expenses_gtq: quotePortExpenses,
+      port_crane_gtq: quotePortCrane,
+      other_expenses_gtq: quoteOtherExpenses,
       professional_fees_gtq: quoteProfessionalFees,
       total_guatemala_gtq: quoteGuatemalaTotal,
       exchange_rate: quoteExchangeRate || null,
@@ -3040,7 +3048,8 @@ function App() {
           plates_gtq: taxes?.plates_gtq ?? 0, total_taxes_gtq: taxes?.total_taxes_gtq ?? 0,
         },
         costs: {
-          document_collection_gtq: quoteDocumentCollection, port_expenses_gtq: quotePortExpenses,
+           document_collection_gtq: quoteDocumentCollection, port_expenses_gtq: quotePortExpenses,
+           port_crane_gtq: quotePortCrane, other_expenses_gtq: quoteOtherExpenses,
           professional_fees_gtq: quoteProfessionalFees, total_guatemala_gtq: quoteGuatemalaTotal,
         },
         freight: {
@@ -4784,13 +4793,18 @@ async function openCustomsDetail(item) {
   const summary = result?.summary;
 
   const quoteDocumentCollection = Number(quoteForm.document_collection_gtq || 0);
+  // EYR V39.9.19.5.8 - GASTOS LOCALES (GTQ)
   const quotePortExpenses = Number(quoteForm.port_expenses_gtq || 0);
+  const quotePortCrane = Math.max(0, Number(quoteForm.port_crane_gtq || 0) || 0);
+  const quoteOtherExpenses = Math.max(0, Number(quoteForm.other_expenses_gtq || 0) || 0);
   const quoteProfessionalFees = Number(quoteForm.professional_fees_gtq || 0);
   const quoteBaseTaxes = Number(taxes?.total_taxes_gtq || 0);
   const quoteGuatemalaTotal =
     quoteBaseTaxes +
     quoteDocumentCollection +
     quotePortExpenses +
+    quotePortCrane +
+    quoteOtherExpenses +
     quoteProfessionalFees;
   // V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN
   // calculated = tarifa base proveniente del motor/configuración.
@@ -7191,7 +7205,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               <div>
                 <span className="eyebrow">OPERACIÓN INTERNACIONAL</span>
                 <h1>Gestiones de Importación</h1>
-                <button type="button" className="secondary-button" onClick={() => setActiveView("usa-yard")}>🇺🇸 Recepción USA</button>
+                <button type="button" className="eyr-usa-entry-button" onClick={() => setActiveView("usa-yard")}><svg viewBox="0 0 28 20" width="26" height="19" aria-hidden="true" style={{borderRadius:3,flexShrink:0}}><rect width="28" height="20" fill="#fff"/>{Array.from({length:7},(_,i)=><rect key={i} x="0" y={i*40/13} width="28" height={20/13} fill="#b22234"/>)}<rect width="12" height="10.77" fill="#3c3b6e"/><g fill="#fff">{Array.from({length:9},(_,i)=><circle key={i} cx={2+(i%3)*3.5} cy={2+Math.floor(i/3)*3.1} r=".65"/>)}</g></svg><span>Recepción USA</span><span aria-hidden="true">→</span></button>
                 <p>Seguimiento de clientes que confirmaron su importación con E&amp;R.</p>
               </div>
               <div className="imports-count-card">
@@ -9879,6 +9893,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
         ) : (
           <>
         <header className="topbar">
+          <img className="eyr-mobile-header-logo" src={tenantLogoUrl || eyrSolutionsLogo} alt="E&R Solutions" />
           <div>
             <span className="eyebrow">
               {tenantEyebrow}
@@ -11228,6 +11243,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   />
                 </label>
                 <label>
+                  <span>Grúa en Puerto (Q)</span>
+                  <input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.port_crane_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({...p, port_crane_gtq: e.target.value}))} />
+                </label>
+                <label>
+                  <span>Otros Gastos (Q)</span>
+                  <input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.other_expenses_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({...p, other_expenses_gtq: e.target.value}))} />
+                </label>
+                <label>
                   <span>Honorarios (Q)</span>
                   <input
                     type="number" min="0" step="0.01" placeholder="0.00"
@@ -11312,7 +11335,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
               <div className="quote-live-totals">
                 <div><span>Tributos calculados</span><strong>{moneyGTQ(quoteBaseTaxes)}</strong></div>
-                <div><span>Costos adicionales</span><strong>{moneyGTQ(quoteDocumentCollection + quotePortExpenses + quoteProfessionalFees)}</strong></div>
+                <div><span>Costos adicionales</span><strong>{moneyGTQ(quoteDocumentCollection + quotePortExpenses + quotePortCrane + quoteOtherExpenses + quoteProfessionalFees)}</strong></div>
                 <div className="quote-total-gtq"><span>Total costos Guatemala</span><strong>{moneyGTQ(quoteGuatemalaTotal)}</strong></div>
                 <div>
                   <span>Flete marítimo</span>
@@ -11445,6 +11468,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         <strong>{moneyGTQ(quotePortExpenses)}</strong>
                       </div>
 
+                       {quotePortCrane > 0 && <div><span>Grúa en Puerto</span><strong>{moneyGTQ(quotePortCrane)}</strong></div>}
+                       {quoteOtherExpenses > 0 && <div><span>Otros Gastos</span><strong>{moneyGTQ(quoteOtherExpenses)}</strong></div>}
                       <div>
                         <span>Honorarios</span>
                         <strong>{moneyGTQ(quoteProfessionalFees)}</strong>

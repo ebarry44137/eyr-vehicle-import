@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const Item = ({ icon, label, active, onClick }) => (
   <button type="button" className={`imn-item${active ? " active" : ""}`} onClick={onClick}>
@@ -24,10 +25,10 @@ export default function InternalMobileNav({
     return () => window.removeEventListener("keydown", close);
   }, [moreOpen, setMoreOpen]);
 
-  const go = (view) => () => onNavigate(view);
+  const go = (view) => () => { setMoreOpen(false); onNavigate(view); };
   const action = (fn) => () => { setMoreOpen(false); fn?.(); };
 
-  return (
+  return createPortal(
     <>
       {moreOpen && <button className="imn-backdrop" aria-label="Cerrar menú" onClick={() => setMoreOpen(false)} />}
       <section className={`imn-more-sheet${moreOpen ? " open" : ""}`} aria-hidden={!moreOpen}>
@@ -60,8 +61,9 @@ export default function InternalMobileNav({
         {canUseOfficeOperations ? <Item icon="▣" label="Aduanal" active={activeView === "customs"} onClick={go("customs")} /> : <Item icon="▤" label="Cotizaciones" active={activeView === "quotations"} onClick={action(onQuotations)} />}
         {canManagePortalClients ? <Item icon="👥" label="Clientes" active={activeView === "portal-clients"} onClick={go("portal-clients")} /> : canUseTenantImports ? <Item icon="🚢" label="Gestiones" active={activeView === "imports"} onClick={action(onImports)} /> : <Item icon="◎" label="Prospectos" active={activeView === "prospects"} onClick={action(onProspects)} />}
         <Item icon="＋" label="Nuevo" active={activeView === "new"} onClick={action(onNewQuote)} />
-        <Item icon="•••" label="Más" active={moreOpen} onClick={() => setMoreOpen(!moreOpen)} />
+        <Item icon="•••" label="Más" active={moreOpen} onClick={() => setMoreOpen((current) => !current)} />
       </nav>
-    </>
+    </>,
+    document.body
   );
 }

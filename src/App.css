@@ -9868,3 +9868,14 @@ nav {
     outline: none !important;
   }
 }
+
+
+/* EYR V39.9.19.5.9: gastos opcionales de cotización */
+.eyr-quote-section-heading{margin:20px 0 12px;font-size:14px;font-weight:900;color:#0a3458;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.eyr-quote-section-heading small{font-size:12px;font-weight:500;color:#64748b}
+.eyr-quote-optional-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.eyr-quote-optional-item{border:1px solid #d7e1ec;border-radius:15px;padding:13px;background:#f9fbfd;display:flex;flex-direction:column;gap:10px;min-width:0}
+.eyr-quote-optional-check{display:flex!important;flex-direction:row!important;align-items:center;gap:9px!important;cursor:pointer;color:#0a3458;font-size:13px;font-weight:800}
+.eyr-quote-optional-check input{width:18px!important;height:18px;accent-color:#d9aa42;flex-shrink:0}
+.eyr-quote-optional-item>input{width:100%;border:1px solid #d7e1ec;border-radius:10px;padding:11px 12px;font:inherit;color:#08284f;background:white;min-width:0}
+@media(max-width:760px){.eyr-quote-optional-grid{grid-template-columns:1fr}}

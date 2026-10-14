@@ -1153,7 +1153,12 @@ function App() {
     document_collection_gtq: "",
     port_expenses_gtq: "",
     port_crane_gtq: "",
+    storage_gtq: "",
     other_expenses_gtq: "",
+    other_expenses_concept: "",
+    enable_port_crane: false,
+    enable_storage: false,
+    enable_other_expenses: false,
     professional_fees_gtq: "",
     crane_usd: "",
   });
@@ -2840,6 +2845,13 @@ function App() {
       freight_usd: "",
       document_collection_gtq: "",
       port_expenses_gtq: "",
+      port_crane_gtq: "",
+      storage_gtq: "",
+      other_expenses_gtq: "",
+      other_expenses_concept: "",
+      enable_port_crane: false,
+      enable_storage: false,
+      enable_other_expenses: false,
       professional_fees_gtq: "",
       crane_usd: "",
     });
@@ -2935,7 +2947,9 @@ function App() {
         document_collection_gtq: quoteDocumentCollection,
         port_expenses_gtq: quotePortExpenses,
         port_crane_gtq: quotePortCrane,
+        storage_gtq: quoteStorage,
         other_expenses_gtq: quoteOtherExpenses,
+        other_expenses_concept: quoteOtherExpensesConcept,
         professional_fees_gtq: quoteProfessionalFees,
         other_charge_gtq: 0,
         other_charge_concept: "Otros servicios",
@@ -3008,7 +3022,9 @@ function App() {
       document_collection_gtq: quoteDocumentCollection,
       port_expenses_gtq: quotePortExpenses,
       port_crane_gtq: quotePortCrane,
+      storage_gtq: quoteStorage,
       other_expenses_gtq: quoteOtherExpenses,
+      other_expenses_concept: quoteOtherExpensesConcept,
       professional_fees_gtq: quoteProfessionalFees,
       total_guatemala_gtq: quoteGuatemalaTotal,
       exchange_rate: quoteExchangeRate || null,
@@ -3049,7 +3065,8 @@ function App() {
         },
         costs: {
            document_collection_gtq: quoteDocumentCollection, port_expenses_gtq: quotePortExpenses,
-           port_crane_gtq: quotePortCrane, other_expenses_gtq: quoteOtherExpenses,
+           port_crane_gtq: quotePortCrane, storage_gtq: quoteStorage,
+           other_expenses_gtq: quoteOtherExpenses, other_expenses_concept: quoteOtherExpensesConcept,
           professional_fees_gtq: quoteProfessionalFees, total_guatemala_gtq: quoteGuatemalaTotal,
         },
         freight: {
@@ -4795,8 +4812,10 @@ async function openCustomsDetail(item) {
   const quoteDocumentCollection = Number(quoteForm.document_collection_gtq || 0);
   // EYR V39.9.19.5.8 - GASTOS LOCALES (GTQ)
   const quotePortExpenses = Number(quoteForm.port_expenses_gtq || 0);
-  const quotePortCrane = Math.max(0, Number(quoteForm.port_crane_gtq || 0) || 0);
-  const quoteOtherExpenses = Math.max(0, Number(quoteForm.other_expenses_gtq || 0) || 0);
+  const quotePortCrane = quoteForm.enable_port_crane ? Math.max(0, Number(quoteForm.port_crane_gtq || 0) || 0) : 0;
+  const quoteStorage = quoteForm.enable_storage ? Math.max(0, Number(quoteForm.storage_gtq || 0) || 0) : 0;
+  const quoteOtherExpenses = quoteForm.enable_other_expenses ? Math.max(0, Number(quoteForm.other_expenses_gtq || 0) || 0) : 0;
+  const quoteOtherExpensesConcept = String(quoteForm.other_expenses_concept || "").trim();
   const quoteProfessionalFees = Number(quoteForm.professional_fees_gtq || 0);
   const quoteBaseTaxes = Number(taxes?.total_taxes_gtq || 0);
   const quoteGuatemalaTotal =
@@ -4804,6 +4823,7 @@ async function openCustomsDetail(item) {
     quoteDocumentCollection +
     quotePortExpenses +
     quotePortCrane +
+    quoteStorage +
     quoteOtherExpenses +
     quoteProfessionalFees;
   // V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN
@@ -11225,39 +11245,29 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </label>
               </div>
 
+              <div className="eyr-quote-section-heading">Costos habituales</div>
               <div className="quote-cost-form">
-                <label>
-                  <span>Recolección de documentos (Q)</span>
-                  <input
-                    type="number" min="0" step="0.01" placeholder="0.00"
-                    value={quoteForm.document_collection_gtq}
-                    onChange={(e) => setQuoteForm((p) => ({ ...p, document_collection_gtq: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>Gastos portuarios (Q)</span>
-                  <input
-                    type="number" min="0" step="0.01" placeholder="0.00"
-                    value={quoteForm.port_expenses_gtq}
-                    onChange={(e) => setQuoteForm((p) => ({ ...p, port_expenses_gtq: e.target.value }))}
-                  />
-                </label>
-                <label>
-                  <span>Grúa en Puerto (Q)</span>
-                  <input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.port_crane_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({...p, port_crane_gtq: e.target.value}))} />
-                </label>
-                <label>
-                  <span>Otros Gastos (Q)</span>
-                  <input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.other_expenses_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({...p, other_expenses_gtq: e.target.value}))} />
-                </label>
-                <label>
-                  <span>Honorarios (Q)</span>
-                  <input
-                    type="number" min="0" step="0.01" placeholder="0.00"
-                    value={quoteForm.professional_fees_gtq}
-                    onChange={(e) => setQuoteForm((p) => ({ ...p, professional_fees_gtq: e.target.value }))}
-                  />
-                </label>
+                <label><span>Recolección de documentos (Q)</span><input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.document_collection_gtq} onChange={(e) => setQuoteForm((p) => ({ ...p, document_collection_gtq: e.target.value }))} /></label>
+                <label><span>Gastos portuarios (Q)</span><input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.port_expenses_gtq} onChange={(e) => setQuoteForm((p) => ({ ...p, port_expenses_gtq: e.target.value }))} /></label>
+                <label><span>Honorarios (Q)</span><input type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.professional_fees_gtq} onChange={(e) => setQuoteForm((p) => ({ ...p, professional_fees_gtq: e.target.value }))} /></label>
+              </div>
+              <div className="eyr-quote-section-heading">Gastos opcionales <small>Seleccioná únicamente los que aplican</small></div>
+              <div className="eyr-quote-optional-grid">
+                <div className="eyr-quote-optional-item">
+                  <label className="eyr-quote-optional-check"><input type="checkbox" checked={Boolean(quoteForm.enable_port_crane)} onChange={(e) => setQuoteForm((p) => ({ ...p, enable_port_crane: e.target.checked }))} /><span>Grúa en Puerto (Q)</span></label>
+                  {quoteForm.enable_port_crane && <input aria-label="Monto de grúa en puerto" type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.port_crane_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({ ...p, port_crane_gtq: e.target.value }))} />}
+                </div>
+                <div className="eyr-quote-optional-item">
+                  <label className="eyr-quote-optional-check"><input type="checkbox" checked={Boolean(quoteForm.enable_storage)} onChange={(e) => setQuoteForm((p) => ({ ...p, enable_storage: e.target.checked }))} /><span>Almacenaje (Q)</span></label>
+                  {quoteForm.enable_storage && <input aria-label="Monto de almacenaje" type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.storage_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({ ...p, storage_gtq: e.target.value }))} />}
+                </div>
+                <div className="eyr-quote-optional-item">
+                  <label className="eyr-quote-optional-check"><input type="checkbox" checked={Boolean(quoteForm.enable_other_expenses)} onChange={(e) => setQuoteForm((p) => ({ ...p, enable_other_expenses: e.target.checked }))} /><span>Otros Gastos (Q)</span></label>
+                  {quoteForm.enable_other_expenses && <><input aria-label="Descripción de otros gastos" type="text" maxLength="90" placeholder="¿Qué gasto es?" value={quoteForm.other_expenses_concept ?? ""} onChange={(e) => setQuoteForm((p) => ({ ...p, other_expenses_concept: e.target.value }))} /><input aria-label="Monto de otros gastos" type="number" min="0" step="0.01" placeholder="0.00" value={quoteForm.other_expenses_gtq ?? ""} onChange={(e) => setQuoteForm((p) => ({ ...p, other_expenses_gtq: e.target.value }))} /></>}
+                </div>
+              </div>
+              <div className="eyr-quote-section-heading">Transporte internacional</div>
+              <div className="quote-cost-form">
                 {/* V39.9.18.9.3 · FLETE EDITABLE POR COTIZACIÓN */}
                 <label>
                   <span>Flete para esta cotización (USD)</span>
@@ -11335,7 +11345,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
               <div className="quote-live-totals">
                 <div><span>Tributos calculados</span><strong>{moneyGTQ(quoteBaseTaxes)}</strong></div>
-                <div><span>Costos adicionales</span><strong>{moneyGTQ(quoteDocumentCollection + quotePortExpenses + quotePortCrane + quoteOtherExpenses + quoteProfessionalFees)}</strong></div>
+                <div><span>Costos adicionales</span><strong>{moneyGTQ(quoteDocumentCollection + quotePortExpenses + quoteProfessionalFees + quotePortCrane + quoteStorage + quoteOtherExpenses)}</strong></div>
                 <div className="quote-total-gtq"><span>Total costos Guatemala</span><strong>{moneyGTQ(quoteGuatemalaTotal)}</strong></div>
                 <div>
                   <span>Flete marítimo</span>
@@ -11469,7 +11479,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       </div>
 
                        {quotePortCrane > 0 && <div><span>Grúa en Puerto</span><strong>{moneyGTQ(quotePortCrane)}</strong></div>}
-                       {quoteOtherExpenses > 0 && <div><span>Otros Gastos</span><strong>{moneyGTQ(quoteOtherExpenses)}</strong></div>}
+                       {quoteStorage > 0 && <div><span>Almacenaje</span><strong>{moneyGTQ(quoteStorage)}</strong></div>}
+                       {quoteOtherExpenses > 0 && <div><span>{quoteOtherExpensesConcept ? `Otros Gastos: ${quoteOtherExpensesConcept}` : "Otros Gastos"}</span><strong>{moneyGTQ(quoteOtherExpenses)}</strong></div>}
                       <div>
                         <span>Honorarios</span>
                         <strong>{moneyGTQ(quoteProfessionalFees)}</strong>

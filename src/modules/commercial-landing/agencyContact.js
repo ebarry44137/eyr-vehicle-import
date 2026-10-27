@@ -11,8 +11,8 @@ export const agencySocialLinks = [
   { platform: "tiktok", label: "TikTok", url: "https://www.tiktok.com/@eyrsolutionsgt?_r=1&_t=ZS-9AuubQpLBUy" },
 ];
 
-// Días de atención pendientes de confirmar. No se presume atención diaria.
+// Horario comercial confirmado por la agencia.
 export const agencyHours = [
-  { label: "Mañana", opens: "08:00", closes: "12:00" },
-  { label: "Tarde", opens: "14:00", closes: "18:00" },
+  { label: "Lunes a viernes", periods: [{ opens: "08:00", closes: "12:00" }, { opens: "14:00", closes: "18:00" }] },
+  { label: "Sábados", periods: [{ opens: "08:00", closes: "12:00" }] },
 ];

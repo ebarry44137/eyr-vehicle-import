@@ -31,7 +31,7 @@ El formulario valida nombre, teléfono, servicio y aceptación de privacidad. Pr
 
 `agencySocialLinks` contiene los enlaces oficiales de Facebook, Instagram y TikTok compartidos por el usuario. Se abren en otra pestaña con `noopener noreferrer`. LinkedIn no se muestra porque no se proporcionó un enlace.
 
-El horario confirmado es de 08:00 a 12:00 y de 14:00 a 18:00, mostrado en contacto y pie de página. No se indican días de la semana porque todavía no están confirmados.
+El horario confirmado, mostrado en contacto y pie de página, es de lunes a viernes de 08:00 a 12:00 y de 14:00 a 18:00; sábados de 08:00 a 12:00. No se agregó un horario dominical.
 
 Verificación adicional: enlaces de correo, WhatsApp condicional, redes confirmadas y horario y anchos 320, 390, 768 y 1440 px sin desbordamiento.
 

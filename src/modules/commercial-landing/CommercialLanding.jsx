@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { agencyEmails, agencySocialLinks } from "./agencyContact.js";
 import "./commercial-landing.css";
 
 const asset = (name) => `/commercial/${name}.webp`;
@@ -33,8 +34,23 @@ function Icon({ kind = "arrow", ...props }) {
     document: <><path d="M6 3h9l4 4v14H6ZM14 3v5h5M9 12h7M9 16h7" /></>,
     menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
     close: <><path d="m6 6 12 12M18 6 6 18" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7" /></>,
+    facebook: <><path d="M14 21v-8h3l.5-4H14V7c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v2H7v4h3v8" /></>,
+    instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".7" /></>,
+    tiktok: <><path d="M14 3v12a4 4 0 1 1-4-4M14 3c1 4 3 5 6 5v3c-3 0-5-1-6-2" /></>,
+    linkedin: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M7 10v7M11 17v-7M11 13c0-4 6-4 6 0v4" /><circle cx="7" cy="7" r=".6" /></>,
   };
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[kind]}</svg>;
+}
+
+function AgencyContactDetails({ whatsappUrl, whatsappReady, number, compact = false }) {
+  return <div className={compact ? "ec-agency-details ec-agency-details-compact" : "ec-agency-details"}>
+    <p className="ec-contact-label">CONTACTO DIRECTO</p>
+    {agencyEmails.map((contact) => <a className="ec-email-contact" href={`mailto:${contact.email}`} key={contact.email}><span className="ec-email-icon"><Icon kind="mail" /></span><span><small>{contact.area} · {contact.name}</small><strong>{contact.email}</strong></span><Icon /></a>)}
+    {whatsappReady && <a className="ec-contact-number" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><Icon kind="chat" /><span>WhatsApp <strong>+{number}</strong></span><Icon /></a>}
+    <p className="ec-contact-location">Puerto Barrios, Izabal · Guatemala</p>
+    {agencySocialLinks.length > 0 && <nav className="ec-social-links" aria-label={compact ? "Redes sociales de E&R en el pie de página" : "Redes sociales de E&R"}>{agencySocialLinks.map((social) => <a key={social.platform} href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`E&R Solutions en ${social.label}`}><Icon kind={social.platform} /><span>{social.label}</span></a>)}</nav>}
+  </div>;
 }
 
 export default function CommercialLanding({ logo, whatsappNumber, settingsLoading, settingsError }) {
@@ -112,7 +128,7 @@ export default function CommercialLanding({ logo, whatsappNumber, settingsLoadin
         <section id="como-importar" className="ec-section ec-process" aria-labelledby="ec-process-title"><div className="ec-wrap"><p className="ec-eyebrow">ASÍ EMPEZAMOS</p><div className="ec-section-heading"><h2 id="ec-process-title">TU IMPORTACIÓN.<br /><em>PASO A PASO.</em></h2><a href="#contacto" className="ec-text-link">REVISEMOS TU OPERACIÓN <Icon /></a></div><ol className="ec-steps">{steps.map(([title, copy], index) => <li key={title}><span className="ec-step-number">0{index + 1}</span><h3>{title}</h3><p>{copy}</p></li>)}</ol></div></section>
         <section className="ec-quoter" aria-labelledby="ec-quoter-title"><img className="ec-quoter-image" src={asset("hero")} alt="" loading="lazy" width="1536" height="1024" /><div className="ec-wrap ec-quoter-content"><span className="ec-quoter-badge"><Icon kind="document" /> COTIZADOR DE VEHÍCULOS</span><h2 id="ec-quoter-title">ANTES DE IMPORTAR,<br /><em>HACÉ TUS NÚMEROS.</em></h2><p>Consultá una estimación de tributos y flete.<br />Un primer paso para decidir con información.</p><a href="/cotizador" className="ec-button ec-button-orange">ABRIR COTIZADOR <Icon /></a><small>Valores estimados sujetos a revisión.</small></div></section>
         <section className="ec-section ec-faq" aria-labelledby="ec-faq-title"><div className="ec-wrap ec-faq-grid"><div><p className="ec-eyebrow">HABLEMOS CLARO</p><h2 id="ec-faq-title">TUS DUDAS.<br /><em>NUESTRO PUNTO<br />DE PARTIDA.</em></h2><a {...contactProps} className="ec-text-link">CONSULTANOS <Icon /></a></div><div className="ec-questions">{questions.map(([title, answer], index) => <details key={title} open={index === 0 ? true : undefined}><summary>{title}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></div></section>
-        <section id="contacto" className="ec-contact ec-section" aria-labelledby="ec-contact-title"><div className="ec-wrap ec-contact-grid"><div className="ec-contact-copy"><p className="ec-eyebrow">EL SIGUIENTE PASO ES TUYO</p><h2 id="ec-contact-title">HAGAMOS QUE<br />TU IMPORTACIÓN<br /><em>EMPIECE AQUÍ.</em></h2><p>Contanos qué necesitás y en qué etapa estás. Revisemos juntos cómo podemos acompañarte.</p><a {...contactProps} className="ec-button ec-button-outline"><Icon kind="chat" /> ESCRIBIR POR WHATSAPP</a><div className="ec-contact-signature"><img src={logo} alt="E&R Solutions" width="180" height="73" /><span>Transporte de vehículos.<br />Logística internacional.<br />Gestión aduanal.</span></div></div>
+        <section id="contacto" className="ec-contact ec-section" aria-labelledby="ec-contact-title"><div className="ec-wrap ec-contact-grid"><div className="ec-contact-copy"><p className="ec-eyebrow">EL SIGUIENTE PASO ES TUYO</p><h2 id="ec-contact-title">HAGAMOS QUE<br />TU IMPORTACIÓN<br /><em>EMPIECE AQUÍ.</em></h2><p>Contanos qué necesitás y en qué etapa estás. Revisemos juntos cómo podemos acompañarte.</p><a {...contactProps} className="ec-button ec-button-outline"><Icon kind="chat" /> ESCRIBIR POR WHATSAPP</a><AgencyContactDetails whatsappUrl={whatsappUrl} whatsappReady={whatsappReady} number={number} /><div className="ec-contact-signature"><img src={logo} alt="E&R Solutions" width="180" height="73" /><span>Transporte de vehículos.<br />Logística internacional.<br />Gestión aduanal.</span></div></div>
             <form className="ec-contact-form" onSubmit={submitConsultation}>
               <div className="ec-form-row"><label htmlFor="ec-name">Nombre<input id="ec-name" name="name" autoComplete="name" placeholder="Tu nombre completo" required minLength={2} maxLength={100} /></label><label htmlFor="ec-phone">WhatsApp<input id="ec-phone" name="phone" type="tel" autoComplete="tel" placeholder="Tu número de WhatsApp" required maxLength={25} /></label></div>
               <label htmlFor="ec-service">Servicio de interés<select id="ec-service" name="service" value={service} onChange={(event) => setService(event.target.value)} required><option value="">Seleccioná un servicio</option>{services.map((item) => <option key={item.name}>{item.name}</option>)}<option>Importación integral</option><option>Necesito orientación</option></select></label>
@@ -124,7 +140,7 @@ export default function CommercialLanding({ logo, whatsappNumber, settingsLoadin
             </form>
           </div></section>
       </main>
-      <footer className="ec-footer"><div className="ec-wrap"><div className="ec-footer-top"><a href="/" className="ec-brand"><img src={logo} alt="E&R Solutions · Agencia Aduanal" loading="lazy" width="180" height="73" /></a><p>De Estados Unidos a Guatemala.<br /><strong>Con E&R Solutions.</strong></p><a href="#inicio" className="ec-back-top">VOLVER ARRIBA ↑</a></div><div className="ec-footer-bottom"><nav aria-label="Enlaces del sitio"><a href="/cotizador">Cotizador</a><a href="/portal">Portal de clientes</a><a href="/app">Acceso administrativo</a><a href="/politica-de-privacidad">Política de Privacidad</a><a href="/eliminacion-de-datos">Eliminación de Datos</a></nav><p className="ec-photo-note">Imágenes ilustrativas de servicios logísticos.</p></div></div></footer>
+      <footer className="ec-footer"><div className="ec-wrap"><div className="ec-footer-top"><a href="/" className="ec-brand"><img src={logo} alt="E&R Solutions · Agencia Aduanal" loading="lazy" width="180" height="73" /></a><p>De Estados Unidos a Guatemala.<br /><strong>Con E&R Solutions.</strong></p><a href="#inicio" className="ec-back-top">VOLVER ARRIBA ↑</a></div><div className="ec-footer-contact"><AgencyContactDetails compact whatsappUrl={whatsappUrl} whatsappReady={whatsappReady} number={number} /><div className="ec-footer-message"><p className="ec-eyebrow">MÁS QUE TRÁMITES, SOLUCIONES.</p><h3>Hablemos de tu<br />próxima importación.</h3><a href="#contacto" className="ec-text-link">CONTACTAR A E&R <Icon /></a></div></div><div className="ec-footer-bottom"><nav aria-label="Enlaces del sitio"><a href="/cotizador">Cotizador</a><a href="/portal">Portal de clientes</a><a href="/app">Acceso administrativo</a><a href="/politica-de-privacidad">Política de Privacidad</a><a href="/eliminacion-de-datos">Eliminación de Datos</a></nav><p className="ec-photo-note">Imágenes ilustrativas de servicios logísticos.</p></div></div></footer>
       <a {...contactProps} className="ec-floating-chat" aria-label={whatsappReady ? "Contactar a E&R por WhatsApp" : "Ver opciones de contacto"}><Icon kind="chat" /></a>
     </div>
   );

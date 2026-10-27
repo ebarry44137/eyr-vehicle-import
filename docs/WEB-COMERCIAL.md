@@ -25,6 +25,14 @@ El contacto usa `app_settings.whatsapp_number`, cargado por el flujo existente. 
 
 El formulario valida nombre, teléfono, servicio y aceptación de privacidad. Prepara una nueva pestaña de WhatsApp con los datos; el visitante debe enviar allí el mensaje. No confirma entrega ni escribe una oportunidad en el CRM. La captura pública en CRM requiere una etapa posterior que valide endpoint, permisos, duplicados y tratamiento de datos.
 
+## Correos y redes sociales
+
+`agencyContact.js` centraliza los correos corporativos usados por el sistema. Se muestran enlaces `mailto:` de Edgar Barrientos (Logística) y Ronaldo Barrientos (Aduanas), tanto en contacto como en el pie de página. El número de WhatsApp se presenta solo si hay configuración válida. La ubicación se limita a Puerto Barrios, Izabal, Guatemala; no se añadieron dirección exacta ni horarios sin datos confirmados.
+
+`agencySocialLinks` está vacío hasta recibir URLs oficiales. No aparecen iconos sin destino ni enlaces inventados. Admite Facebook, Instagram, TikTok y LinkedIn con enlaces externos accesibles.
+
+Verificación adicional: enlaces de correo, WhatsApp condicional, ausencia de redes no confirmadas y anchos 320, 390, 768 y 1440 px sin desbordamiento.
+
 ## Verificación realizada
 
 - `npm ci --ignore-scripts` y `npm run build`: correctos; sigue el aviso previo de tamaño del bundle general.

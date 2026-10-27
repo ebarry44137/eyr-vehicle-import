@@ -44,14 +44,14 @@ function Icon({ kind = "arrow", ...props }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[kind]}</svg>;
 }
 
-function AgencyContactDetails({ whatsappUrl, whatsappReady, number, compact = false }) {
-  return <div className={compact ? "ec-agency-details ec-agency-details-compact" : "ec-agency-details"}>
+function AgencyContactDetails({ whatsappUrl, whatsappReady, number }) {
+  return <div className="ec-agency-details">
     <p className="ec-contact-label">CONTACTO DIRECTO</p>
     {agencyEmails.map((contact) => <a className="ec-email-contact" href={`mailto:${contact.email}`} key={contact.email}><span className="ec-email-icon"><Icon kind="mail" /></span><span><small>{contact.area} · {contact.name}</small><strong>{contact.email}</strong></span><Icon /></a>)}
     {whatsappReady && <a className="ec-contact-number" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><Icon kind="chat" /><span>WhatsApp <strong>+{number}</strong></span><Icon /></a>}
     <p className="ec-contact-location">Puerto Barrios, Izabal · Guatemala</p>
     <div className="ec-business-hours"><span className="ec-hours-icon"><Icon kind="clock" /></span><div><p>HORARIO DE ATENCIÓN</p><div className="ec-hours-slots">{agencyHours.map((hours) => <div key={hours.label}><small>{hours.label}</small>{hours.periods.map((period) => <span key={period.opens}><time dateTime={period.opens}>{period.opens}</time> – <time dateTime={period.closes}>{period.closes}</time></span>)}</div>)}</div></div></div>
-    {agencySocialLinks.length > 0 && <nav className="ec-social-links" aria-label={compact ? "Redes sociales de E&R en el pie de página" : "Redes sociales de E&R"}>{agencySocialLinks.map((social) => <a key={social.platform} href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`E&R Solutions en ${social.label}`}><Icon kind={social.platform} /><span>{social.label}</span></a>)}</nav>}
+    {agencySocialLinks.length > 0 && <nav className="ec-social-links" aria-label="Redes sociales de E&R">{agencySocialLinks.map((social) => <a key={social.platform} href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`E&R Solutions en ${social.label}`}><Icon kind={social.platform} /><span>{social.label}</span></a>)}</nav>}
   </div>;
 }
 
@@ -142,7 +142,7 @@ export default function CommercialLanding({ logo, whatsappNumber, settingsLoadin
             </form>
           </div></section>
       </main>
-      <footer className="ec-footer"><div className="ec-wrap"><div className="ec-footer-top"><a href="/" className="ec-brand"><img src={logo} alt="E&R Solutions · Agencia Aduanal" loading="lazy" width="180" height="73" /></a><p>De Estados Unidos a Guatemala.<br /><strong>Con E&R Solutions.</strong></p><a href="#inicio" className="ec-back-top">VOLVER ARRIBA ↑</a></div><div className="ec-footer-contact"><AgencyContactDetails compact whatsappUrl={whatsappUrl} whatsappReady={whatsappReady} number={number} /><div className="ec-footer-message"><p className="ec-eyebrow">MÁS QUE TRÁMITES, SOLUCIONES.</p><h3>Hablemos de tu<br />próxima importación.</h3><a href="#contacto" className="ec-text-link">CONTACTAR A E&R <Icon /></a></div></div><div className="ec-footer-bottom"><nav aria-label="Enlaces del sitio"><a href="/cotizador">Cotizador</a><a href="/portal">Portal de clientes</a><a href="/app">Acceso administrativo</a><a href="/politica-de-privacidad">Política de Privacidad</a><a href="/eliminacion-de-datos">Eliminación de Datos</a></nav><p className="ec-photo-note">Imágenes ilustrativas de servicios logísticos.</p></div></div></footer>
+      <footer className="ec-footer"><div className="ec-wrap"><div className="ec-footer-top"><a href="/" className="ec-brand"><img src={logo} alt="E&R Solutions · Agencia Aduanal" loading="lazy" width="180" height="73" /></a><p>De Estados Unidos a Guatemala.<br /><strong>Con E&R Solutions.</strong></p><a href="#inicio" className="ec-back-top">VOLVER ARRIBA ↑</a></div><div className="ec-footer-bottom"><nav aria-label="Enlaces del sitio"><a href="/cotizador">Cotizador</a><a href="/portal">Portal de clientes</a><a href="/app">Acceso administrativo</a><a href="/politica-de-privacidad">Política de Privacidad</a><a href="/eliminacion-de-datos">Eliminación de Datos</a></nav><p className="ec-photo-note">Imágenes ilustrativas de servicios logísticos.</p></div></div></footer>
       <a {...contactProps} className="ec-floating-chat" aria-label={whatsappReady ? "Contactar a E&R por WhatsApp" : "Ver opciones de contacto"}><Icon kind="chat" /></a>
     </div>
   );

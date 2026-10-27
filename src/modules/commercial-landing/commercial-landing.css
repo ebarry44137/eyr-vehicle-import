@@ -175,11 +175,11 @@ body:has(.eyr-commercial) #eyr-customer-support-floating-root{display:none}
 .eyr-commercial .ec-social-links a{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;min-height:42px;border:1px solid #ffffff25;border-radius:6px;color:#e9eff4;background:#ffffff04;font-size:10px;font-weight:650}
 .eyr-commercial .ec-social-links a:hover{border-color:#ff9e2470;color:var(--ec-orange)}
 .eyr-commercial .ec-social-links svg{width:17px;height:17px}
-.eyr-commercial .ec-footer-contact{display:grid;grid-template-columns:1.1fr 1fr;gap:100px;border-top:1px solid var(--ec-line);padding:28px 0 35px;align-items:center}
-.eyr-commercial .ec-agency-details-compact{border-top:0;margin-top:0;padding-top:0}
-.eyr-commercial .ec-footer-message h3{font-size:28px;line-height:1.2;margin:15px 0 20px;letter-spacing:-1px}
-@media(max-width:820px){.eyr-commercial .ec-footer-contact{gap:45px;grid-template-columns:1.2fr 1fr}.eyr-commercial .ec-footer-message h3{font-size:24px}}
-@media(max-width:560px){.eyr-commercial .ec-footer-contact{grid-template-columns:1fr;gap:30px}.eyr-commercial .ec-email-contact strong{font-size:11px}.eyr-commercial .ec-email-contact{gap:10px}.eyr-commercial .ec-footer-message{padding-top:24px;border-top:1px solid var(--ec-line)}.eyr-commercial .ec-footer-message h3{font-size:26px}.eyr-commercial .ec-contact-signature{margin-top:20px}.eyr-commercial .ec-agency-details{margin-top:25px}}
+
+
+
+
+@media(max-width:560px){.eyr-commercial .ec-email-contact strong{font-size:11px}.eyr-commercial .ec-email-contact{gap:10px}.eyr-commercial .ec-contact-signature{margin-top:20px}.eyr-commercial .ec-agency-details{margin-top:25px}}
 .eyr-commercial .ec-business-hours{display:flex;gap:12px;align-items:flex-start;margin-top:20px;padding:17px 16px;background:#ffffff04;border:1px solid var(--ec-line);border-radius:7px}
 .eyr-commercial .ec-hours-icon{color:var(--ec-orange);display:flex;padding-top:2px;flex-shrink:0}
 .eyr-commercial .ec-hours-icon svg{width:18px;height:18px}

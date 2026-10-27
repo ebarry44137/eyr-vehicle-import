@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { agencyEmails, agencySocialLinks } from "./agencyContact.js";
+import { agencyEmails, agencySocialLinks, agencyHours } from "./agencyContact.js";
 import "./commercial-landing.css";
 
 const asset = (name) => `/commercial/${name}.webp`;
@@ -35,6 +35,7 @@ function Icon({ kind = "arrow", ...props }) {
     menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
     close: <><path d="m6 6 12 12M18 6 6 18" /></>,
     mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     facebook: <><path d="M14 21v-8h3l.5-4H14V7c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v2H7v4h3v8" /></>,
     instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".7" /></>,
     tiktok: <><path d="M14 3v12a4 4 0 1 1-4-4M14 3c1 4 3 5 6 5v3c-3 0-5-1-6-2" /></>,
@@ -49,6 +50,7 @@ function AgencyContactDetails({ whatsappUrl, whatsappReady, number, compact = fa
     {agencyEmails.map((contact) => <a className="ec-email-contact" href={`mailto:${contact.email}`} key={contact.email}><span className="ec-email-icon"><Icon kind="mail" /></span><span><small>{contact.area} · {contact.name}</small><strong>{contact.email}</strong></span><Icon /></a>)}
     {whatsappReady && <a className="ec-contact-number" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><Icon kind="chat" /><span>WhatsApp <strong>+{number}</strong></span><Icon /></a>}
     <p className="ec-contact-location">Puerto Barrios, Izabal · Guatemala</p>
+    <div className="ec-business-hours"><span className="ec-hours-icon"><Icon kind="clock" /></span><div><p>HORARIO DE ATENCIÓN</p><div className="ec-hours-slots">{agencyHours.map((hours) => <div key={hours.label}><small>{hours.label}</small><span><time dateTime={hours.opens}>{hours.opens}</time> – <time dateTime={hours.closes}>{hours.closes}</time></span></div>)}</div></div></div>
     {agencySocialLinks.length > 0 && <nav className="ec-social-links" aria-label={compact ? "Redes sociales de E&R en el pie de página" : "Redes sociales de E&R"}>{agencySocialLinks.map((social) => <a key={social.platform} href={social.url} target="_blank" rel="noopener noreferrer" aria-label={`E&R Solutions en ${social.label}`}><Icon kind={social.platform} /><span>{social.label}</span></a>)}</nav>}
   </div>;
 }

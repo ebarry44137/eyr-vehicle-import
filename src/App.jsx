@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { supabase } from "./supabaseClient";
 import eyrSolutionsLogo from "./assets/eyr-solutions-logo.png";
+import CommercialLanding from "./modules/commercial-landing/CommercialLanding.jsx";
 import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
 import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
 import ImporterCustomsServiceRequest from "./modules/importer-customs/ImporterCustomsServiceRequest";
@@ -5339,130 +5340,12 @@ async function openCustomsDetail(item) {
 
   if (siteMode === "landing") {
     return (
-      <div className="public-site">
-        <header className="public-nav">
-          <button className="public-brand public-brand-logo" onClick={() => navigateSite("/")}>
-            <img src={eyrSolutionsLogo} alt="E&R Solutions Agencia Aduanal" />
-          </button>
-
-          <nav>
-            <a className="public-nav-link" href="#como-funciona">Cómo funciona</a>
-            <a className="public-nav-link" href="#beneficios">Beneficios</a>
-            <button className="public-nav-quote" onClick={() => navigateSite("/cotizador")}>
-              Cotizador
-            </button>
-            <button className="public-login-link" onClick={() => navigateSite("/app")}>
-              Acceso E&amp;R
-            </button>
-          </nav>
-        </header>
-
-        <main>
-          <section className="public-hero">
-            <div className="public-hero-content">
-              <span className="public-kicker">IMPORTÁ CON INFORMACIÓN CLARA</span>
-              <h1>Conocé cuánto puede costar importar tu vehículo a Guatemala.</h1>
-              <p>
-                Ingresá el VIN y nuestro motor analiza el vehículo, cruza información SAT,
-                estima tributos y calcula el flete marítimo.
-              </p>
-
-              <div className="public-hero-actions">
-                <button className="public-primary" onClick={() => navigateSite("/cotizador")}>
-                  Cotizar mi vehículo <span>→</span>
-                </button>
-                <span className="public-free-badge">3 cotizaciones gratis</span>
-              </div>
-
-              <div className="public-trust-row">
-                <span>✓ Identificación por VIN</span>
-                <span>✓ Referencia SAT Guatemala</span>
-                <span>✓ Flete según dimensiones</span>
-              </div>
-            </div>
-
-            <div className="public-hero-card">
-              <div className="hero-card-top">
-                <span>SIMULACIÓN INTELIGENTE</span>
-                <span className="hero-live">● Motor conectado</span>
-              </div>
-              <div className="hero-vin-demo">
-                <small>VIN DEL VEHÍCULO</small>
-                <strong>3GNAL2EK9ES629619</strong>
-                <span>17/17</span>
-              </div>
-              <div className="hero-flow">
-                <div><strong>01</strong><span>VIN</span></div>
-                <i>→</i>
-                <div><strong>02</strong><span>SAT</span></div>
-                <i>→</i>
-                <div><strong>03</strong><span>Tributos</span></div>
-                <i>→</i>
-                <div><strong>04</strong><span>Flete</span></div>
-              </div>
-              <div className="hero-result-demo">
-                <span>Resultado estimado</span>
-                <strong>En segundos</strong>
-              </div>
-            </div>
-          </section>
-
-          <section className="public-section" id="como-funciona">
-            <div className="public-section-heading">
-              <span>PROCESO SIMPLE</span>
-              <h2>Del VIN a una estimación completa.</h2>
-            </div>
-            <div className="public-steps">
-              <article><b>01</b><h3>Ingresá el VIN</h3><p>Identificamos año, marca, modelo, motor y configuración.</p></article>
-              <article><b>02</b><h3>Analizamos SAT</h3><p>Buscamos la línea que mejor corresponde al vehículo.</p></article>
-              <article><b>03</b><h3>Calculamos</h3><p>Estimamos tributos y seleccionamos la tarifa marítima.</p></article>
-              <article><b>04</b><h3>Recibí el resultado</h3><p>Visualizá los principales costos antes de tomar una decisión.</p></article>
-            </div>
-          </section>
-
-          <section className="public-benefits" id="beneficios">
-            <div>
-              <span className="public-kicker">E&amp;R VEHICLE IMPORT</span>
-              <h2>Menos incertidumbre antes de importar.</h2>
-              <p>
-                El cotizador te da una referencia rápida para evaluar un vehículo antes de avanzar
-                con la operación. Los casos que requieren validación adicional son identificados
-                por el sistema para evitar resultados forzados.
-              </p>
-              <button className="public-primary" onClick={() => navigateSite("/cotizador")}>
-                Probar gratis <span>→</span>
-              </button>
-            </div>
-            <div className="benefit-grid">
-              <article><span>🧠</span><strong>Matching inteligente</strong><p>El sistema compara datos técnicos antes de aceptar una coincidencia.</p></article>
-              <article><span>📏</span><strong>Flete por dimensiones</strong><p>La tarifa se determina a partir del tamaño del vehículo.</p></article>
-              <article><span>🛡️</span><strong>Revisión segura</strong><p>Si los datos no son concluyentes, el sistema lo indica en vez de adivinar.</p></article>
-              <article><span>📄</span><strong>Información clara</strong><p>Vehículo, tributos y transporte en una sola consulta.</p></article>
-            </div>
-          </section>
-
-          <section className="public-cta">
-            <span>EMPEZÁ SIN COSTO</span>
-            <h2>Tus primeras 3 cotizaciones son gratis.</h2>
-            <p>Dejanos tus datos de contacto, ingresá un VIN y probá el cotizador sin crear una cuenta.</p>
-            <button className="public-primary public-primary-dark" onClick={() => navigateSite("/cotizador")}>
-              Probar el cotizador <span>→</span>
-            </button>
-          </section>
-        </main>
-
-        <footer className="public-footer">
-          <div className="public-brand public-brand-logo public-footer-logo">
-            <img src={eyrSolutionsLogo} alt="E&R Solutions Agencia Aduanal" />
-          </div>
-          <span>Herramienta de estimación para importación de vehículos a Guatemala.</span>
-          <div className="public-footer-legal">
-            <button onClick={() => navigateSite("/politica-de-privacidad")}>Política de Privacidad</button>
-            <span>•</span>
-            <button onClick={() => navigateSite("/eliminacion-de-datos")}>Eliminación de Datos</button>
-          </div>
-        </footer>
-      </div>
+      <CommercialLanding
+        logo={eyrSolutionsLogo}
+        whatsappNumber={appSettings.whatsapp_number}
+        settingsLoading={settingsLoading}
+        settingsError={settingsError}
+      />
     );
   }
 

@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>E&amp;R Solutions | GestiÃ³n Aduanal</title>
+    <title>E&amp;R Solutions | Gestión Aduanal</title>
 
     <meta
       name="description"
-      content="Cotizador inteligente y plataforma de gestiÃ³n aduanal."
+      content="Cotizador inteligente y plataforma de gestión aduanal."
     />
     <meta name="theme-color" content="#082f57" />
 
@@ -33,10 +33,10 @@
     <link id="app-manifest" rel="manifest" href="/site.webmanifest" />
     <meta id="app-apple-title" name="apple-mobile-web-app-title" content="E&R Solutions" />
 
-    <meta property="og:title" content="E&R Solutions | GestiÃ³n Aduanal" />
+    <meta property="og:title" content="E&R Solutions | Gestión Aduanal" />
     <meta
       property="og:description"
-      content="Cotizador inteligente y plataforma de gestiÃ³n aduanal."
+      content="Cotizador inteligente y plataforma de gestión aduanal."
     />
     <meta property="og:type" content="website" />
   </head>
@@ -46,7 +46,7 @@
 
     <script>
       (() => {
-        const EYR_TITLE = "E&R Solutions | GestiÃ³n Aduanal";
+        const EYR_TITLE = "E&R Solutions | Gestión Aduanal";
         const USA_ROUTE = /^\/usa(?:\/|$)/;
         const IS_USA = USA_ROUTE.test(window.location.pathname);
         if (IS_USA) {
@@ -54,7 +54,7 @@
           if (manifest) manifest.href = "/usa.webmanifest";
           const appleTitle = document.getElementById("app-apple-title");
           if (appleTitle) appleTitle.content = "E&R USA";
-          document.title = "E&R USA | RecepciÃ³n de VehÃ­culos";
+          document.title = "E&R USA | Recepción de Vehículos";
         }
         const EYR_FAVICON = "/branding/favicon-32.png";
         const EYR_SHORTCUT = "/favicon.ico";
@@ -316,7 +316,7 @@
 
         function updateBrowserBrand() {
           if (IS_USA) {
-            document.title = "E&R USA | RecepciÃ³n de VehÃ­culos";
+            document.title = "E&R USA | Recepción de Vehículos";
             restoreEyrIcons();
             return;
           }
@@ -341,7 +341,7 @@
           const suffix =
             route === "portal"
               ? "Portal de Clientes"
-              : "GestiÃ³n Aduanal";
+              : "Gestión Aduanal";
 
           const signature =
             `${route}|${brandName}|${logoUrl}`;

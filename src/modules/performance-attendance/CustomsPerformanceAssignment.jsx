@@ -31,11 +31,8 @@ export default function CustomsPerformanceAssignment({ supabase, value, onChange
 
   useEffect(()=>{
     if(loading)return;
-    const patch={};
-    if(!value?.digitizer_user_id && digitizers.length===1) patch.digitizer_user_id=digitizers[0].user_id;
-    if(!value?.port_manager_user_id && portManagers.length===1) patch.port_manager_user_id=portManagers[0].user_id;
-    if(Object.keys(patch).length) onChange(patch);
-  },[loading,digitizers,portManagers,value?.digitizer_user_id,value?.port_manager_user_id]);
+    if(!value?.digitizer_user_id && digitizers.length===1) onChange({digitizer_user_id:digitizers[0].user_id});
+  },[loading,digitizers,value?.digitizer_user_id]);
 
   return (
     <section className="cpa-box">
@@ -65,12 +62,15 @@ export default function CustomsPerformanceAssignment({ supabase, value, onChange
         <label>
           <span>Despacho / retiro de puerto</span>
           <select
-            value={value?.port_manager_user_id || ""}
-            disabled={loading}
-            onChange={e=>onChange({port_manager_user_id:e.target.value || null})}
+            value={value?.dispatch_responsible_name || (portManagers.find(e=>e.user_id===value?.port_manager_user_id)?.full_name || "")}
+            onChange={e=>{
+              const name=e.target.value;
+              const matched=portManagers.find(p=>p.full_name===name);
+              onChange({dispatch_responsible_name:name || null,port_manager_user_id:matched?.user_id || null});
+            }}
           >
-            <option value="">{loading ? "Cargando..." : "Sin asignar"}</option>
-            {portManagers.map(e=><option key={e.user_id} value={e.user_id}>{e.full_name}</option>)}
+            <option value="">Sin asignar</option>
+            {Array.from(new Set(["Geovany","Ariel","Jefferson",...portManagers.map(p=>p.full_name)])).map(name=><option key={name} value={name}>{name}</option>)}
           </select>
           <small>Selectivo → salida del vehículo del puerto.</small>
         </label>

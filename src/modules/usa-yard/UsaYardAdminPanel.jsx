@@ -16,7 +16,7 @@ export default function UsaYardAdminPanel(){
  const card={border:'1px solid #dbe4ef',borderRadius:14,padding:18,margin:'18px 0',background:'#fff'};
  const field={display:'block',width:'100%',padding:10,margin:'6px 0 12px',border:'1px solid #cad6e4',borderRadius:8};
  const btn={background:'#133b67',color:'#fff',padding:'10px 16px',border:0,borderRadius:8,cursor:'pointer'};
- return <section style={{marginTop:28}}>
+ return <section className="eyr-usa-admin-panel" style={{marginTop:28}}>
  <h2 style={{fontSize:23}}>🇺🇸 Yardas y Colaboradores USA</h2><p>Usuarios con acceso únicamente a las yardas asignadas. No se les concede el perfil de Operador ni Administrador.</p>
  {error&&<p role="alert" style={{color:'#ad2424'}}>{error}</p>}{notice&&<p role="status" style={{color:'#167146'}}>{notice}</p>}
  <div style={card}><h3>🏭 Registrar nueva yarda</h3><form onSubmit={createYard} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:12}}>

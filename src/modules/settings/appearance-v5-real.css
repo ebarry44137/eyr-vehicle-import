@@ -1,0 +1,55 @@
+/* E&R PRO 3.0 — V5: superficies reales, sin alterar lógica ni impresión. */
+@media screen {
+html[data-eyr-theme="dark"] {
+  --eyr5-bg:#0b1220; --eyr5-panel:#17263d; --eyr5-panel-alt:#20334d;
+  --eyr5-line:#354b67; --eyr5-fg:#f0f5fd; --eyr5-muted:#b3c4d9;
+}
+/* El Dashboard se aloja dentro de .app > .main; las tarjetas tienen nombres propios. */
+html[data-eyr-theme="dark"] body,
+html[data-eyr-theme="dark"] #root,
+html[data-eyr-theme="dark"] .app > .main,
+html[data-eyr-theme="dark"] .eyr-ops-dashboard,
+html[data-eyr-theme="dark"] .crm-pro-shell {background:#0b1220 !important;color:#f0f5fd;}
+html[data-eyr-theme="dark"] .app > .main > .topbar {background:#111f33 !important;border-color:#354b67;color:#f0f5fd;}
+html[data-eyr-theme="dark"] .app > .main > .topbar :is(h1,h2,h3,p,span) {color:#f0f5fd;}
+/* Dashboard Operativo */
+html[data-eyr-theme="dark"] .eyr-ops-kpis article,
+html[data-eyr-theme="dark"] .eyr-ops-kpis article.attention,
+html[data-eyr-theme="dark"] .eyr-ops-kpis article.support,
+html[data-eyr-theme="dark"] .eyr-ops-panel,
+html[data-eyr-theme="dark"] .eyr-exec-kpis article,
+html[data-eyr-theme="dark"] .eyr-exec-panel {background:#17263d !important;border-color:#354b67 !important;color:#f0f5fd;box-shadow:0 7px 22px #0003;}
+html[data-eyr-theme="dark"] .eyr-ops-kpis :is(strong,small,p),
+html[data-eyr-theme="dark"] .eyr-exec-kpis :is(strong,small,p),
+html[data-eyr-theme="dark"] .eyr-exec-panel :is(h2,h3,h4,p) {color:#f0f5fd;}
+html[data-eyr-theme="dark"] .eyr-ops-kpis :is(small,p),
+html[data-eyr-theme="dark"] .eyr-exec-kpis :is(small,p) {color:#b3c4d9;}
+html[data-eyr-theme="dark"] .eyr-ops-kpi-icon {background:#20334d;color:#f0f5fd;}
+/* CRM: pipeline, indicadores y tarjetas con clases específicas. */
+html[data-eyr-theme="dark"] .crm-kpis article,
+html[data-eyr-theme="dark"] .crm-column,
+html[data-eyr-theme="dark"] .crm-drawer,
+html[data-eyr-theme="dark"] .crm-tabs button:not(.active) {background:#17263d !important;border-color:#354b67 !important;color:#f0f5fd;}
+html[data-eyr-theme="dark"] .crm-kpis :is(strong,span,small),
+html[data-eyr-theme="dark"] .crm-column>header :is(strong,b),
+html[data-eyr-theme="dark"] .crm-drawer :is(h2,h3) {color:#f0f5fd;}
+html[data-eyr-theme="dark"] .crm-kpis :is(span,small) {color:#b3c4d9;}
+html[data-eyr-theme="dark"] .crm-column>header b {background:#20334d;}
+/* Finanzas: superficies operativas y KPI, conservando estados de alerta. */
+html[data-eyr-theme="dark"] .finance-kpis article:not(.cash):not(.warning),
+html[data-eyr-theme="dark"] .finance-panel,
+html[data-eyr-theme="dark"] .finance-table-wrap,
+html[data-eyr-theme="dark"] .closing-preview,
+html[data-eyr-theme="dark"] .case-finance-card {background:#17263d !important;border-color:#354b67 !important;color:#f0f5fd;}
+html[data-eyr-theme="dark"] .finance-header :is(h1,p),
+html[data-eyr-theme="dark"] .finance-panel-head h2,
+html[data-eyr-theme="dark"] .finance-kpis article:not(.cash):not(.warning) :is(strong,span,small) {color:#f0f5fd;}
+html[data-eyr-theme="dark"] .finance-kpis article:not(.cash):not(.warning) :is(span,small),
+html[data-eyr-theme="dark"] .finance-header p {color:#b3c4d9;}
+/* Controles y tablas solo dentro de superficies adaptadas. */
+html[data-eyr-theme="dark"] :is(.eyr-ops-dashboard,.eyr-exec,.crm-pro-shell,.finance-module) :is(input,select,textarea):not([type="checkbox"]):not([type="radio"]) {background:#20334d;color:#f0f5fd;border-color:#48617e;}
+html[data-eyr-theme="dark"] :is(.eyr-ops-dashboard,.eyr-exec,.crm-pro-shell,.finance-module) :is(input,textarea)::placeholder {color:#a9bdd4;}
+html[data-eyr-theme="dark"] :is(.eyr-ops-dashboard,.eyr-exec,.crm-pro-shell,.finance-module) :is(th,thead) {background:#20334d;color:#f0f5fd;border-color:#354b67;}
+html[data-eyr-theme="dark"] :is(.eyr-ops-dashboard,.eyr-exec,.crm-pro-shell,.finance-module) :is(td,tbody tr) {color:#f0f5fd;border-color:#354b67;}
+/* La identidad de los encabezados hero, badges y avisos semánticos se conserva. */
+}

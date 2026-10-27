@@ -1,0 +1,132 @@
+/* EYR PRO 3.0 — Apariencia V1: estilos acotados al sistema interno */
+.eyr-appearance-card{background:#fff;border:1px solid #dce5ef;border-radius:24px;padding:26px;margin-bottom:20px;box-shadow:0 12px 30px rgba(13,45,80,.05)}
+.eyr-appearance-head{display:flex;align-items:flex-start;gap:14px}.eyr-appearance-icon{font-size:28px}.eyr-appearance-kicker{font-size:11px;font-weight:800;letter-spacing:.08em;color:#457092}.eyr-appearance-head h2{margin:5px 0;color:#08284e}.eyr-appearance-head p,.eyr-appearance-note{color:#64748b}.eyr-appearance-options{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.eyr-appearance-option{padding:12px 18px;border:1px solid #cbd5e1;border-radius:12px;background:#f8fafc;color:#17345b;font-weight:700}.eyr-appearance-option.selected{background:#e6f1ff;border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,.13)}.eyr-appearance-note{font-size:12px;line-height:1.5;margin:16px 0 0}
+/* Primera capa controlada: sin alterar hojas PDF/PNG, pantallas públicas ni módulos de terceros */
+@media screen{
+html[data-eyr-theme="dark"] body{background:#0b1220;color:#e5e7eb}
+html[data-eyr-theme="dark"] .settings-module{color:#e5e7eb}
+html[data-eyr-theme="dark"] .settings-module .settings-card,html[data-eyr-theme="dark"] .settings-module .eyr-appearance-card{background:#152238;border-color:#34465e;box-shadow:none;color:#e5e7eb}
+html[data-eyr-theme="dark"] .settings-module .eyr-appearance-head h2,html[data-eyr-theme="dark"] .settings-module .settings-card-head h2{color:#f1f5f9}
+html[data-eyr-theme="dark"] .settings-module .eyr-appearance-head p,html[data-eyr-theme="dark"] .settings-module .eyr-appearance-note{color:#cbd5e1}
+html[data-eyr-theme="dark"] .settings-module .eyr-appearance-option{background:#1d304b;color:#e2e8f0;border-color:#526783}
+html[data-eyr-theme="dark"] .settings-module .eyr-appearance-option.selected{background:#244f80;border-color:#60a5fa}
+}
+@media(max-width:640px){.eyr-appearance-card{padding:18px}.eyr-appearance-options{display:grid;grid-template-columns:1fr}.eyr-appearance-option{width:100%}}
+
+
+/* E&R PRO 3.0 - Apariencia V2: capa controlada de Configuracion y contenedor principal.
+   No afecta portales publicos, documentos imprimibles ni modulos ajenos. */
+@media screen {
+  html[data-eyr-theme="dark"] .main:has(> .settings-module) {
+    background: #0b1526 !important;
+    color: #e7eef8;
+  }
+  html[data-eyr-theme="dark"] .settings-module {
+    color: #e7eef8;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-topbar h1,
+  html[data-eyr-theme="dark"] .settings-module .settings-topbar .eyebrow,
+  html[data-eyr-theme="dark"] .settings-module .settings-card-head h2 {
+    color: #f3f7ff;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-topbar p,
+  html[data-eyr-theme="dark"] .settings-module .settings-card-head p,
+  html[data-eyr-theme="dark"] .settings-module .settings-form label > small {
+    color: #b6c6db;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-card,
+  html[data-eyr-theme="dark"] .settings-module .eyr-appearance-card {
+    background: #17263e;
+    border-color: #354b67;
+    box-shadow: 0 12px 32px rgba(0,0,0,.18);
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-card-head {
+    border-color: #354b67;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-form label > span,
+  html[data-eyr-theme="dark"] .settings-module .settings-preview strong,
+  html[data-eyr-theme="dark"] .settings-module .settings-input-row input {
+    color: #f1f6fd;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-input-row,
+  html[data-eyr-theme="dark"] .settings-module .settings-preview,
+  html[data-eyr-theme="dark"] .settings-module .whatsapp-not-configured {
+    background: #20344f;
+    border-color: #45607e;
+    color: #e4edf9;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-preview span,
+  html[data-eyr-theme="dark"] .settings-module .country-prefix {
+    color: #b6c8df;
+  }
+  html[data-eyr-theme="dark"] .settings-module .settings-test-link {
+    color: #c9e1ff;
+  }
+  html[data-eyr-theme="dark"] .settings-module .eyr-appearance-option {
+    background: #20344f;
+    border-color: #496685;
+    color: #f1f6fd;
+  }
+  html[data-eyr-theme="dark"] .settings-module .eyr-appearance-option.selected {
+    background: #285487;
+    border-color: #82b9ff;
+    box-shadow: 0 0 0 2px rgba(130,185,255,.2);
+  }
+  html[data-eyr-theme="light"] .main:has(> .settings-module) {
+    background: #f3f7fc;
+  }
+  html[data-eyr-theme="light"] .settings-module .settings-card,
+  html[data-eyr-theme="light"] .settings-module .eyr-appearance-card {
+    background: #fff;
+    border-color: #dce5ef;
+  }
+}
+
+
+/* E&R PRO 3.0 - Apariencia V3: ajustes de contraste exclusivos de Configuracion. */
+@media screen {
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-card {background:#17263e!important;border-color:#354b67!important;color:#edf4ff!important;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-head h2,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-status strong,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-diagnostics-head strong,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-event>div strong {color:#f2f7ff!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-head p,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-safety span,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-actions small,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-event code {color:#c0d0e5!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-safety,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-diagnostics,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-result>div,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-event {background:#20344f!important;border-color:#45607e!important;color:#eaf2fc!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-status span,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-result span,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-diagnostics-head span,
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-event>div span {color:#b7c9df!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-badge {background:#2a405d!important;color:#e6f0ff!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-badge.finished {background:#143e31!important;color:#a8f2cc!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-badge.error {background:#522c35!important;color:#ffd3d9!important}
+  html[data-eyr-theme="dark"] .settings-module .wa-coexist-badge.code_received {background:#493e25!important;color:#ffe2a1!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-safe-note,
+  html[data-eyr-theme="dark"] .settings-module .config-pro-loading,
+  html[data-eyr-theme="dark"] .settings-module .config-pro-empty {background:#20344f!important;border-color:#45607e!important;color:#eaf2fc!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-safe-note strong {color:#f0f6ff!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-safe-note small {color:#bed0e5!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-rate-item,
+  html[data-eyr-theme="dark"] .settings-module .sat-catalog-version,
+  html[data-eyr-theme="dark"] .settings-module .sat-import-box,
+  html[data-eyr-theme="dark"] .settings-module .sat-active-summary {background:#20344f!important;border-color:#45607e!important;color:#eaf2fc!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-rate-copy strong,
+  html[data-eyr-theme="dark"] .settings-module .sat-catalog-version strong,
+  html[data-eyr-theme="dark"] .settings-module .sat-active-summary strong,
+  html[data-eyr-theme="dark"] .settings-module .sat-import-head h3 {color:#f2f7ff!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-rate-copy small,
+  html[data-eyr-theme="dark"] .settings-module .sat-catalog-version small,
+  html[data-eyr-theme="dark"] .settings-module .sat-active-summary small {color:#bfd0e5!important}
+  html[data-eyr-theme="dark"] .settings-module .config-pro-rate-item label,
+  html[data-eyr-theme="dark"] .settings-module .config-pro-rate-item label input {background:#f9fbff!important;color:#102c4d!important;border-color:#cad8e8!important}
+  html[data-eyr-theme="dark"] .settings-module .settings-test-link {display:inline-flex;align-items:center;min-height:34px;padding:5px 12px;border:1px solid #698caf;border-radius:10px;background:#203e60!important;color:#f4f9ff!important;text-decoration:none}
+  html[data-eyr-theme="dark"] .settings-module .settings-test-link:hover {background:#2d567e!important}
+  html[data-eyr-theme="dark"] .settings-module .settings-test-link:focus-visible,
+  html[data-eyr-theme="dark"] .settings-module .eyr-appearance-option:focus-visible {outline:2px solid #a8d3ff;outline-offset:2px}
+  html[data-eyr-theme="dark"] .settings-module .settings-input-row input {background:transparent!important;color:#f4f8ff!important}
+}

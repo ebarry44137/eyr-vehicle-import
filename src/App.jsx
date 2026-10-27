@@ -47,6 +47,8 @@ import InternalMobileNav from "./modules/internal-mobile-nav/InternalMobileNav.j
 import "./modules/internal-mobile-nav/internal-mobile-nav.css";
 import "./modules/layout/module-splash-pro.css";
 import ConfigurationProPanels from "./modules/settings/ConfigurationProPanels.jsx";
+import AppearanceProPanel from "./modules/settings/AppearanceProPanel.jsx";
+import useEyrAppearanceGlobal from "./modules/settings/useEyrAppearanceGlobal.js"; // EYR_PRO30_APPEARANCE_GLOBAL_V4
 import WhatsAppCoexistencePanel from "./modules/settings/WhatsAppCoexistencePanel.jsx";
 import "./modules/settings/configuration-pro-panels.css";
 import PerformanceBonusesPage from "./modules/performance-bonuses/PerformanceBonusesPage.jsx";
@@ -983,6 +985,7 @@ function ModuleSplashProV3991811({ activeView, logo, brandName }) {
 }
 
 function App() {
+  useEyrAppearanceGlobal(); // EYR_PRO30_APPEARANCE_GLOBAL_V4
   // V22.1 · Landing pública + cotizador + sistema interno
   // Todas las Edge Functions reciben explícitamente el JWT de la sesión activa.
   async function invokeFunction(functionName, options = {}) {
@@ -4168,7 +4171,7 @@ async function openCustomsDetail(item) {
         "selective_type", "selective_at", "port_exit_at",
         "docs_set_built_at", "envelope_ready_at", "delivered_at",
         "incident_status", "problem_reason", "action_taken",
-        "digitizer_user_id", "port_manager_user_id",
+        "digitizer_user_id", "port_manager_user_id", "dispatch_responsible_name",
         "incident_detected_at", "incident_reported_at",
         "pending_from", "delivery_status",
         "document_collection_gtq", "port_expenses_gtq",
@@ -9576,6 +9579,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 <p>Parámetros comerciales del portal público y del cotizador.</p>
               </div>
             </header>
+
+            <AppearanceProPanel />
 
             <section className="settings-card">
               <div className="settings-card-head">

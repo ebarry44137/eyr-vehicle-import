@@ -1,6 +1,6 @@
 # Portada comercial E&R Solutions
 
-La ruta `/` presenta transporte de vehículos, logística internacional y gestión aduanal con la dirección visual aprobada. Incluye servicios, proceso, acceso al cotizador, preguntas frecuentes y consulta por WhatsApp. Usa el logo original del proyecto.
+La ruta `/` presenta transporte de vehículos, logística internacional y gestión aduanal con una dirección visual basada en la referencia pública de La Familia de Dios: fondo oscuro continuo, tipografía fuerte, navegación fija, acentos naranja del logo original y mosaico fotográfico asimétrico. Incluye servicios, proceso, acceso al cotizador, preguntas frecuentes y consulta por WhatsApp. Usa el logo original del proyecto.
 
 ## Alcance
 
@@ -10,6 +10,14 @@ La ruta `/` presenta transporte de vehículos, logística internacional y gesti�
 - `App.jsx` cambia únicamente la importación del componente y el bloque `siteMode === "landing"`.
 - `index.html` actualiza metadatos comerciales; mantiene el mecanismo de identidad del sistema y de las oficinas.
 - Se mantienen `/cotizador`, `/portal`, `/app`, `/o/:slug` y las páginas legales. No se cambian cálculos, SQL, funciones Edge ni permisos.
+
+## Rediseño a partir de la referencia
+
+- Portada con tres escenas seleccionables de vehículos, logística y aduanas, sin reproducción automática.
+- Se mantiene un único `h1`, controles con estado accesible y soporte de movimiento reducido.
+- Franja de origen y destino conectada al cotizador; no muestra horarios, estados operativos ni conteos inventados.
+- Las imágenes ilustrativas no se presentan como una galería documental de operaciones propias.
+- No se modificaron el sitio ni el repositorio de la Iglesia; solo se observó su página pública como referencia visual.
 
 ## Contacto y límite de esta etapa
 

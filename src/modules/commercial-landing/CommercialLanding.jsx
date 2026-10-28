@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { agencyEmails, agencySocialLinks, agencyHours } from "./agencyContact.js";
 import "./commercial-landing.css";
+
+const VehicleTrackingModal = lazy(() => import("../vehicle-tracking/VehicleTrackingModal.jsx"));
 
 const asset = (name) => `/commercial/${name}.webp`;
 const heroSlides = [
@@ -57,6 +59,7 @@ function AgencyContactDetails({ whatsappUrl, whatsappReady, number }) {
 
 export default function CommercialLanding({ logo, whatsappNumber, settingsLoading, settingsError }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [trackingOpen, setTrackingOpen] = useState(false);
   const [service, setService] = useState("");
   const [scene, setScene] = useState(0);
   const currentScene = heroSlides[scene];
@@ -89,7 +92,7 @@ export default function CommercialLanding({ logo, whatsappNumber, settingsLoadin
           <a href="/" className="ec-brand" aria-label="E&R Solutions, inicio"><img src={logo} alt="E&R Solutions · Agencia Aduanal" width="200" height="81" /></a>
           <button type="button" className="ec-menu-toggle" aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={menuOpen} aria-controls="ec-navigation" onClick={() => setMenuOpen(!menuOpen)}><Icon kind={menuOpen ? "close" : "menu"} /></button>
           <nav id="ec-navigation" className={menuOpen ? "ec-navigation ec-navigation-open" : "ec-navigation"} aria-label="Navegación principal" onClick={() => setMenuOpen(false)}>
-            <a href="#inicio">Inicio</a><a href="#servicios">Servicios</a><a href="#como-importar">Cómo importar</a><a href="/cotizador">Cotizador</a><a href="#contacto">Contacto</a><a href="/portal" className="ec-button ec-button-orange">Portal de clientes <Icon /></a>
+            <a href="#inicio">Inicio</a><a href="#servicios">Servicios</a><a href="#como-importar">Cómo importar</a><a href="/cotizador">Cotizador</a><a href="#contacto">Contacto</a><button type="button" className="ec-tracking-nav" data-tracking-trigger onClick={()=>setTrackingOpen(true)}>Seguimiento</button><a href="/portal" className="ec-button ec-button-orange">Portal de clientes <Icon /></a>
           </nav>
         </div>
       </header>
@@ -118,6 +121,7 @@ export default function CommercialLanding({ logo, whatsappNumber, settingsLoadin
             <a href="/cotizador" className="ec-route-quoter"><span>¿YA TENÉS EL VIN?</span><strong>Hacé tus números <Icon /></strong><small>Abrir cotizador de vehículos</small></a>
           </div>
         </section>
+        <div className="ec-wrap ec-tracking-callout"><div><span>¿TU VEHÍCULO YA ESTÁ EN CAMINO?</span><p>Seguí su recorrido con el VIN.</p></div><button type="button" data-tracking-trigger onClick={()=>setTrackingOpen(true)}>Rastrear mi vehículo <Icon /></button></div>
         <section id="servicios" className="ec-section ec-services" aria-labelledby="ec-services-title"><div className="ec-wrap">
           <div className="ec-section-heading"><div><p className="ec-eyebrow">EL RESPALDO QUE NECESITÁS</p><h2 id="ec-services-title">UNA AGENCIA.<br /><em>TODA TU IMPORTACIÓN.</em></h2></div><p>Tu operación tiene distintas etapas.<br />Con E&R, encontrás un equipo para conectarlas.</p></div>
           <div className="ec-service-grid">{services.map((item, index) => <article className="ec-service-card" key={item.name}><div className="ec-service-top"><span className="ec-service-index">0{index + 1}</span><Icon kind={["globe", "arrow", "document"][index]} /></div><h3>{item.name}</h3><p>{item.copy}</p><a href="#contacto" onClick={() => setService(item.name)}>Consultar servicio <Icon /></a></article>)}</div>
@@ -143,6 +147,7 @@ export default function CommercialLanding({ logo, whatsappNumber, settingsLoadin
           </div></section>
       </main>
       <footer className="ec-footer"><div className="ec-wrap"><div className="ec-footer-top"><a href="/" className="ec-brand"><img src={logo} alt="E&R Solutions · Agencia Aduanal" loading="lazy" width="180" height="73" /></a><p>De Estados Unidos a Guatemala.<br /><strong>Con E&R Solutions.</strong></p><a href="#inicio" className="ec-back-top">VOLVER ARRIBA ↑</a></div><div className="ec-footer-bottom"><nav aria-label="Enlaces del sitio"><a href="/cotizador">Cotizador</a><a href="/portal">Portal de clientes</a><a href="/app">Acceso administrativo</a><a href="/politica-de-privacidad">Política de Privacidad</a><a href="/eliminacion-de-datos">Eliminación de Datos</a></nav><p className="ec-photo-note">Imágenes ilustrativas de servicios logísticos.</p></div></div></footer>
+      {trackingOpen&&<Suspense fallback={<p className="ec-tracking-loading" role="status">Abriendo seguimiento…</p>}><VehicleTrackingModal onClose={()=>setTrackingOpen(false)} contactHref="#contacto" /></Suspense>}
       <a {...contactProps} className="ec-floating-chat" aria-label={whatsappReady ? "Contactar a E&R por WhatsApp" : "Ver opciones de contacto"}><Icon kind="chat" /></a>
     </div>
   );

@@ -1,53 +1,59 @@
-# Seguimiento integral por VIN — diagnóstico y alcance
+# Seguimiento por VIN: modal, avances y recepción en yarda
 
-## Experiencia solicitada
+## Estado
 
-Un visitante ingresa el VIN en la página pública y consulta el estado de su operación desde la recepción en Estados Unidos hasta la entrega en Guatemala. La respuesta presenta etapa actual, fecha del último avance e historial de hitos confirmados. Se incorpora un acceso de seguimiento en la portada.
+Implementación preparada en `feat/web-comercial`. No se aplicó la migración ni se desplegó la función. No se modificó `main`, producción, ni el proyecto de la Iglesia. La rama conserva su regla de despliegue automático desactivado en `vercel.json`.
 
-Este documento define la integración. El seguimiento todavía no está implementado ni publicado.
+## Experiencia
 
-## Bases comprobadas en el código
+La portada incluye Seguimiento y Rastrear mi vehículo. Abren un modal con VIN completo (17 caracteres), estado informado, fechas reales registradas, ETA identificada como estimación y galería ampliable de recepción en yarda. Incluye navegación por teclado, cierre con Escape, foco y bloqueo del fondo, consulta sin resultados, ambigüedad, límite de consultas y servicio no disponible.
 
-| Fuente | Evidencia disponible | Límite actual |
-| --- | --- | --- |
-| Recepción USA | `usa_yard_receptions`: VIN, yarda, `received_at`, vínculo `import_management_id`. El colaborador registra la recepción con `usa-yard-manager`. | `PENDING_REVIEW` y `LINKED` describen revisión/vinculación; no prueban carga ni salida marítima. |
-| Gestión de Importaciones | `import_managements` usa estados como `EMBARCADO`, `TRÁNSITO_MARÍTIMO`, `ARRIBÓ_GUATEMALA`, `CONTROL_ADUANAL`, `LIBERADO`, `ENTREGADO`, `CANCELADO`. | Debe verificarse en la base si existen historial, fechas y asociación de contenedor. No interpretar automáticamente `EMBARCADO` como dos eventos distintos. |
-| Aduanas | `customs_cases` registra hitos como `docs_collected_at`, `declaration_signed_at`, `iva_form_sent_at`, `iva_paid_at`, `port_exit_at`, `envelope_ready_at` y `delivered_at`. | Hay que comprobar el vínculo real entre expediente y operación. Retiro de puerto y entrega al cliente son hechos distintos. |
-| Portal del cliente | Consume `list_portal_operations_v3957` y `portal_operation_detail_v3957`. Presenta estados normalizados, embarque, ETA, naviera y contenedor. | Estas funciones pertenecen al portal autenticado; no se expondrán públicamente sin un contrato mínimo independiente. Sus definiciones no están incluidas en las migraciones presentes. |
+No simula un porcentaje ni completa etapas anteriores sin evidencia. `EMBARCADO` conserva una etiqueta propia; no inventa las fechas de carga ni salida. `customs_cases.delivered_at` significa “vehículo/documentos entregados” en el sistema existente: se muestra como entrega registrada en aduanas, sin afirmar por sí solo entrega final del vehículo. Esta última puede confirmarse con un avance específico o el estado ENTREGADO de la gestión.
 
-## Recorrido propuesto
+## Operación
 
-1. Recibido en yarda USA.
-2. Cargado en contenedor, cuando exista registro explícito de carga.
-3. Despachado desde USA, cuando se confirme la salida.
-4. En tránsito a Guatemala.
-5. Arribó a Guatemala.
-6. Documentación y gestión aduanal.
-7. Liberado / retirado de puerto, según el hecho registrado.
-8. En entrega, si existe un evento operativo que lo respalde.
-9. Entregado al cliente.
+- Recepción y fechas aduanales se leen de sus registros habituales, sin copiar datos de clientes.
+- En el detalle de una gestión o expediente se agregó un panel para registrar/corregir/retirar fechas reales: carga en contenedor, despacho desde USA, llegada a Guatemala, en entrega y entregado al cliente.
+- En Yarda USA, un ADMIN puede seleccionar qué fotos de la recepción compartir. Por defecto ninguna está publicada. Antes de marcar debe revisar que sean fotos del vehículo sin documentos ni datos personales visibles. Se comparten los originales; no se elimina EXIF ni se difuminan datos automáticamente.
+- Una recepción sin vínculo permite seleccionar fotos pero requiere vincular su gestión para registrar transporte. Las operaciones exclusivamente aduanales no ofrecen carga/salida USA ni fotos de yarda.
+- Los nuevos avances no cambian los estados financieros, CRM ni cálculos existentes. Sus correcciones conservan auditoría y revisión para impedir sobrescribir cambios concurrentes.
 
-La secuencia orienta la presentación; no completa automáticamente hitos anteriores. Un estado sin fecha histórica confirmada no genera una fecha inventada. Una operación exclusivamente aduanal inicia donde corresponda y no se presenta como si E&R hubiera transportado el vehículo desde USA.
+## Datos y permisos
 
-## Integración operativa
+Proyecto inspeccionado: `jbrgbqlyohlnwdnwhort` (EyR Vehicle Import). Organización E&R comprobada: `00000000-0000-0000-0000-000000000001`.
 
-- Vincular recepción, gestión, contenedor/viaje y expediente mediante sus IDs dentro de la misma organización; usar el VIN para búsqueda y validación, no como única clave de unión universal.
-- Un VIN puede tener más de una operación a lo largo del tiempo. Identificar el viaje correcto, gestionar ambigüedades y evitar mezclar operaciones canceladas o anteriores con la activa.
-- Reutilizar las acciones donde el equipo ya registra avances; generar la proyección de seguimiento desde esos eventos. Añadir únicamente los hitos que hoy no existan, como carga en contenedor si no está registrada.
-- Conservar fecha efectiva y fecha de registro, responsable interno, fuente y referencia del evento; evitar duplicados al sincronizar. Corregir o anular un evento debe actualizar el resultado público sin borrar el rastro de auditoría.
-- No mostrar porcentaje ficticio ni fechas estimadas como hechos. La ETA solo aparece como estimación cuando exista una fuente operativa.
+La búsqueda usa organización y VIN exactos e índices funcionales. Recepción/gestión/aduanas se vinculan por IDs y se valida también organización/VIN; no se unen operaciones distintas solo porque tengan el mismo VIN. Una operación activa inequívoca tiene prioridad sobre antiguas cerradas; varios registros activos o varios históricos sin uno inequívoco devuelven ambigüedad. Se excluyen gestiones/recepciones canceladas.
 
-## Consulta pública
+La migración `supabase/migrations/20261028214659_vehicle_tracking_modal.sql` añade tres índices de búsqueda, un esquema privado con avances, selección de fotos, auditoría y límites, y tres RPC acotadas. No cambia las políticas de lectura de las tablas operativas existentes.
 
-- VIN completo y coincidencia exacta; sin búsquedas parciales ni listados públicos de vehículos.
-- Un endpoint específico devuelve solo la identificación mínima del vehículo, etapas públicas, fechas confirmadas y última actualización. No concede lectura pública directa de tablas internas ni reutiliza permisos de administrador en el navegador.
-- La organización E&R se resuelve desde configuración confiable del servidor, no desde un `organization_id` elegido por el visitante.
-- No devolver nombres de clientes, teléfonos, documentos, fotografías internas, costos, saldos, usuarios responsables, observaciones privadas ni claves internas.
-- Validar formato, limitar frecuencia de consultas y tamaño de respuesta. Definir estados claros para VIN no encontrado, operación ambigua y servicio temporalmente no disponible.
-- El portal autenticado conserva la información detallada asociada al cliente.
+- `eyr_tracking_admin_v1`: usuario autenticado activo ADMIN/OPERADOR, organización activa y acceso operativo `can_full_office_v3821()`. Solo ADMIN publica fotos, solo de su recepción/organización.
+- `eyr_tracking_snapshot_v1` y `eyr_tracking_limit_v1`: solo `service_role`. El navegador no puede ejecutarlas ni leer tablas privadas.
+- La función pública `public-vehicle-tracking` valida VIN, cuerpo de hasta 2 KB y límites por minuto global (300), señal IP (20) y VIN (10). Guarda hashes con sal, no direcciones IP ni VIN en el contador. La señal IP no es autenticación y no sustituye el presupuesto global. Sin CAPTCHA en esta versión.
+- Organización fija de servidor, CORS de orígenes autorizados, respuesta sin caché. Solo devuelve vehículo, estado, fechas y fotos seleccionadas. No devuelve clientes, documentos, saldos, costos, notas o usuarios.
+- Las fotos aprobadas tienen enlaces firmados de hasta 120 segundos. Retirarlas impide enlaces nuevos; los ya emitidos pueden funcionar hasta vencer. La consulta se actualiza para renovar los enlaces. No hay bucket público ni rutas arbitrarias elegibles desde el navegador.
 
-## Siguiente verificación necesaria
+## Activación pendiente de autorización
 
-Acceso de lectura al proyecto correcto de Supabase para inspeccionar columnas, restricciones, funciones del portal, historial de eventos y vínculos entre recepción, gestión y expediente. No ejecutar migraciones ni desplegar funciones durante esta inspección.
+No ejecutar todos los archivos históricos de migraciones indiscriminadamente. Antes de activar, verificar que el destino es el proyecto E&R y que esta migración no existe ya. Aplicar únicamente `20261028214659_vehicle_tracking_modal.sql`, desplegar `public-vehicle-tracking` con `verify_jwt=false` y configurar sus secretos del servidor. No se agregó `supabase/config.toml` para evitar colisionar con la configuración local del equipo.
 
-Después del diagnóstico de base: preparar migración y contrato del endpoint, conectar los eventos de los módulos existentes y construir la consulta pública con pruebas de aislamiento por organización, VIN repetido, correcciones y operaciones aduanales parciales. Todo continúa fuera de producción hasta autorización.
+| Variable de servidor | Valor / condición |
+| --- | --- |
+| `TRACKING_PUBLIC_ENABLED` | Mantener `false` durante preparación; habilitar al final |
+| `TRACKING_ORGANIZATION_ID` | UUID de E&R indicado arriba, nunca enviado por el visitante |
+| `TRACKING_RATE_LIMIT_SALT` | Aleatorio secreto de al menos 32 caracteres |
+| `TRACKING_ALLOWED_ORIGINS` | Orígenes HTTPS reales de E&R separados por coma, sin rutas ni barra final |
+| `TRACKING_ALLOW_LOCALHOST` | Omitida/false en producción; true solo para prueba local explícita |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Entorno de la función, nunca variables `VITE_` |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | Reutilizar configuración de almacenamiento existente sin exponer credenciales |
+
+Antes de publicar la web: verificar una operación de prueba autorizada de principio a fin en el proyecto correcto, selección/retiro de fotos, renovación de enlaces, permisos y respuesta sin datos privados. Publicar frontend o fusionar `main` requiere autorización aparte. Deshabilitar `TRACKING_PUBLIC_ENABLED` desactiva la consulta sin afectar los módulos existentes; no borrar la auditoría para desactivar.
+
+## Validación local
+
+- `npm run build`: correcto; permanece el aviso previo de bundle principal grande. El modal público se carga en un fragmento separado.
+- `node --test tests/tracking.test.mjs`: contrato público, normalización, fechas/ETA, no exposición de datos, CORS/configuración, límites, cuerpo inválido y fallas de imágenes.
+- `tests/tracking-db.test.mjs`: aplica la migración real en Postgres local PGlite sobre un esquema mínimo; no se conecta a Supabase. Comprueba permisos de anon/authenticated, aislamiento de organizaciones, auditoría, revisiones, fechas futuras, fotos privadas/publicación/retiro, ambigüedad, solo aduanas y límites. La función de acceso operativo se simula en el fixture; no reemplaza una prueba integral del entorno real.
+- Para DB: instalar `@electric-sql/pglite@0.5.13` en un directorio temporal y ejecutar `TRACKING_PGLITE_MODULE=/ruta/absoluta/node_modules/@electric-sql/pglite/dist/index.js node --test tests/tracking-db.test.mjs` (en PowerShell configurar `$env:TRACKING_PGLITE_MODULE` antes del comando).
+- `node tests/tracking-browser.cjs` con Playwright instalado aparte y Chromium disponible (opcional `TRACKING_PLAYWRIGHT_MODULE` / `TRACKING_CHROMIUM_PATH`); `TRACKING_SCREENSHOT_DIR` permite guardar capturas. Navegador con respuestas simuladas: modal, foco/Escape, validación, historial, galería, resultados vacíos/ambiguos/429/503 y tamaños 320/390/768/1440. También panel de administración, selección de foto, guardar/retirar avance. Las capturas de demostración no contienen fotos ni operaciones reales.
+
+La validación del adaptador Deno y de la firma R2 real queda pendiente del entorno de prueba autorizado; las pruebas locales cubren el manejador HTTP, contrato, SQL y componentes, sin presentar esa cobertura como un despliegue verificado.

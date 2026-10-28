@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import { supabase } from "./supabaseClient";
 import eyrSolutionsLogo from "./assets/eyr-solutions-logo.png";
 import CommercialLanding from "./modules/commercial-landing/CommercialLanding.jsx";
+import TrackingAdminPanel from "./modules/vehicle-tracking/TrackingAdminPanel.jsx";
 import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
 import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
 import ImporterCustomsServiceRequest from "./modules/importer-customs/ImporterCustomsServiceRequest";
@@ -7176,6 +7177,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                   </div>
 
                   <div className="import-detail-body">
+                    <TrackingAdminPanel sourceType="MANAGEMENT" sourceId={importManagementDetail.id} />
                     <section className="import-vehicle-card">
                       <span className="section-label">VEHÍCULO</span>
                       <h3>{[importManagementDetail.model_year,importManagementDetail.make,importManagementDetail.model,importManagementDetail.vehicle_trim].filter(Boolean).join(" ")}</h3>
@@ -8274,6 +8276,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                     </button>
                   </div>
 
+                  <TrackingAdminPanel sourceType="CUSTOMS" sourceId={customsDetail.id} />
                   <div className="customs-detail-summary">
                     <article>
                       <span>Estado actual</span>

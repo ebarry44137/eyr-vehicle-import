@@ -1,4 +1,4 @@
--- BORRADOR: no aplicado a producción. Solo añade almacenamiento privado y RPCs acotadas.
+-- Seguimiento VIN: almacenamiento privado y RPCs acotadas.
 begin;
 create schema if not exists eyr_tracking_private;
 revoke all on schema eyr_tracking_private from public,anon,authenticated;

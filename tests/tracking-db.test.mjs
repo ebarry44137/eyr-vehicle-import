@@ -29,7 +29,7 @@ insert into public.import_managements values('${management}','${org}','${vin}','
 insert into public.usa_yard_receptions values('${reception}','${org}','${management}','${vin}','LINKED','2026-01-10T15:00:00Z',now(),'Honda','Accord',2003);
 insert into public.usa_yard_photos values('${photo}','${org}','${reception}','${org}/usa-yard/${reception}/photo/test.jpg','image/jpeg',now());
 `);
-try {await db.exec(await readFile(new URL('../supabase/migrations/20261028214659_vehicle_tracking_modal.sql',import.meta.url),'utf8'));}catch(error){console.error('Migration:',error.message,'position:',error.position);process.exit(1);}
+try {await db.exec(await readFile(new URL('../supabase/migrations/20261029040604_vehicle_tracking_modal.sql',import.meta.url),'utf8'));}catch(error){console.error('Migration:',error.message,'position:',error.position);process.exit(1);}
 async function as(role,user,sql,params=[]){await db.exec(`set role ${role};select set_config('request.jwt.claim.sub','${user||''}',false);`);try{return (await db.query(sql,params)).rows;}finally{await db.exec('reset role');}}
 const snapshot=async()=> (await as('service_role',null,'select public.eyr_tracking_snapshot_v1($1,$2) data',[org,vin]))[0].data;
 const action=async(user,payload)=> (await as('authenticated',user,`select public.eyr_tracking_admin_v1(p_source_type=>$1,p_source_id=>$2,p_action=>$3,p_code=>$4,p_date=>$5,p_photo_id=>$6,p_publish=>$7,p_expected_revision=>$8) data`,[payload.type||'MANAGEMENT',payload.id||management,payload.action||'read',payload.code||null,payload.date||null,payload.photo||null,payload.publish??null,payload.revision??null]))[0].data;

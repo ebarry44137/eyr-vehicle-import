@@ -1,0 +1,56 @@
+/* E&R PRO 3.0 V4 — capas visuales. No afecta impresión ni plantillas comerciales. */
+@media screen {
+html[data-eyr-theme="dark"] {
+  color-scheme: dark;
+  --eyr-v4-bg: #0b1220;
+  --eyr-v4-surface: #152238;
+  --eyr-v4-elevated: #1d2e48;
+  --eyr-v4-border: #34465e;
+  --eyr-v4-text: #edf3fb;
+  --eyr-v4-muted: #b9c7d8;
+}
+html[data-eyr-theme="dark"] body,
+html[data-eyr-theme="dark"] #root,
+html[data-eyr-theme="dark"] .app,
+html[data-eyr-theme="dark"] .main { background-color: var(--eyr-v4-bg); color: var(--eyr-v4-text); }
+html[data-eyr-theme="dark"] .main .topbar,
+html[data-eyr-theme="dark"] .main .page-header,
+html[data-eyr-theme="dark"] .main .module-header { color: var(--eyr-v4-text); }
+html[data-eyr-theme="dark"] .main :is(h1,h2,h3,h4,h5,h6) { color: var(--eyr-v4-text); }
+html[data-eyr-theme="dark"] .main :is(input,textarea,select):not([type="checkbox"]):not([type="radio"]) {
+  background-color: #142238; color: var(--eyr-v4-text); border-color: var(--eyr-v4-border);
+}
+html[data-eyr-theme="dark"] .main :is(input,textarea)::placeholder { color: #9badc3; }
+html[data-eyr-theme="dark"] .main :is(input,textarea,select):focus-visible,
+html[data-eyr-theme="dark"] .main button:focus-visible { outline: 2px solid #d4a73d; outline-offset: 2px; }
+html[data-eyr-theme="dark"] .main :is(table,th,td) { border-color: var(--eyr-v4-border); }
+html[data-eyr-theme="dark"] .main :is(th,thead) { background-color: #1d304a; color: var(--eyr-v4-text); }
+html[data-eyr-theme="dark"] .main :is(td,tbody tr) { color: var(--eyr-v4-text); }
+html[data-eyr-theme="dark"] .main :is(.muted,.text-muted,.helper-text,.eyebrow,small) { color: var(--eyr-v4-muted); }
+/* Raíces comprobadas en las hojas de estilos entregadas. */
+html[data-eyr-theme="dark"] .main :is(
+ .admin-center,.crm-pro-shell,.commercial-quote-page,.declarations-module,.correlatives-module,
+ .finance-module,.impdir-module,.internal-users-module,.office-users-module,.opc-module,
+ .eyr-exec,.eyr-ops-dashboard,.perf-shell,.eyr-usa,.importer-pro-page,
+ .importer-dashboard-v3974,.importer-pro-files-v39751,.importer-pro-team-v39753,
+ .importer-customs-v39744,.receivable-panel,.accounts-payable-panel,.paa-panel,.pci-card,
+ .ofp,.config-pro-panels,.prospects-layout
+) { color: var(--eyr-v4-text); }
+html[data-eyr-theme="dark"] .main :is(
+ .admin-center,.crm-pro-shell,.commercial-quote-page,.declarations-module,.correlatives-module,
+ .finance-module,.impdir-module,.internal-users-module,.office-users-module,.opc-module,
+ .eyr-exec,.eyr-ops-dashboard,.perf-shell,.eyr-usa,.importer-pro-page,
+ .importer-dashboard-v3974,.importer-pro-files-v39751,.importer-pro-team-v39753,
+ .importer-customs-v39744,.receivable-panel,.accounts-payable-panel,.paa-panel,.pci-card,
+ .ofp,.prospects-layout
+) :is(.card,.panel,.stat-card,.kpi-card,.summary-card,.metric-card) {
+  background-color: var(--eyr-v4-surface); color: var(--eyr-v4-text); border-color: var(--eyr-v4-border);
+}
+html[data-eyr-theme="dark"] .main :is(
+ .admin-center,.crm-pro-shell,.commercial-quote-page,.declarations-module,.correlatives-module,
+ .finance-module,.impdir-module,.internal-users-module,.office-users-module,.opc-module,
+ .eyr-exec,.eyr-ops-dashboard,.perf-shell,.eyr-usa,.importer-pro-page,
+ .importer-dashboard-v3974,.receivable-panel,.accounts-payable-panel,.ofp
+) :is(.table-container,.table-wrap,.table-wrapper) { background-color: var(--eyr-v4-surface); border-color: var(--eyr-v4-border); }
+html[data-eyr-theme="light"] { color-scheme: light; }
+}

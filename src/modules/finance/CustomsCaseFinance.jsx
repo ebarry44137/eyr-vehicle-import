@@ -368,7 +368,7 @@ export default function CustomsCaseFinance({
         </label>
 
         <label>
-          <span>Gestión de despacho · Geovany (Q)</span>
+          <span>Gestión de despacho (Q)</span>
           <input
             type="number"
             step="0.01"

@@ -1,0 +1,49 @@
+/* EYR V9: dark appearance only for USA yard administration. */
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] {
+  background: #172940 !important;
+  color: #eaf2ff !important;
+  border-color: #344e6c !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] h3,
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] strong,
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] label,
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] legend,
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] span,
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] small {
+  color: #eaf2ff !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] small,
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] span:not([style]) {
+  color: #b9cce3 !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel input:not([type="checkbox"]),
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel select {
+  background: #0e1b2d !important;
+  color: #f5f9ff !important;
+  border: 1px solid #496481 !important;
+  caret-color: #f5f9ff !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel input::placeholder { color: #9fb5cd !important; }
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel fieldset {
+  background: #12233a !important;
+  border-color: #3a5472 !important;
+  color: #eaf2ff !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] div[style*="borderTop"] {
+  border-color: #344e6c !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel > div[style*="background"] span[style*="background"] {
+  background: #223b56 !important;
+  color: #eaf2ff !important;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel button:not([style]) {
+  background: #244d78 !important;
+  color: #f5f9ff !important;
+  border: 1px solid #547498 !important;
+  border-radius: 7px;
+  padding: 7px 11px;
+  cursor: pointer;
+}
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel button:not([style]):hover { background: #306394 !important; }
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel button:disabled { opacity: .55; cursor: not-allowed; }
+html[data-eyr-theme="dark"] .eyr-usa-admin-panel input[type="checkbox"] { accent-color: #e7b957; }

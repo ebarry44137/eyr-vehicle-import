@@ -25,3 +25,5 @@
 .eyr-tracking-admin .eta-hint{background:#fff6e2;color:#795716;padding:12px;border-radius:6px}
 html[data-eyr-theme=dark] .eyr-tracking-admin{--eta-bg:#142536;--eta-field:#0c1c2b;--eta-text:#e9f1f8;--eta-muted:#adc0d0;--eta-line:#3a5268}
 @media(max-width:600px){.eyr-tracking-admin{padding:16px}.eyr-tracking-admin .eta-milestone-form{display:grid;grid-template-columns:1fr}.eyr-tracking-admin :is(input[type=date],select){font-size:16px}.eyr-tracking-admin .eta-photo-options{grid-template-columns:1fr}}
+.eyr-tracking-admin>header>div,.eyr-tracking-admin fieldset{min-width:0}
+@media(max-width:600px){.eyr-tracking-admin .eta-milestone-form label{min-width:0}.eyr-tracking-admin>header{flex-wrap:wrap}.eyr-tracking-admin .eta-events li{flex-wrap:wrap;gap:4px 12px}}

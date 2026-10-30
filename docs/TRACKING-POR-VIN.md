@@ -15,7 +15,9 @@ No simula un porcentaje ni completa etapas anteriores sin evidencia. `EMBARCADO`
 - Recepción y fechas aduanales se leen de sus registros habituales, sin copiar datos de clientes.
 - En el detalle de una gestión o expediente se agregó un panel para registrar/corregir/retirar fechas reales: carga en contenedor, despacho desde USA, llegada a Guatemala, en entrega y entregado al cliente.
 - En Yarda USA, un ADMIN puede seleccionar qué fotos de la recepción compartir. Por defecto ninguna está publicada. Antes de marcar debe revisar que sean fotos del vehículo sin documentos ni datos personales visibles. Se comparten los originales; no se elimina EXIF ni se difuminan datos automáticamente.
-- Una recepción sin vínculo permite seleccionar fotos pero requiere vincular su gestión para registrar transporte. Las operaciones exclusivamente aduanales no ofrecen carga/salida USA ni fotos de yarda.
+- En Recepción USA, los colaboradores activos pueden registrar/corregir/retirar carga en contenedor y despacho desde USA únicamente en sus yardas activas asignadas. No se exige vínculo previo a una gestión. Los avances se guardan en la recepción y siguen visibles después de vincularla por ID/VIN/organización. Aduanas, llegada y entrega en Guatemala permanecen en sus módulos autorizados.
+- Administración conserva la selección de fotos en un panel separado. Las operaciones exclusivamente aduanales no ofrecen carga/salida USA ni fotos de yarda.
+- Cuando hay una fecha de yarda y otra manual de gestión para el mismo avance USA, la fecha operativa de yarda tiene prioridad en la consulta pública. Los registros conservan auditoría; no se modifican estados de gestión ni revisión/vinculación de recepciones.
 - Los nuevos avances no cambian los estados financieros, CRM ni cálculos existentes. Sus correcciones conservan auditoría y revisión para impedir sobrescribir cambios concurrentes.
 
 ## Datos y permisos
@@ -57,3 +59,11 @@ Antes de publicar la web: verificar una operación de prueba autorizada de princ
 - `node tests/tracking-browser.cjs` con Playwright instalado aparte y Chromium disponible (opcional `TRACKING_PLAYWRIGHT_MODULE` / `TRACKING_CHROMIUM_PATH`); `TRACKING_SCREENSHOT_DIR` permite guardar capturas. Navegador con respuestas simuladas: modal, foco/Escape, validación, historial, galería, resultados vacíos/ambiguos/429/503 y tamaños 320/390/768/1440. También panel de administración, selección de foto, guardar/retirar avance. Las capturas de demostración no contienen fotos ni operaciones reales.
 
 La función fue compilada y desplegada por Supabase. Las imágenes reales continúan privadas hasta que el administrador las seleccione; las pruebas simuladas de galería no sustituyen la revisión de una foto real aprobada. La firma R2 se valida al seleccionar y consultar una foto de recepción autorizada.
+
+## Corrección de colaborador USA (20261030172627)
+
+Migración aplicada en Supabase E&R: `20261030172627_usa_yard_tracking_collaborator.sql`. No requiere reemplazar la función Edge de recepción ni cambiar roles de usuarios.
+
+`eyr_tracking_yard_v1` autentica con `auth.uid()`, exige perfil y organización activos, y comprueba colaborador, asignación y yarda activa para cada recepción. Un ADMIN de la misma organización conserva acceso operativo. Solo admite carga y despacho, fechas reales posteriores a recepción y orden de carga/despacho, revisión optimista y retiro auditado. No permite publicar fotos ni registrar etapas guatemaltecas. Las tablas privadas siguen sin acceso directo para anon/authenticated. El encabezado usa E&R SOLUTIONS sin el emoji regional que algunos equipos mostraban como US.
+
+Validación adicional: cinco pruebas SQL de permisos por yarda/organización, revocaciones, recepción sin vínculo y vínculo posterior, correcciones/cronología/auditoría, y navegador `tests/usa-yard-tracking-browser.cjs` con sesión y API simuladas.

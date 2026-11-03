@@ -1,0 +1,14 @@
+.freight-net-settlements{padding:20px;margin:0 0 18px;border:1px solid #c9ddce;border-radius:16px;background:#f4faf6;color:#153b2a;font:13px/1.6 system-ui,sans-serif}
+.freight-net-settlements *{box-sizing:border-box}
+.freight-net-settlements header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.freight-net-settlements header span{font-size:9px;font-weight:800;letter-spacing:1px;color:#47735a}
+.freight-net-settlements h2{font:700 19px/1.3 system-ui,sans-serif;margin:6px 0}
+.freight-net-settlements>p{font-size:12px;color:#506d5d;margin:12px 0}
+.freight-net-settlements .fns-total{display:flex;flex-direction:column;text-align:right;flex-shrink:0}
+.freight-net-settlements .fns-total small{font-size:10px}.freight-net-settlements .fns-total strong{font-size:22px;color:#176e3d}
+.freight-net-settlements .fns-entries article{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 0;border-top:1px solid #d5e4d9}
+.freight-net-settlements .fns-entries article>div{min-width:0}.freight-net-settlements .fns-entries strong,.freight-net-settlements .fns-entries span{display:block;overflow-wrap:anywhere}
+.freight-net-settlements .fns-entries span{font-size:11px;color:#53715f}.freight-net-settlements .fns-entries b{white-space:nowrap;color:#176e3d}
+.freight-net-settlements .fns-error{color:#a62e25}
+html[data-eyr-theme=dark] .freight-net-settlements{background:#152b22;color:#e6f3e9;border-color:#395c47}html[data-eyr-theme=dark] .freight-net-settlements :is(p,small,span){color:#b4cdbb}html[data-eyr-theme=dark] .freight-net-settlements :is(b,.fns-total strong){color:#9be7b4}
+@media(max-width:600px){.freight-net-settlements{padding:16px}.freight-net-settlements header{flex-direction:column}.freight-net-settlements .fns-total{text-align:left}.freight-net-settlements .fns-entries article{flex-wrap:wrap}}

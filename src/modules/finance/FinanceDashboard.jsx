@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./finance.css";
 import "./finance-v39622.css";
 import AccountsPayablePanel from "./AccountsPayablePanel";
+import FreightNetSettlements from "./FreightNetSettlements.jsx";
 import AccountsReceivablePanel from "./AccountsReceivablePanel";
 
 function q(value) {
@@ -636,6 +637,8 @@ const availableAfterReserves =
       {message && <div className="finance-message success">{message}</div>}
       {error && <div className="finance-message error">{error}</div>}
 
+      <FreightNetSettlements supabase={supabase} from={fromDate} to={toDate} refreshKey={summary} />
+
       {/* V39.9.18.10H.2.1 · POST-CLOSING CURRENT PERIOD */}
       <div className="finance-message" style={{ marginBottom: "14px" }}>
         <strong>📍 Período financiero actual:</strong>{" "}
@@ -696,7 +699,7 @@ const availableAfterReserves =
           <article className={Number(s.net_result_gtq || 0) >= 0 ? "profit" : "danger"}>
             <span>Utilidad neta desde último cierre</span>
             <strong>{q(s.net_result_gtq)}</strong>
-            <small>Resultado del período abierto</small>
+            <small>Incluye ganancias netas de fletes imputadas al período</small>
           </article>
         </section>
       </section>
@@ -1103,6 +1106,7 @@ const availableAfterReserves =
                 </span>
               </div>
               <div>
+                {Number(item.freight_net_profit_gtq||0)>0&&<small>GANANCIA NETA DE FLETES · {q(item.freight_net_profit_gtq)}</small>}
                 <small>SALDO FINAL</small>
                 <strong>{q(item.closing_cash_gtq)}</strong>
               </div>

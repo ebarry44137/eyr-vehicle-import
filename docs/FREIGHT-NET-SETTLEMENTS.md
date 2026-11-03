@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-Preparado y probado, pendiente de autorización explícita para aplicar la migración en Supabase E&R y publicar en producción. La revisión automática rechazó el primer intento de aplicar DDL; se comprobó por lectura que no se creó la tabla. No hay ninguna liquidación real cargada por este cambio, ni se generó un cierre. Esta rama tiene el despliegue automático desactivado.
+Autorización explícita recibida del usuario. Migración 20261103233952 aplicada en Supabase E&R y partida real registrada mediante referencia idempotente. La validación transaccional confirmó el incremento exacto de utilidad, sin cambios en otras columnas de resultados, saldo bancario ni cantidad de cierres. Los importes reales permanecen solo en la base privada. Esta rama conserva el despliegue automático desactivado; el frontend se publica mediante integración en main.
 
 El caso actual solo dispone de la ganancia final después de los costos USA y Guatemala. No se reconstruyen ventas, remesas, costos ni pagos históricos desconocidos. Tampoco se crea un expediente aduanal. El importe real solicitado se registra aparte mediante una operación de datos autorizada, no se incluye en el código ni en estas pruebas públicas.
 
@@ -17,13 +17,13 @@ El caso actual solo dispone de la ganancia final después de los costos USA y Gu
 - La referencia única impide repetir una misma carga. La liquidación es inmutable; una corrección requiere anulación documentada. El mismo bloqueo por organización del motor de cierres impide insertar o corregir una liquidación mientras se está cerrando. Los meses ya incluidos en un cierre activo requieren revisión previa.
 - En Finanzas se agrega una sección de consulta de ganancias liquidadas. Muestra total del rango y los registros recientes con su mes; avisa si uno está fuera del rango. No hay formulario de cobro ni de entrada bancaria.
 
-## Pasos de activación, una vez autorizados
+## Procedimiento de activación y comprobación
 
 1. Verificar proyecto `jbrgbqlyohlnwdnwhort` y organización activa E&R.
 2. Verificar que las funciones originales siguen coincidiendo con las bases revisadas. Aplicar únicamente la nueva migración, sin ejecutar indiscriminadamente las migraciones históricas del repositorio.
 3. Registrar la partida real mediante una transacción que tome el bloqueo `finance_closing:<organization_id>`, resuelva E&R por su slug y utilice una referencia idempotente. Verificar importe/mes si ya existe una fila. La fecha de creación es la real; el mes de imputación es el indicado por el usuario.
 4. Consultar resultados de octubre antes/después bajo permisos financieros: la diferencia neta debe ser exactamente la partida; todas las columnas de caja, cobros y banco deben permanecer iguales. Noviembre no incorpora la partida de octubre.
-5. Publicar el frontend aprobado y comprobar la sección con datos de prueba. No generar el cierre real: el usuario lo revisará en su flujo habitual.
+5. Publicar el frontend aprobado y comprobar la sección con datos de prueba. El cierre real queda para revisión y generación por el usuario en su flujo habitual.
 
 ## Validación
 

@@ -12,11 +12,12 @@ function q(value) {
     : "Q 0.00";
 }
 
+function guatemalaToday() {
+  return new Intl.DateTimeFormat("sv-SE", {timeZone:"America/Guatemala",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+}
+
 function monthStart() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
+  return guatemalaToday().slice(0,7)+"-01";
 }
 
 export default function FinanceDashboard({ supabase }) {
@@ -40,7 +41,7 @@ export default function FinanceDashboard({ supabase }) {
   });
 
   const [fromDate, setFromDate] = useState(monthStart());
-  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
+  const [toDate, setToDate] = useState(guatemalaToday());
 
   const [expenseForm, setExpenseForm] = useState({
     expense_date: new Date().toISOString().slice(0, 10),
@@ -60,6 +61,7 @@ export default function FinanceDashboard({ supabase }) {
   // V39.9.18.10G.1 · CLOSING PRO PREVIEW UI
   // Vista segura: el servidor determina apertura y movimientos.
   const [closingPreview, setClosingPreview] = useState(null);
+  const [closingSaving,setClosingSaving]=useState(false);
   const [closingPreviewError, setClosingPreviewError] = useState("");
 
   // V39.9.18.10H.1 · FINANCE PRO TOP DASHBOARD
@@ -150,7 +152,7 @@ export default function FinanceDashboard({ supabase }) {
       // NO inserta cierres ni modifica movimientos.
       // ============================================================
       const { data: closingPreviewRows, error: closingPreviewRpcError } =
-        await supabase.rpc("finance_next_closing_preview");
+        await supabase.rpc("finance_next_closing_preview",{p_from:fromDate,p_to:toDate});
 
       if (closingPreviewRpcError) {
         setClosingPreview(null);
@@ -436,13 +438,15 @@ export default function FinanceDashboard({ supabase }) {
 
   // V39.9.18.10G.2 · SAFE CLOSING CONFIRMATION
   async function createClosing() {
+    if(closingSaving)return;
+    setClosingSaving(true);
     setError("");
     setMessage("");
 
     try {
       // 1) Preview fresco justo antes de confirmar.
       const { data: freshPreviewRows, error: freshPreviewError } =
-        await supabase.rpc("finance_next_closing_preview");
+        await supabase.rpc("finance_next_closing_preview",{p_from:fromDate,p_to:toDate});
 
       if (freshPreviewError) throw freshPreviewError;
 
@@ -478,6 +482,7 @@ export default function FinanceDashboard({ supabase }) {
           "",
           "Período: " + fromDate + " → " + toDate,
           "Tipo: " + closingForm.closing_type,
+          "Movimientos registrados hasta: " + new Date(new Date(freshPreview.cutoff_to).getTime()-1).toLocaleString("es-GT",{timeZone:"America/Guatemala"}),
           "Punto de partida: " + checkpointLabel,
           "",
           "Saldo inicial BANK: Q " + money(freshPreview.opening_bank_gtq),
@@ -541,7 +546,7 @@ export default function FinanceDashboard({ supabase }) {
         err?.message ||
           "No fue posible generar el cierre financiero."
       );
-    }
+    } finally {setClosingSaving(false);}
   }
 
   const s = summary || {
@@ -624,11 +629,11 @@ const availableAfterReserves =
           </div>
           <label>
             <span>Desde</span>
-            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            <input type="date" disabled={closingSaving} value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </label>
           <label>
             <span>Hasta</span>
-            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            <input type="date" disabled={closingSaving} value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </label>
           <button onClick={load} disabled={loading}>↻</button>
         </div>
@@ -982,7 +987,7 @@ const availableAfterReserves =
             <button
               type="button"
               onClick={createClosing}
-              disabled={loading || !closingPreview || Boolean(closingPreviewError)}
+              disabled={loading || closingSaving || !closingPreview || Boolean(closingPreviewError)}
               title={
                 closingPreviewError
                   ? "El preview bancario presenta un error."
@@ -991,7 +996,7 @@ const availableAfterReserves =
                     : "Revisar y confirmar el cierre financiero."
               }
             >
-              {loading ? "Procesando…" : "Generar cierre →"}
+              {loading || closingSaving ? "Procesando…" : "Generar cierre →"}
             </button>
           </div>
 
@@ -1009,6 +1014,7 @@ const availableAfterReserves =
 
           {closingPreview && (
             <div className="closing-preview">
+              <p style={{fontSize:12}}>El corte respeta la fecha Hasta seleccionada, según la fecha de registro de los movimientos. La fecha de creación del cierre se guarda por separado.</p>
               <div>
                 <span>🏦 Saldo inicial BANK</span>
                 <strong>{q(closingPreview.opening_bank_gtq)}</strong>
@@ -1041,7 +1047,7 @@ const availableAfterReserves =
                   {" "}
                   {Number(closingPreview.general_expenses_count || 0)} gasto(s) +
                   {" "}
-                  {Number(closingPreview.supplier_payments_count || 0)} pago(s) a proveedores
+                  {Number(closingPreview.supplier_payments_count || 0)} pago(s) a proveedores + {Number(closingPreview.customs_outflows_count || 0)} salida(s) aduanales
                 </span>
                 <strong></strong>
               </div>
@@ -1068,8 +1074,8 @@ const availableAfterReserves =
 
               <div>
                 <span className="closing-subnote">
-                  Corte técnico desde: {closingPreview.cutoff_from
-                    ? new Date(closingPreview.cutoff_from).toLocaleString("es-GT")
+                  Movimientos registrados desde: {closingPreview.cutoff_from
+                    ? new Date(closingPreview.cutoff_from).toLocaleString("es-GT",{timeZone:"America/Guatemala"})
                     : "—"}
                 </span>
                 <strong></strong>
@@ -1077,8 +1083,8 @@ const availableAfterReserves =
 
               <div>
                 <span className="closing-subnote">
-                  Simulación al: {closingPreview.cutoff_to
-                    ? new Date(closingPreview.cutoff_to).toLocaleString("es-GT")
+                  Movimientos registrados hasta: {closingPreview.cutoff_to
+                    ? new Date(new Date(closingPreview.cutoff_to).getTime()-1).toLocaleString("es-GT",{timeZone:"America/Guatemala"})
                     : "—"}
                 </span>
                 <strong></strong>
@@ -1104,6 +1110,7 @@ const availableAfterReserves =
                   {item.closing_type} · {item.period_start} → {item.period_end}
                   {item.status === "VOID" ? " · ANULADO" : ""}
                 </span>
+                <small>Creado el {new Date(item.closed_at||item.created_at).toLocaleString("es-GT",{timeZone:"America/Guatemala"})}</small>
               </div>
               <div>
                 {Number(item.freight_net_profit_gtq||0)>0&&<small>GANANCIA NETA DE FLETES · {q(item.freight_net_profit_gtq)}</small>}

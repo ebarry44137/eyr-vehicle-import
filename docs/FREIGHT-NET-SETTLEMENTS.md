@@ -34,3 +34,14 @@ El caso actual solo dispone de la ganancia final después de los costos USA y Gu
 Ejecutar con `FINANCE_PGLITE_MODULE=/ruta/node_modules/@electric-sql/pglite/dist/index.js node --test tests/freight-net-settlements.test.mjs` (`@electric-sql/pglite@0.5.13` instalado aparte).
 
 `tests/freight-net-settlements-browser.cjs` verifica la tarjeta, cambio octubre/noviembre, error de carga y pantallas 320/390/768/1440 con API e importes ficticios. Usar `FINANCE_PLAYWRIGHT_MODULE` y `FINANCE_CHROMIUM_PATH` si Playwright/Chromium están instalados fuera del proyecto.
+
+
+## Recepciones bancarias confirmadas
+
+La migración `freight_bank_receipt` permite vincular una recepción bancaria confirmada a la liquidación existente. `bank_received_on` conserva la fecha confirmada sin inventar una hora y `bank_recorded_at` conserva el momento real de registro. El importe de la recepción es el mismo de la liquidación. No crea ventas, cobros de expedientes ni una segunda utilidad.
+
+El dashboard bancario y el motor de cierres incluyen esta recepción una vez; la tarjeta de fletes muestra fecha e importe bancario del rango. La utilidad conserva su imputación de fin de mes. La conciliación original y los cierres previos no se modifican. Se rechazan fechas futuras y fechas que afecten conciliaciones o cierres activos. Una recepción registrada no se puede editar o anular silenciosamente.
+
+Los movimientos anteriores mantienen su base de fecha de registro; las recepciones de fletes usan la fecha confirmada, con límites de calendario de Guatemala. Los campos nuevos y la función de agregación son privados. Esta migración no registra dinero por sí sola: el asiento requiere la confirmación expresa del usuario.
+
+Pruebas: `tests/freight-bank-receipt.test.mjs` usa cifras ficticias para comprobar banco, disponibilidad, cortes antes/después de la recepción, utilidad sin duplicación, cierre siguiente, permisos y auditoría. `tests/freight-net-settlements-browser.cjs` verifica la fecha bancaria y el importe en la tarjeta real.

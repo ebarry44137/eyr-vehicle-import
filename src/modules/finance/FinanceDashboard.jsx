@@ -1014,14 +1014,14 @@ const availableAfterReserves =
 
           {closingPreview && (
             <div className="closing-preview">
-              <p style={{fontSize:12}}>El corte respeta la fecha Hasta seleccionada, según la fecha de registro de los movimientos. La fecha de creación del cierre se guarda por separado.</p>
+              <p style={{fontSize:12}}>El corte respeta la fecha Hasta seleccionada, según la fecha de registro de los movimientos y la fecha confirmada de las recepciones de fletes. La fecha de creación del cierre se guarda por separado.</p>
               <div>
                 <span>🏦 Saldo inicial BANK</span>
                 <strong>{q(closingPreview.opening_bank_gtq)}</strong>
               </div>
 
               <div>
-                <span>+ Cobros BANK</span>
+                <span>+ Entradas BANK</span>
                 <strong>{q(closingPreview.total_collections_gtq)}</strong>
               </div>
 
@@ -1031,7 +1031,7 @@ const availableAfterReserves =
                   {" "}
                   {Number(closingPreview.case_collections_count || 0)} expediente(s) +
                   {" "}
-                  {Number(closingPreview.declaration_collections_count || 0)} declaración(es)
+                  {Number(closingPreview.declaration_collections_count || 0)} declaración(es) + {Math.max(0,Number(closingPreview.total_collections_count||0)-Number(closingPreview.case_collections_count||0)-Number(closingPreview.declaration_collections_count||0))} ingreso(s) de fletes
                 </span>
                 <strong></strong>
               </div>

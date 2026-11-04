@@ -17,9 +17,10 @@ export default function FreightNetSettlements({supabase,from,to,refreshKey}){
  },[supabase,from,to,refreshKey]);
  return <section className="freight-net-settlements" aria-label="Ganancias netas de fletes">
   <header><div><span>RESULTADO DE FLETES</span><h2>Ganancias de fletes liquidadas</h2></div><div className="fns-total"><small>Utilidad en el rango seleccionado</small><strong>{data?money(data.period_total_gtq):'—'}</strong></div></header>
-  <p>Ganancia final después de los costos del envío. Se incorpora a la utilidad neta del período, con imputación al cierre de mes. Este registro no genera cobros ni depósitos bancarios.</p>
+  <p>Ganancia final después de los costos del envío. Se incorpora a la utilidad neta del período, con imputación al cierre de mes. La utilidad se registra una sola vez. El banco solo suma las recepciones confirmadas con su fecha correspondiente.</p>
   {error&&<p className="fns-error" role="alert">{error}</p>}
   {!data&&!error&&<p role="status">Cargando liquidaciones…</p>}
-  {data?.entries?.length?<div className="fns-entries">{data.entries.map(entry=><article key={entry.id}><div><strong>{entry.concept}</strong><span>{monthLabel(entry.period_month)}{!entry.in_selected_period?' · Fuera del rango seleccionado':''}</span></div><b>{money(entry.amount_gtq)}</b></article>)}</div>:data&&<p>Todavía no hay liquidaciones de fletes registradas.</p>}
+  {data&&<p>Ingresos bancarios de fletes en el rango: <strong>{money(data.bank_effect_gtq)}</strong></p>}
+  {data?.entries?.length?<div className="fns-entries">{data.entries.map(entry=><article key={entry.id}><div><strong>{entry.concept}</strong><span>{monthLabel(entry.period_month)}{!entry.in_selected_period?' · Fuera del rango seleccionado':''}</span>{entry.bank_received_on?<span>Recibido en banco el {entry.bank_received_on.split("-").reverse().join("/")}</span>:<span>Sin recepción bancaria registrada</span>}</div><b>{money(entry.amount_gtq)}</b></article>)}</div>:data&&<p>Todavía no hay liquidaciones de fletes registradas.</p>}
  </section>;
 }

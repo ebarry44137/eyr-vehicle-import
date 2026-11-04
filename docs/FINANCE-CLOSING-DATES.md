@@ -8,7 +8,7 @@ El banco mantiene su base existente: `created_at`, la fecha de registro del movi
 
 El RPC nuevo `finance_next_closing_preview(date,date)` recibe ambas fechas y devuelve metadatos del cálculo. La firma sin argumentos se conserva para clientes anteriores. Los permisos financieros y el bloqueo transaccional del cierre siguen vigentes. Las salidas aduanales ahora figuran también en el contador de salidas de la vista previa.
 
-Las liquidaciones netas de fletes siguen afectando únicamente la utilidad. Registrar una entrada bancaria es una operación distinta, que requiere confirmar la recepción y evitar duplicarla con el saldo conciliado.
+Las liquidaciones netas de fletes siguen afectando únicamente la utilidad. Registrar una entrada bancaria requiere confirmar la recepción y evitar duplicarla con el saldo conciliado. Las recepciones confirmadas vinculadas a fletes usan su propia fecha bancaria, manteniendo aparte la auditoría real de registro.
 
 ## Validación
 

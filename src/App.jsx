@@ -3264,7 +3264,7 @@ function App() {
 
     const vinValue = safe(cleanVin);
     const templateUrl =
-      `${window.location.origin}/branding/formato-caratula-eyr.png`;
+      `${window.location.origin}/branding/formato-caratula-carta-eyr.png`;
 
     const printWindow = window.open("", "_blank", "width=920,height=1180");
 
@@ -3289,7 +3289,7 @@ function App() {
       font-family:Arial,Helvetica,sans-serif;color:#143957
     }
     .toolbar{
-      width:210mm;margin:16px auto 10px;
+      width:215.9mm;margin:16px auto 10px;
       display:flex;align-items:center;justify-content:space-between;gap:16px
     }
     .toolbar strong{display:block;font-size:18px}
@@ -3299,7 +3299,7 @@ function App() {
       padding:12px 18px;font-weight:900;cursor:pointer
     }
     .sheet{
-      position:relative;width:210mm;height:297mm;margin:0 auto 24px;
+      position:relative;width:215.9mm;height:279.4mm;margin:0 auto 24px;
       background:#fff url("${templateUrl}") center/100% 100% no-repeat;
       overflow:hidden;box-shadow:0 10px 40px rgba(9,34,58,.15)
     }
@@ -3307,21 +3307,21 @@ function App() {
       position:absolute;z-index:2;left:17mm;right:17mm;top:88mm;
       margin:0;text-align:center;text-transform:uppercase;
       color:#173a5c;font-size:12.5mm;line-height:1.05;font-weight:950;
-      letter-spacing:.15mm
+      letter-spacing:.15mm;overflow-wrap:anywhere
     }
     .vehicle-block{
       position:absolute;z-index:2;left:14mm;right:14mm;top:166mm;
       text-align:center;text-transform:uppercase;color:#f39a20
     }
     .vehicle{
-      margin:0;font-size:8.5mm;line-height:1.05;font-weight:950
+      margin:0;overflow-wrap:anywhere;font-size:8.5mm;line-height:1.05;font-weight:950
     }
     .vin{
       margin-top:4mm;font-size:8.2mm;line-height:1.05;
       font-weight:950;letter-spacing:.12mm
     }
 
-    @page{size:A4 portrait;margin:0}
+    @page{size:letter portrait;margin:0}
     @media print{
       html,body{background:#fff}
       .toolbar{display:none!important}
@@ -3333,7 +3333,7 @@ function App() {
 <body>
   <div class="toolbar">
     <div>
-      <strong>Carátula E&amp;R · lista para imprimir</strong>
+      <strong>Carátula E&amp;R · tamaño carta (8.5 × 11 pulgadas)</strong>
       <small>${clientName} · ${vinValue}</small>
     </div>
     <button onclick="window.print()">🖨️ Imprimir</button>

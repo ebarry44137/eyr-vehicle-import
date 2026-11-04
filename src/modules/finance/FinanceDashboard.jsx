@@ -44,7 +44,7 @@ export default function FinanceDashboard({ supabase }) {
   const [toDate, setToDate] = useState(guatemalaToday());
 
   const [expenseForm, setExpenseForm] = useState({
-    expense_date: new Date().toISOString().slice(0, 10),
+    expense_date: guatemalaToday(),
     category: "SUELDOS",
     description: "",
     payee: "",
@@ -421,7 +421,7 @@ export default function FinanceDashboard({ supabase }) {
       if (insertError) throw insertError;
 
       setExpenseForm({
-        expense_date: new Date().toISOString().slice(0, 10),
+        expense_date: guatemalaToday(),
         category: "SUELDOS",
         description: "",
         payee: "",
@@ -857,7 +857,7 @@ const availableAfterReserves =
           </div>
 
           <form onSubmit={addExpense}>
-            <label><span>Fecha</span><input type="date" value={expenseForm.expense_date} onChange={(e) => setExpenseForm((p) => ({...p, expense_date:e.target.value}))}/></label>
+            <label><span>Fecha del gasto para el cierre</span><input type="date" value={expenseForm.expense_date} onChange={(e) => setExpenseForm((p) => ({...p, expense_date:e.target.value}))}/></label>
             <label>
               <span>Categoría</span>
               <select value={expenseForm.category} onChange={(e) => setExpenseForm((p) => ({...p, category:e.target.value}))}>
@@ -1014,7 +1014,7 @@ const availableAfterReserves =
 
           {closingPreview && (
             <div className="closing-preview">
-              <p style={{fontSize:12}}>El corte respeta la fecha Hasta seleccionada, según la fecha de registro de los movimientos y la fecha confirmada de las recepciones de fletes. La fecha de creación del cierre se guarda por separado.</p>
+              <p style={{fontSize:12}}>El corte respeta la fecha Hasta seleccionada, usando la fecha elegida para los gastos nuevos o ajustados y la fecha confirmada de las recepciones de fletes. Los demás movimientos conservan su fecha de registro. La fecha de creación del cierre se guarda por separado.</p>
               <div>
                 <span>🏦 Saldo inicial BANK</span>
                 <strong>{q(closingPreview.opening_bank_gtq)}</strong>

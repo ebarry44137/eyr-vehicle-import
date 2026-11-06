@@ -34,6 +34,7 @@ export default function OperationFilesPanel({
   sourceType,
   sourceId,
   readOnly = false,
+  photosOnly = false,
   title = "Fotos y documentos",
 }) {
   const [rows, setRows] = useState([]);
@@ -120,7 +121,10 @@ export default function OperationFilesPanel({
         source_id: sourceId,
       });
 
-      setRows(Array.isArray(data.files) ? data.files : []);
+      const files = Array.isArray(data.files) ? data.files : [];
+      setRows(photosOnly
+        ? files.filter((file) => file.category === "PHOTO" && file.visible_to_client === true)
+        : files);
     } catch (e) {
       setMessage(e?.message || "No fue posible cargar archivos.");
     } finally {
@@ -130,7 +134,7 @@ export default function OperationFilesPanel({
 
   useEffect(() => {
     load();
-  }, [sourceId, sourceType]);
+  }, [sourceId, sourceType, photosOnly]);
 
   async function ensurePreviewUrl(row, { force = false } = {}) {
     if (!row?.id) return null;
@@ -727,7 +731,7 @@ export default function OperationFilesPanel({
           <div className="ofp-empty">Cargando archivos...</div>
         ) : rows.length === 0 ? (
           <div className="ofp-empty">
-            Todavía no hay fotos o documentos publicados.
+            {photosOnly ? "Todavía no hay fotos publicadas." : "Todavía no hay fotos o documentos publicados."}
           </div>
         ) : (
           <>

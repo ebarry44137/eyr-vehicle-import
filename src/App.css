@@ -9879,3 +9879,10 @@ nav {
 .eyr-quote-optional-check input{width:18px!important;height:18px;accent-color:#d9aa42;flex-shrink:0}
 .eyr-quote-optional-item>input{width:100%;border:1px solid #d7e1ec;border-radius:10px;padding:11px 12px;font:inherit;color:#08284f;background:white;min-width:0}
 @media(max-width:760px){.eyr-quote-optional-grid{grid-template-columns:1fr}}
+
+.customs-photo-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}

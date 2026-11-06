@@ -9880,9 +9880,45 @@ nav {
 .eyr-quote-optional-item>input{width:100%;border:1px solid #d7e1ec;border-radius:10px;padding:11px 12px;font:inherit;color:#08284f;background:white;min-width:0}
 @media(max-width:760px){.eyr-quote-optional-grid{grid-template-columns:1fr}}
 
+.customs-table-wrap {
+  max-width: 100%;
+}
+
+.customs-table th:last-child,
+.customs-table td:last-child:not(.empty-cell) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+}
+
+.customs-table td:last-child:not(.empty-cell) {
+  background: #fff;
+}
+
 .customs-photo-link-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
+  min-width: 4.5rem;
+}
+
+.customs-photo-link-actions .customs-photo-copy {
+  max-width: 6rem;
+  white-space: normal;
+}
+
+.customs-photo-copy-confirmed {
+  display: inline-block;
+  color: #157445;
+  animation: customs-photo-copy-confirmation 260ms ease-out;
+}
+
+@keyframes customs-photo-copy-confirmation {
+  from { opacity: .35; transform: scale(.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customs-photo-copy-confirmed { animation: none; }
 }

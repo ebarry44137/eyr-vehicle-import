@@ -3304,22 +3304,23 @@ function App() {
       background:#fff url("${templateUrl}") center/100% 100% no-repeat;
       overflow:hidden;box-shadow:0 10px 40px rgba(9,34,58,.15)
     }
-    .client{
-      position:absolute;z-index:2;left:17mm;right:17mm;top:88mm;
-      margin:0;text-align:center;text-transform:uppercase;
-      color:#173a5c;font-size:12.5mm;line-height:1.05;font-weight:950;
+    .cover-content{
+      position:absolute;inset:88mm 14mm 53mm;
+      display:grid;grid-template-rows:auto 1fr auto;row-gap:5mm;
+      text-align:center;text-transform:uppercase
+    }
+    .client,.sender{
+      margin:0;color:#173a5c;font-size:12.5mm;line-height:1.05;font-weight:950;
       letter-spacing:.15mm;overflow-wrap:anywhere
     }
-    .vehicle-block{
-      position:absolute;z-index:2;left:14mm;right:14mm;top:166mm;
-      text-align:center;text-transform:uppercase;color:#f39a20
-    }
+    .client{margin-inline:3mm}
+    .vehicle-block{align-self:center;color:#f39a20}
     .vehicle{
       margin:0;overflow-wrap:anywhere;font-size:8.5mm;line-height:1.05;font-weight:950
     }
     .vin{
-      margin-top:4mm;font-size:8.2mm;line-height:1.05;
-      font-weight:950;letter-spacing:.12mm
+      margin-top:4mm;
+      font-size:8.2mm;line-height:1.05;font-weight:950;letter-spacing:.12mm
     }
 
     @page{size:letter portrait;margin:0}
@@ -3341,12 +3342,37 @@ function App() {
   </div>
 
   <main class="sheet">
-    <h1 class="client">${clientName}</h1>
-    <section class="vehicle-block">
-      <h2 class="vehicle">${vehicleLabel}</h2>
-      <div class="vin">VIN: ${vinValue}</div>
-    </section>
+    <div class="cover-content">
+      <h1 class="client">${clientName}</h1>
+      <section class="vehicle-block">
+        <h2 class="vehicle">${vehicleLabel}</h2>
+        <div class="vin">VIN: ${vinValue}</div>
+      </section>
+      <p class="sender">Remitente:<br />Ronaldo Barrientos</p>
+    </div>
   </main>
+  <script>
+    (() => {
+      const content = document.querySelector(".cover-content");
+      const client = content.querySelector(".client");
+      const vehicle = content.querySelector(".vehicle-block");
+      const sender = content.querySelector(".sender");
+      const rowGap = parseFloat(getComputedStyle(content).rowGap);
+      const availableHeight = content.clientHeight - vehicle.offsetHeight - sender.offsetHeight - 2 * rowGap - 1;
+
+      if (availableHeight > 0 && client.offsetHeight > availableHeight) {
+        let lowerSize = 1;
+        let upperSize = parseFloat(getComputedStyle(client).fontSize);
+        while (upperSize - lowerSize > 0.25) {
+          const size = (lowerSize + upperSize) / 2;
+          client.style.fontSize = size + "px";
+          if (client.offsetHeight <= availableHeight) lowerSize = size;
+          else upperSize = size;
+        }
+        client.style.fontSize = lowerSize + "px";
+      }
+    })();
+  </script>
 </body>
 </html>`);
     printWindow.document.close();

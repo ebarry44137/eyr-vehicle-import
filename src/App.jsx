@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import { supabase } from "./supabaseClient";
 import eyrSolutionsLogo from "./assets/eyr-solutions-logo.png";
 import CommercialLanding from "./modules/commercial-landing/CommercialLanding.jsx";
+import CopyCustomsPhotoLink from "./modules/customs/CopyCustomsPhotoLink.jsx";
 import TrackingAdminPanel from "./modules/vehicle-tracking/TrackingAdminPanel.jsx";
 import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
 import ImporterQuoteFields from "./modules/public-quoter/ImporterQuoteFields";
@@ -7720,12 +7721,19 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                           </span>
                         </td>
                         <td>
-                          <button
-                            className="prospect-open-button"
-                            onClick={() => openCustomsDetail(item)}
-                          >
-                            Ver →
-                          </button>
+                          <div className="customs-photo-link-actions">
+                            <button
+                              className="prospect-open-button"
+                              onClick={() => openCustomsDetail(item)}
+                            >
+                              Ver →
+                            </button>
+                            <CopyCustomsPhotoLink
+                              caseId={item.id}
+                              portalClientId={item.office_portal_client_id}
+                              officeSlug={tenantOrganization?.slug}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))}

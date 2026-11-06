@@ -3,6 +3,7 @@ import { supabase } from "../../supabaseClient";
 import "./importer-portal.css";
 import "./portal-v39.6.0.css";
 import "./portal-customs-request-v39621.css";
+import PortalCustomsPhotoLink from "./PortalCustomsPhotoLink.jsx";
 import OperationFilesPanel from "../operation-files/OperationFilesPanel.jsx";
 import PortalProfilePage from "../portal-profile/PortalProfilePage.jsx";
 import PortalSupportCenter from "../portal-support/PortalSupportCenter.jsx";
@@ -209,6 +210,7 @@ function setFavicon(url) {
 }
 
 export default function ImporterPortalPage() {
+  const photoCaseId = new URLSearchParams(window.location.search).get("fotos");
   const [session,setSession] = useState(null);
   const [context,setContext] = useState(null);
   const [branding,setBranding] = useState(DEFAULT_BRAND);
@@ -437,7 +439,7 @@ export default function ImporterPortalPage() {
         await loadBrand(data.portal_branding_slug);
       }
 
-      await loadImports({search:"",status:"ALL"});
+      if (photoCaseId === null) await loadImports({search:"",status:"ALL"});
     } catch(err) {
       setError(err?.message || "No fue posible cargar el portal.");
     } finally {
@@ -858,7 +860,9 @@ export default function ImporterPortalPage() {
             </div>
             <small>ACCESO DE CLIENTES</small>
             <h2>Ingresar al portal</h2>
-            <p>Usá las credenciales que te proporcionó {brandName}.</p>
+            <p>{photoCaseId !== null
+              ? "Ingresá con tu cuenta para ver las fotos de esta gestión."
+              : `Usá las credenciales que te proporcionó ${brandName}.`}</p>
 
             {error && <div className="ip-message error">{error}</div>}
 
@@ -892,6 +896,18 @@ export default function ImporterPortalPage() {
           <button onClick={logout}>Cerrar sesión</button>
         </section>
       </main>
+    );
+  }
+
+  if (photoCaseId !== null) {
+    return (
+      <div style={style}>
+        <PortalCustomsPhotoLink
+          key={`${session.user.id}:${photoCaseId}`}
+          caseId={photoCaseId}
+          supabase={supabase}
+        />
+      </div>
     );
   }
 

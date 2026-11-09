@@ -224,6 +224,8 @@ export default function ImporterPortalPage() {
   const [detail,setDetail] = useState(null);
 
   const [loading,setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState("");
+  const [sessionRetry, setSessionRetry] = useState(0);
   const [authLoading,setAuthLoading] = useState(false);
   const [importsLoading,setImportsLoading] = useState(false);
   const [detailLoading,setDetailLoading] = useState(false);
@@ -359,7 +361,7 @@ export default function ImporterPortalPage() {
     }
   }
 
-  async function loadImports(next=filters) {
+  async function loadImports(next=filters, isCurrent = () => true) {
     setImportsLoading(true);
     setError("");
     try {
@@ -371,11 +373,11 @@ export default function ImporterPortalPage() {
         }
       );
       if (error) throw error;
-      setImports(Array.isArray(data)?data:[]);
+      if (isCurrent()) setImports(Array.isArray(data)?data:[]);
     } catch(err) {
-      setError(err?.message || "No fue posible cargar tus importaciones.");
+      if (isCurrent()) setError(err?.message || "No fue posible cargar tus importaciones.");
     } finally {
-      setImportsLoading(false);
+      if (isCurrent()) setImportsLoading(false);
     }
   }
 
@@ -407,43 +409,45 @@ export default function ImporterPortalPage() {
     }
   }
 
-  async function loadPortal(nextSession=null) {
-    setLoading(true);
-    setError("");
+  async function loadPortal(nextSession, isCurrent = () => true, background = false) {
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
     try {
-      const s = nextSession || (await supabase.auth.getSession()).data?.session || null;
-      setSession(s);
-
-      if (!s?.user?.id) {
-        setContext(null);
-        setImports([]);
-        return;
-      }
+      if (!nextSession?.user?.id) return;
 
       const {data,error} = await supabase.rpc(
         "office_client_portal_context_v3956",
         { p_slug: routeSlug || null }
       );
+      if (!isCurrent()) return;
       if (error) throw error;
 
       if (!data?.authorized) {
-        setContext(data || null);
+        setContext(data || { authorized: false });
         setImports([]);
         setError(data?.message || "No tenés acceso al portal de clientes.");
         return;
       }
 
       setContext(data);
+      if (background) return;
 
-      if (data?.portal_branding_slug) {
-        await loadBrand(data.portal_branding_slug);
+      if (data.portal_branding_slug) {
+        await loadBrand(data.portal_branding_slug).catch(() => {});
       }
 
-      if (photoCaseId === null) await loadImports({search:"",status:"ALL"});
+      if (isCurrent() && photoCaseId === null) {
+        await loadImports({search:"",status:"ALL"}, isCurrent);
+      }
     } catch(err) {
-      setError(err?.message || "No fue posible cargar el portal.");
+      if (!background && isCurrent()) {
+        setContext(null);
+        setError(err?.message || "No fue posible cargar el portal.");
+      }
     } finally {
-      setLoading(false);
+      if (!background && isCurrent()) setLoading(false);
     }
   }
 
@@ -452,21 +456,71 @@ export default function ImporterPortalPage() {
   }, [routeSlug]);
 
   useEffect(() => {
-    let mounted=true;
+    let mounted = true;
+    let receivedAuthEvent = false;
+    let currentUserId;
+    let requestVersion = 0;
+    let portalReady = false;
+    let pendingLoad;
 
-    supabase.auth.getSession().then(({data}) => {
-      if (mounted) loadPortal(data?.session || null);
+    function restoreSession(nextSession, event) {
+      if (!mounted) return;
+      const userId = nextSession?.user?.id ?? null;
+      setSession(nextSession);
+      setSessionError("");
+      if (currentUserId === userId) {
+        if (event === "TOKEN_REFRESHED" && userId && portalReady) {
+          const version = ++requestVersion;
+          window.clearTimeout(pendingLoad);
+          pendingLoad = window.setTimeout(() => {
+            loadPortal(nextSession, () => mounted && version === requestVersion, true);
+          }, 0);
+        }
+        return;
+      }
+
+      currentUserId = userId;
+      portalReady = false;
+      const version = ++requestVersion;
+      setContext(null);
+      setImports([]);
+      setSelected(null);
+      setDetail(null);
+      setImportsLoading(false);
+      setLoading(true);
+
+      // Keep Supabase calls outside the auth callback and its session lock.
+      window.clearTimeout(pendingLoad);
+      pendingLoad = window.setTimeout(async () => {
+        const isCurrent = () => mounted && version === requestVersion;
+        await loadPortal(nextSession, isCurrent);
+        if (isCurrent()) portalReady = true;
+      }, 0);
+    }
+
+    setLoading(true);
+    const {data:listener} = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "INITIAL_SESSION") return;
+      receivedAuthEvent = true;
+      restoreSession(nextSession, event);
     });
 
-    const {data:listener} = supabase.auth.onAuthStateChange((_event,nextSession) => {
-      if (mounted) loadPortal(nextSession);
+    supabase.auth.getSession().then(({data,error}) => {
+      if (!mounted || receivedAuthEvent) return;
+      if (error) throw error;
+      restoreSession(data?.session ?? null);
+    }).catch(() => {
+      if (!mounted || receivedAuthEvent) return;
+      setSessionError("No pudimos recuperar tu sesión en este momento. Reintentá la conexión.");
+      setLoading(false);
     });
 
     return () => {
-      mounted=false;
+      mounted = false;
+      window.clearTimeout(pendingLoad);
       listener?.subscription?.unsubscribe();
     };
-  }, []);
+  }, [routeSlug, photoCaseId, sessionRetry]);
 
   useEffect(() => {
     document.title = `${brandName} | Portal de Clientes`;
@@ -749,12 +803,12 @@ export default function ImporterPortalPage() {
     setAuthLoading(true);
     setError("");
     try {
-      const {data,error} = await supabase.auth.signInWithPassword({
+      const {error} = await supabase.auth.signInWithPassword({
         email:login.email.trim().toLowerCase(),
         password:login.password,
       });
       if (error) throw error;
-      await loadPortal(data?.session);
+      setLogin((previous) => ({ ...previous, password: "" }));
     } catch(err) {
       setError(err?.message || "No fue posible iniciar sesión.");
     } finally {
@@ -821,10 +875,8 @@ export default function ImporterPortalPage() {
   }
 
   async function logout() {
-    await supabase.auth.signOut();
-    setContext(null);
-    setImports([]);
-    setSession(null);
+    const { error } = await supabase.auth.signOut();
+    if (error) setError("No fue posible cerrar sesión. Volvé a intentarlo.");
   }
 
   if (loading) {
@@ -834,6 +886,19 @@ export default function ImporterPortalPage() {
         <div className="ip-spinner"/>
         <strong>Preparando tu portal...</strong>
       </div>
+    );
+  }
+
+  if (sessionError || (session && !context)) {
+    return (
+      <main className="ip-denied-shell" style={style}>
+        <section className="ip-denied-card">
+          <small>PORTAL DE CLIENTES</small>
+          <h1>No pudimos conectar con el portal</h1>
+          <p>{sessionError || "Reintentá para recuperar el acceso a tus gestiones."}</p>
+          <button onClick={() => setSessionRetry((previous) => previous + 1)}>Reintentar</button>
+        </section>
+      </main>
     );
   }
 

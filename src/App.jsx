@@ -4737,19 +4737,21 @@ async function openCustomsDetail(item) {
     try {
       setQuoteGenerating(true);
 
-      // Guardamos/actualizamos la cotización antes de generar la imagen.
-      // V39.9.18.3 · DIGITADOR PNG: descarga no depende del guardado previo
-      // ADMIN/OPERADOR conserva exactamente el flujo estable existente.
-      // Para DIGITADOR, si el guardado CRM es rechazado por permisos,
-      // la generación/descarga visual de la cotización PRO debe continuar.
-      if (internalJobTitle === "DIGITADOR") {
-        try {
+      const manualWithoutVin = result?.calculation_method === "MANUAL"
+        && !String(vehicle?.vin || "").trim()
+        && !crmOriginalQuoteBridge?.leadId;
+
+      // El cálculo manual admite VIN vacío. En ese caso solo exportamos el PNG.
+      if (!manualWithoutVin) {
+        if (internalJobTitle === "DIGITADOR") {
+          try {
+            await saveCurrentQuotation();
+          } catch (saveErr) {
+            console.error("DIGITADOR QUOTE PRE-SAVE ERROR:", saveErr);
+          }
+        } else {
           await saveCurrentQuotation();
-        } catch (saveErr) {
-          console.error("DIGITADOR QUOTE PRE-SAVE ERROR:", saveErr);
         }
-      } else {
-        await saveCurrentQuotation();
       }
 
       await waitForQuoteImages(quoteRef.current);

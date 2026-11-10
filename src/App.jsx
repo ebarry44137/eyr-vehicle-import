@@ -37,6 +37,7 @@ import "./modules/branding/branding-v35.css";
 import "./modules/branding/branding-sidebar-fix-v35.1.css";
 import "./App.css";
 import { buildQuoteCode } from "./utils/quoteCode";
+import { VIN_PATTERN } from "../supabase/functions/_shared/vehicleTrackingDomain.js";
 import OfficePortalClientsPage from "./modules/office-portal-clients/OfficePortalClientsPage.jsx";
 import ImportersPage from "./modules/importers/ImportersPage.jsx";
 import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
@@ -2299,12 +2300,7 @@ function App() {
     const cleanVin =
       String(manualVin || "").trim().toUpperCase() || null;
 
-    if (cleanVin && cleanVin.length !== 17) {
-      setError(
-        "El VIN es opcional, pero para calcular el flete debe contener 17 caracteres."
-      );
-      return;
-    }
+    const hasStandardVin = VIN_PATTERN.test(cleanVin || "");
 
     const cleanVehicleName =
       String(manualVehicleName || "").trim().toUpperCase() ||
@@ -2322,7 +2318,7 @@ function App() {
     // V39.7.9.8.2 · El modo MANUAL conserva impuestos/base definidos por E&R,
     // pero si hay VIN válido reutiliza el motor únicamente para dimensiones/flete.
     // Nunca sustituimos taxableValue, IVA, IPRIMA ni placas del cálculo manual.
-    if (cleanVin) {
+    if (hasStandardVin) {
       try {
         const { data: freightLookup, error: freightLookupError } =
           await invokeFunction("decode-vin", {
@@ -4736,13 +4732,14 @@ async function openCustomsDetail(item) {
 
     try {
       setQuoteGenerating(true);
+      setError("");
 
-      const manualWithoutVin = result?.calculation_method === "MANUAL"
-        && !String(vehicle?.vin || "").trim()
+      const manualExportOnly = result?.calculation_method === "MANUAL"
+        && !VIN_PATTERN.test(String(vehicle?.vin || "").trim().toUpperCase())
         && !crmOriginalQuoteBridge?.leadId;
 
-      // El cálculo manual admite VIN vacío. En ese caso solo exportamos el PNG.
-      if (!manualWithoutVin) {
+      // El modo manual admite una serie de maquinaria o un VIN vacío.
+      if (!manualExportOnly) {
         if (internalJobTitle === "DIGITADOR") {
           try {
             await saveCurrentQuotation();
@@ -4776,7 +4773,7 @@ async function openCustomsDetail(item) {
       });
 
       const link = document.createElement("a");
-      link.download = `Cotizacion-${vehicle?.vin || "EYR"}.png`;
+      link.download = `Cotizacion-${manualExportOnly ? "EYR" : vehicle?.vin || "EYR"}.png`;
       link.href = canvas.toDataURL("image/png", 1);
       link.click();
     } catch (err) {
@@ -4837,6 +4834,10 @@ async function openCustomsDetail(item) {
   }
 
   const vehicle = result?.vehicle;
+  const vehicleIdentifierLabel = result?.calculation_method === "MANUAL"
+    && vehicle?.vin && !VIN_PATTERN.test(vehicle.vin)
+    ? "Número de serie"
+    : "VIN";
   const sat = result?.sat;
   const taxes = result?.taxes;
   const dimensions = result?.dimensions;
@@ -9956,7 +9957,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 <label><span>Valor imponible · GTQ</span><div className="manual-money"><b>Q</b><input type="number" min="0" step="0.01" value={manualTaxableValueGtq} onChange={(e)=>setManualTaxableValueGtq(e.target.value)} placeholder="0.00"/></div></label>
                 <label><span>Categoría tributaria</span><select value={manualTaxRuleId} onFocus={loadManualTaxRules} onChange={(e)=>setManualTaxRuleId(e.target.value)}><option value="">Seleccionar...</option>{manualTaxRules.map((r)=><option key={r.id} value={r.id}>{r.vehicle_type} · IPRIMA {Number(r.iprima_rate*100).toFixed(0)}%</option>)}</select></label>
                 <label><span>Vehículo / línea · opcional</span><input value={manualVehicleName} onChange={(e)=>setManualVehicleName(e.target.value)} placeholder="Ej. TOYOTA YARIS"/></label>
-                <label><span>VIN · opcional</span><input value={manualVin} maxLength={17} onChange={(e)=>setManualVin(e.target.value.toUpperCase())} placeholder="17 caracteres"/></label>
+                <label><span>VIN o número de serie · opcional</span><input value={manualVin} maxLength={64} onChange={(e)=>setManualVin(e.target.value.toUpperCase())} placeholder="VIN de 17 caracteres o serie"/></label>
               </div>
               <div className="manual-tax-action"><span>Este modo no depende del Motor VIN / SAT.</span><button className="search-button" type="button" onClick={calcularImpuestosManual}>Calcular impuestos <span>→</span></button></div>
             </section>
@@ -10864,7 +10865,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
                 <div className="detail-list">
                   <div>
-                    <span>VIN</span>
+                    <span>{vehicleIdentifierLabel}</span>
                     <strong>{vehicle?.vin}</strong>
                   </div>
 
@@ -11341,7 +11342,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
                     <div className="quote-vehicle-data">
                       <span>
-                        VIN
+                        {vehicleIdentifierLabel}
                         <strong>{vehicle?.vin}</strong>
                       </span>
 

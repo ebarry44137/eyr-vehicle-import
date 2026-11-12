@@ -7612,7 +7612,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </button>
               </div>
 
-              <div className="customs-table-wrap">
+              <div className="customs-table-wrap" role="region" aria-label="Expedientes de Control Aduanal" tabIndex={0}>
                 <table className="customs-table">
                   <thead>
                     <tr>
@@ -7624,14 +7624,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <th>Estado</th>
                       <th>Progreso</th>
                       <th>Almacenaje</th>
-                          <th>Semáforo</th>
-                      <th></th>
+                      <th>Semáforo</th>
+                      <th scope="col">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {!customsLoading && customsCases.length === 0 && (
                       <tr>
-                        <td colSpan="9" className="empty-cell">
+                        <td colSpan="10" className="empty-cell">
                           No hay expedientes registrados.
                         </td>
                       </tr>

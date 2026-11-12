@@ -794,3 +794,31 @@
     font-size:7px
   }
 }
+
+.ofp-dispatch-share {
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid #d6e2ee;
+  border-radius: 12px;
+}
+
+.ofp-dispatch-share h4 {
+  margin-top: 0;
+}
+
+.ofp-dispatch-share [role="status"]:empty {
+  margin: 0;
+}
+
+.ofp-dispatch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ofp-dispatch-selection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.75rem;
+}

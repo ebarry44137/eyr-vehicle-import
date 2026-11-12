@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./operation-files.css";
+import DispatchPhotoShare from "./DispatchPhotoShare.jsx";
 
 const LABELS = {
   PHOTO: "Foto",
@@ -37,6 +38,9 @@ export default function OperationFilesPanel({
   photosOnly = false,
   title = "Fotos y documentos",
 }) {
+  const [canManage, setCanManage] = useState(false);
+  const [dispatchSelection, setDispatchSelection] = useState([]);
+  const dispatchSharing = sourceType === "CUSTOMS_CASE" && !readOnly && canManage;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -121,7 +125,9 @@ export default function OperationFilesPanel({
         source_id: sourceId,
       });
 
+      setCanManage(data.can_manage === true);
       const files = Array.isArray(data.files) ? data.files : [];
+      setDispatchSelection((current) => current.filter((id) => files.some((file) => file.id === id)));
       setRows(photosOnly
         ? files.filter((file) => file.category === "PHOTO" && file.visible_to_client === true)
         : files);
@@ -620,6 +626,11 @@ export default function OperationFilesPanel({
           <b>{rows.length} archivo(s)</b>
         </div>
 
+        {dispatchSharing && (
+          <DispatchPhotoShare supabase={supabase} caseId={sourceId}
+            selectedIds={dispatchSelection} clearSelection={() => setDispatchSelection([])} />
+        )}
+
         {!readOnly && (
           <div className="ofp-upload">
             <select
@@ -811,6 +822,19 @@ export default function OperationFilesPanel({
                             </>
                           )}
                         </div>
+                        {dispatchSharing && row.visible_to_client === true && row.storage_provider === "R2" &&
+                          ["image/jpeg", "image/png", "image/webp"].includes(row.mime_type) && (
+                          <label className="ofp-dispatch-selection">
+                            <input type="checkbox" checked={dispatchSelection.includes(row.id)}
+                              onChange={(event) => {
+                                const checked = event.target.checked;
+                                setDispatchSelection((current) => checked
+                                  ? [...current, row.id]
+                                  : current.filter((id) => id !== row.id));
+                              }} />
+                            Compartir foto
+                          </label>
+                        )}
                       </div>
                     );
                   })}

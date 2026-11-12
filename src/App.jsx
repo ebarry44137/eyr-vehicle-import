@@ -5017,6 +5017,8 @@ async function openCustomsDetail(item) {
     resolvedCalculationMethod === "MANUAL" ||
     result?.manual_calculation === true;
 
+  const satQuoteTaxableValue = taxes?.taxable_value_gtq ?? summary?.sat_value_gtq;
+
   // V37.4.1 · En IMPORTER la Tabla SAT no define la base imponible.
   // El VIN se conserva para identificación/dimensiones/flete.
   const needsSatSelectableReview =
@@ -5390,6 +5392,7 @@ async function openCustomsDetail(item) {
       publicSummary?.calculation_method ||
       publicQuoteMode;
     const publicImporterMode = publicCalculationMode === "IMPORTER";
+    const publicSatTaxableValue = publicTaxes?.taxable_value_gtq ?? publicSummary?.sat_value_gtq;
     const publicReady = publicResult?.calculation_status === "READY";
     const publicNeedsReview =
       publicResult &&
@@ -5914,6 +5917,9 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                         </div>
 
                         <dl>
+                          {publicCalculationMode === "SAT" && publicReady && publicSatTaxableValue != null && (
+                            <div><dt>Valor imponible (tabla SAT)</dt><dd>{moneyGTQ(publicSatTaxableValue)}</dd></div>
+                          )}
                           <div>
                             <dt>IVA <small className="public-tax-rate">({displayTaxRate(publicTaxes?.iva_rate, 0.12)})</small></dt>
                             <dd>{publicTaxes?.iva_gtq ? moneyGTQ(publicTaxes.iva_gtq) : "—"}</dd>
@@ -7606,7 +7612,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </button>
               </div>
 
-              <div className="customs-table-wrap">
+              <div className="customs-table-wrap" role="region" aria-label="Expedientes de Control Aduanal" tabIndex={0}>
                 <table className="customs-table">
                   <thead>
                     <tr>
@@ -7618,14 +7624,14 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                       <th>Estado</th>
                       <th>Progreso</th>
                       <th>Almacenaje</th>
-                          <th>Semáforo</th>
-                      <th></th>
+                      <th>Semáforo</th>
+                      <th scope="col">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {!customsLoading && customsCases.length === 0 && (
                       <tr>
-                        <td colSpan="9" className="empty-cell">
+                        <td colSpan="10" className="empty-cell">
                           No hay expedientes registrados.
                         </td>
                       </tr>
@@ -8355,6 +8361,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
 
 <OperationFilesPanel
                     supabase={supabase}
+                    key={customsDetail.id}
                     sourceType="CUSTOMS_CASE"
                     sourceId={customsDetail.id}
                     organizationId={customsDetail.organization_id}
@@ -11378,6 +11385,13 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                               0
                             )}
                           </strong>
+                        </div>
+                      )}
+
+                      {resolvedCalculationMethod === "SAT" && !isManualCalculation && satQuoteTaxableValue != null && (
+                        <div className="quote-importer-basis">
+                          <span>Valor imponible (tabla SAT)</span>
+                          <strong>{moneyGTQ(satQuoteTaxableValue)}</strong>
                         </div>
                       )}
 

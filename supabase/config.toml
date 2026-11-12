@@ -1,0 +1,2 @@
+[functions.dispatch-photo-share]
+verify_jwt = false

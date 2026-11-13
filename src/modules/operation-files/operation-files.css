@@ -822,3 +822,17 @@
   gap: 0.5rem;
   padding: 0 0.75rem 0.75rem;
 }
+
+.ofp-dispatch-dialog {
+  width: min(880px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: clamp(12px, 3vw, 24px);
+  border: 1px solid #d6e2ee;
+  border-radius: 16px;
+  color: #0a3458;
+  background: #fff;
+}
+
+.ofp-dispatch-dialog::backdrop {
+  background: rgb(10 35 60 / 60%);
+}

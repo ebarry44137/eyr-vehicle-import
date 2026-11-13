@@ -40,6 +40,7 @@ import { buildQuoteCode } from "./utils/quoteCode";
 import { VIN_PATTERN } from "../supabase/functions/_shared/vehicleTrackingDomain.js";
 import OfficePortalClientsPage from "./modules/office-portal-clients/OfficePortalClientsPage.jsx";
 import ImportersPage from "./modules/importers/ImportersPage.jsx";
+import DispatchPhotoDialog from "./modules/operation-files/DispatchPhotoDialog.jsx";
 import OperationFilesPanel from "./modules/operation-files/OperationFilesPanel.jsx";
 // EYR-USA-V39.9.19.1
 import UsaYardPage from "./modules/usa-yard/UsaYardPage.jsx";
@@ -1229,6 +1230,7 @@ function App() {
   const [customsDecodeResult, setCustomsDecodeResult] = useState(null);
   const [customsSaving, setCustomsSaving] = useState(false);
   const [selectedCustomsCase, setSelectedCustomsCase] = useState(null);
+  const [dispatchPhotoCase, setDispatchPhotoCase] = useState(null);
   const [customsDetail, setCustomsDetail] = useState(null);
   const [customsDetailSaving, setCustomsDetailSaving] = useState(false);
   const [customsMessage, setCustomsMessage] = useState("");
@@ -7763,6 +7765,10 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                             >
                               Ver →
                             </button>
+                            <button type="button" className="prospect-open-button"
+                              onClick={() => setDispatchPhotoCase(item)}>
+                              Enlace público
+                            </button>
                             <CopyCustomsPhotoLink
                               caseId={item.id}
                               portalClientId={item.office_portal_client_id}
@@ -7776,6 +7782,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                 </table>
               </div>
             </section>
+
+            {dispatchPhotoCase && (
+              <DispatchPhotoDialog supabase={supabase} customsCase={dispatchPhotoCase}
+                onClose={() => setDispatchPhotoCase(null)} />
+            )}
 
             {showCustomsForm && (
               <div

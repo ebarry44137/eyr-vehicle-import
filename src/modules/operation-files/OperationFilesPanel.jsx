@@ -30,16 +30,23 @@ async function sha256Hex(file) {
     .join("");
 }
 
+function isShareableDispatchPhoto(file) {
+  return file.category === "PHOTO" && file.visible_to_client === true &&
+    file.storage_provider === "R2" && ["image/jpeg", "image/png", "image/webp"].includes(file.mime_type) &&
+    file.storage_path?.startsWith(`${file.organization_id}/customs_case/${file.source_id}/photo/`);
+}
+
 export default function OperationFilesPanel({
   supabase,
   sourceType,
   sourceId,
   readOnly = false,
   photosOnly = false,
+  dispatchShareOnly = false,
   title = "Fotos y documentos",
 }) {
   const [canManage, setCanManage] = useState(false);
-  const [dispatchSelection, setDispatchSelection] = useState([]);
+  const [excludedDispatchPhotos, setExcludedDispatchPhotos] = useState([]);
   const dispatchSharing = sourceType === "CUSTOMS_CASE" && !readOnly && canManage;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -127,10 +134,11 @@ export default function OperationFilesPanel({
 
       setCanManage(data.can_manage === true);
       const files = Array.isArray(data.files) ? data.files : [];
-      setDispatchSelection((current) => current.filter((id) => files.some((file) => file.id === id)));
-      setRows(photosOnly
-        ? files.filter((file) => file.category === "PHOTO" && file.visible_to_client === true)
-        : files);
+      setRows(dispatchShareOnly
+        ? files.filter(isShareableDispatchPhoto)
+        : photosOnly
+          ? files.filter((file) => file.category === "PHOTO" && file.visible_to_client === true)
+          : files);
     } catch (e) {
       setMessage(e?.message || "No fue posible cargar archivos.");
     } finally {
@@ -140,7 +148,7 @@ export default function OperationFilesPanel({
 
   useEffect(() => {
     load();
-  }, [sourceId, sourceType, photosOnly]);
+  }, [sourceId, sourceType, photosOnly, dispatchShareOnly]);
 
   async function ensurePreviewUrl(row, { force = false } = {}) {
     if (!row?.id) return null;
@@ -182,6 +190,9 @@ export default function OperationFilesPanel({
   }
 
   const photos = rows.filter((x) => x.category === "PHOTO");
+  const selectedDispatchPhotos = dispatchSharing
+    ? photos.filter((file) => isShareableDispatchPhoto(file) && !excludedDispatchPhotos.includes(file.id))
+    : [];
   const docs = rows.filter((x) => x.category !== "PHOTO");
 
   // Carga progresiva de miniaturas. Se limita la concurrencia para no
@@ -628,10 +639,10 @@ export default function OperationFilesPanel({
 
         {dispatchSharing && (
           <DispatchPhotoShare supabase={supabase} caseId={sourceId}
-            selectedIds={dispatchSelection} clearSelection={() => setDispatchSelection([])} />
+            selectedIds={selectedDispatchPhotos.map((file) => file.id)} />
         )}
 
-        {!readOnly && (
+        {!readOnly && !dispatchShareOnly && (
           <div className="ofp-upload">
             <select
               value={category}
@@ -742,7 +753,7 @@ export default function OperationFilesPanel({
           <div className="ofp-empty">Cargando archivos...</div>
         ) : rows.length === 0 ? (
           <div className="ofp-empty">
-            {photosOnly ? "Todavía no hay fotos publicadas." : "Todavía no hay fotos o documentos publicados."}
+            {dispatchShareOnly ? "Todavía no hay fotos visibles para compartir." : photosOnly ? "Todavía no hay fotos publicadas." : "Todavía no hay fotos o documentos publicados."}
           </div>
         ) : (
           <>
@@ -802,7 +813,7 @@ export default function OperationFilesPanel({
                         <div className="ofp-photo-meta">
                           <strong>{row.original_name}</strong>
 
-                          {!readOnly && (
+                          {!readOnly && !dispatchShareOnly && (
                             <>
                               <em>
                                 {row.visible_to_client
@@ -822,15 +833,14 @@ export default function OperationFilesPanel({
                             </>
                           )}
                         </div>
-                        {dispatchSharing && row.visible_to_client === true && row.storage_provider === "R2" &&
-                          ["image/jpeg", "image/png", "image/webp"].includes(row.mime_type) && (
+                        {dispatchSharing && isShareableDispatchPhoto(row) && (
                           <label className="ofp-dispatch-selection">
-                            <input type="checkbox" checked={dispatchSelection.includes(row.id)}
+                            <input type="checkbox" checked={!excludedDispatchPhotos.includes(row.id)}
                               onChange={(event) => {
                                 const checked = event.target.checked;
-                                setDispatchSelection((current) => checked
-                                  ? [...current, row.id]
-                                  : current.filter((id) => id !== row.id));
+                                setExcludedDispatchPhotos((current) => checked
+                                  ? current.filter((id) => id !== row.id)
+                                  : [...current, row.id]);
                               }} />
                             Compartir foto
                           </label>
@@ -1006,7 +1016,7 @@ export default function OperationFilesPanel({
                   ↗ Abrir original
                 </button>
 
-                {!readOnly && (
+                {!readOnly && !dispatchShareOnly && (
                   <button
                     type="button"
                     className="danger"

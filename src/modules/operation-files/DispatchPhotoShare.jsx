@@ -16,7 +16,7 @@ async function manageShare(supabase, caseId, action, payload) {
   return data.share;
 }
 
-export default function DispatchPhotoShare({ supabase, caseId, selectedIds, clearSelection }) {
+export default function DispatchPhotoShare({ supabase, caseId, selectedIds }) {
   const [share, setShare] = useState(undefined);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -35,10 +35,11 @@ export default function DispatchPhotoShare({ supabase, caseId, selectedIds, clea
     setBusy(true);
     setNotice("");
     try {
-      setShare(await manageShare(supabase, caseId, action, payload));
+      const updatedShare = await manageShare(supabase, caseId, action, payload);
+      setShare(updatedShare);
       setCopyCount(0);
-      if (action === "create") clearSelection();
       setNotice(successMessage);
+      if (action === "create") await copy(updatedShare.token);
     } catch (error) {
       setNotice(error.message);
     } finally {
@@ -46,9 +47,9 @@ export default function DispatchPhotoShare({ supabase, caseId, selectedIds, clea
     }
   }
 
-  async function copy() {
+  async function copy(token) {
     const url = new URL("/fotos-despacho", window.location.origin);
-    url.hash = share.token;
+    url.hash = token;
     try {
       await navigator.clipboard.writeText(url.href);
       setCopyCount((value) => value + 1);
@@ -67,18 +68,20 @@ export default function DispatchPhotoShare({ supabase, caseId, selectedIds, clea
           <p>Fotos seleccionadas: {share.photo_ids.length} · Vence {new Intl.DateTimeFormat("es-GT", {
             dateStyle: "medium", timeStyle: "short", timeZone: "America/Guatemala",
           }).format(new Date(share.expires_at))}</p>
+          <p>Para cambiar las fotos del enlace activo, desactivalo y generá uno nuevo.</p>
           <div className="ofp-dispatch-actions">
-            <button type="button" className="prospect-open-button" disabled={busy} onClick={copy}>Copiar enlace público</button>
+            <button type="button" className="prospect-open-button" disabled={busy} onClick={() => copy(share.token)}>Copiar enlace público</button>
             <button type="button" className="prospect-open-button" disabled={busy}
               onClick={() => update("revoke", { token: share.token }, "Enlace desactivado.")}>Desactivar enlace</button>
           </div>
         </>
       ) : share === null ? (
         <>
-          <p>Marcá las fotos de despacho en la galería. {selectedIds.length} seleccionada(s).</p>
+          <p>Las fotos visibles vienen marcadas. Desmarcá las que querás excluir.</p>
+          <p>{selectedIds.length} seleccionada(s){selectedIds.length > 100 && " · El enlace admite hasta 100 fotos."}</p>
           <button type="button" className="prospect-open-button"
             disabled={busy || !selectedIds.length || selectedIds.length > 100}
-            onClick={() => update("create", { photo_ids: selectedIds }, "Enlace listo para copiar.")}>Generar enlace público</button>
+            onClick={() => update("create", { photo_ids: selectedIds }, "Enlace listo para copiar.")}>Generar y copiar enlace</button>
         </>
       ) : notice ? (
         <button type="button" className="prospect-open-button" disabled={busy}

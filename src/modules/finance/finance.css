@@ -27,3 +27,8 @@
 .case-finance-loading{padding:18px;text-align:center;color:#8493a3;font-size:9px}
 @media(max-width:1150px){.finance-kpis{grid-template-columns:repeat(4,1fr)}.expense-category-grid{grid-template-columns:repeat(4,1fr)}.finance-grid-layout,.finance-closing-section{grid-template-columns:1fr}}
 @media(max-width:760px){.finance-header{align-items:stretch;flex-direction:column}.finance-period{overflow-x:auto}.finance-kpis{grid-template-columns:1fr 1fr}.expense-category-grid{grid-template-columns:1fr 1fr}.case-finance-kpis{grid-template-columns:1fr 1fr}.case-finance-grid{grid-template-columns:1fr}.case-finance-grid .span-2{grid-column:auto}.case-payment-form{grid-template-columns:1fr 1fr}.case-payment-form button{min-height:37px}.case-payment-list>div{grid-template-columns:1fr 1fr}.case-finance-head{flex-direction:column}.case-finance-profit{text-align:left}.closing-controls{grid-template-columns:1fr}.finance-expense-entry form{grid-template-columns:1fr}.finance-expense-entry .span-2,.finance-expense-entry form>button{grid-column:auto}}
+
+.finance-ap-v39622 .ap-client-name {
+  min-width: 8rem;
+  overflow-wrap: anywhere;
+}

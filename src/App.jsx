@@ -1007,13 +1007,20 @@ function App() {
       throw new Error("La sesión expiró. Iniciá sesión nuevamente.");
     }
 
-    return await supabase.functions.invoke(functionName, {
+    const response = await supabase.functions.invoke(functionName, {
       ...options,
       headers: {
         ...(options?.headers || {}),
         Authorization: `Bearer ${currentSession.access_token}`,
       },
     });
+    if (functionName === "decode-vin" && response.error?.context?.clone) {
+      const payload = await response.error.context.clone().json().catch(() => null);
+      if (typeof payload?.error === "string") {
+        response.error.message = payload.error;
+      }
+    }
+    return response;
   }
 
   // V22 · Landing pública + cotizador para clientes + sistema interno

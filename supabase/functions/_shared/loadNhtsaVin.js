@@ -1,41 +1,69 @@
+import { autoDevVehicle, wenmarVehicle } from "./vinProviderAdapters.js";
+
 const VIN_SERVICE_ERROR =
-  "NHTSA está temporalmente fuera de servicio. No tenemos datos guardados para este VIN. Intentá nuevamente más tarde o usá Cálculo Manual con el valor imponible verificado.";
+  "No pudimos obtener datos suficientes de este VIN en los servicios de consulta ni en el respaldo guardado. Intentá nuevamente más tarde o usá Cálculo Manual con el valor imponible verificado.";
+const SOURCES = ["NHTSA_VPIC", "WENMAR_OPEN", "AUTO_DEV"];
 
 function completeVehicle(vehicle, vin) {
   return vehicle && String(vehicle.VIN || "").toUpperCase() === vin &&
-    String(vehicle.Make || "").trim() && String(vehicle.Model || "").trim() &&
-    Number(vehicle.ModelYear) > 1900;
+    typeof vehicle.Make === "string" && vehicle.Make.trim() &&
+    typeof vehicle.Model === "string" && vehicle.Model.trim() &&
+    Number.isInteger(Number(vehicle.ModelYear)) && Number(vehicle.ModelYear) > 1900 &&
+    Number(vehicle.ModelYear) <= new Date().getUTCFullYear() + 2;
 }
 
-export async function loadNhtsaVin(supabase, vin, request = fetch) {
-  const endpoints = ["DecodeVinValues", "DecodeVinValuesExtended"];
-  for (const endpoint of endpoints) {
-    try {
-      const response = await request(
-        `https://vpic.nhtsa.dot.gov/api/vehicles/${endpoint}/${encodeURIComponent(vin)}?format=json`,
-        { signal: AbortSignal.timeout(6500) },
-      );
-      if (response.ok) {
-        const payload = await response.json();
-        const vehicle = payload?.Results?.[0];
-        if (completeVehicle(vehicle, vin)) return { vehicle, cachedDecode: null };
-      }
-    } catch {
-      // El respaldo también cubre tiempo de espera y respuestas JSON inválidas.
-    }
+async function requestJson(request, url, headers) {
+  try {
+    const response = await request(url, {
+      signal: AbortSignal.timeout(6500),
+      redirect: "error",
+      headers,
+    });
+    if (response.status !== 200) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
 
-    if (endpoint === endpoints[0]) {
-      const { data, error } = await supabase.from("vin_decodes")
-        .select("*").eq("vin", vin).maybeSingle();
-      if (!error && data?.source === "NHTSA_VPIC" && completeVehicle(data.raw_response, vin) &&
-          data.vin === vin && data.make === data.raw_response.Make &&
-          data.model === data.raw_response.Model && Number(data.model_year) === Number(data.raw_response.ModelYear)) {
-        return { vehicle: data.raw_response, cachedDecode: data };
-      }
+export async function loadNhtsaVin(supabase, vin, request = fetch, autoDevKey = "") {
+  const encodedVin = encodeURIComponent(vin);
+  const nhtsaUrl = "https://vpic.nhtsa.dot.gov/api/vehicles";
+  const primary = await requestJson(request, `${nhtsaUrl}/DecodeVinValues/${encodedVin}?format=json`);
+  if (completeVehicle(primary?.Results?.[0], vin)) {
+    return { vehicle: primary.Results[0], cachedDecode: null, source: "NHTSA_VPIC" };
+  }
+
+  const { data: cache, error } = await supabase.from("vin_decodes")
+    .select("*").eq("vin", vin).maybeSingle();
+  if (!error && SOURCES.includes(cache?.source) && completeVehicle(cache.raw_response, vin) &&
+      cache.vin === vin && cache.make === cache.raw_response.Make &&
+      cache.model === cache.raw_response.Model && Number(cache.model_year) === Number(cache.raw_response.ModelYear)) {
+    return { vehicle: cache.raw_response, cachedDecode: cache, source: cache.source };
+  }
+
+  const wenmar = await requestJson(request, `https://open.wenmarpro.com/v1/vin/${encodedVin}`);
+  const wenmarResult = wenmarVehicle(wenmar);
+  if (completeVehicle(wenmarResult, vin)) {
+    return { vehicle: wenmarResult, cachedDecode: null, source: "WENMAR_OPEN" };
+  }
+
+  if (autoDevKey) {
+    const autoDev = await requestJson(request, `https://api.auto.dev/vin/${encodedVin}`, {
+      Authorization: `Bearer ${autoDevKey}`,
+    });
+    const autoDevResult = autoDevVehicle(autoDev);
+    if (completeVehicle(autoDevResult, vin)) {
+      return { vehicle: autoDevResult, cachedDecode: null, source: "AUTO_DEV" };
     }
   }
 
-  const error = new Error(VIN_SERVICE_ERROR);
-  error.name = "VinServiceUnavailable";
-  throw error;
+  const alternate = await requestJson(request, `${nhtsaUrl}/DecodeVinValuesExtended/${encodedVin}?format=json`);
+  if (completeVehicle(alternate?.Results?.[0], vin)) {
+    return { vehicle: alternate.Results[0], cachedDecode: null, source: "NHTSA_VPIC" };
+  }
+
+  const unavailable = new Error(VIN_SERVICE_ERROR);
+  unavailable.name = "VinServiceUnavailable";
+  throw unavailable;
 }

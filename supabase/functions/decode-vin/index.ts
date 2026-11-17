@@ -1770,7 +1770,9 @@ Deno.serve(async (req) => {
     // 1. DECODIFICAR VIN
     // =========================================================
 
-    const { vehicle, cachedDecode } = await loadNhtsaVin(supabase, cleanVin);
+    const { vehicle, cachedDecode, source: decodeSource } = await loadNhtsaVin(
+      supabase, cleanVin, fetch, Deno.env.get("AUTODEV_API_KEY") || ""
+    );
 
     const parsedVehicle = {
       vin: cleanVin,
@@ -1866,7 +1868,7 @@ Deno.serve(async (req) => {
         vehicle.ErrorText || null,
 
       source:
-        "NHTSA_VPIC",
+        decodeSource,
 
       raw_response:
         vehicle,

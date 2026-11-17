@@ -1,3 +1,4 @@
+import MonthlyReport from "./monthly/MonthlyReport";
 import { useEffect, useMemo, useState } from "react";
 import "./finance.css";
 import "./finance-v39622.css";
@@ -641,6 +642,8 @@ const availableAfterReserves =
 
       {message && <div className="finance-message success">{message}</div>}
       {error && <div className="finance-message error">{error}</div>}
+
+      <MonthlyReport supabase={supabase} initialMonth={(toDate || guatemalaToday()).slice(0,7)} />
 
       <FreightNetSettlements supabase={supabase} from={fromDate} to={toDate} refreshKey={summary} />
 

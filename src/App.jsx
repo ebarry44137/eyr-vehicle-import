@@ -7150,7 +7150,12 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
             </section>
           </section>
         ) : activeView === "usa-yard" ? (
-          <section className="imports-module"><button className="secondary-button" onClick={openImportManagementsView}>← Volver a Gestiones de Importación</button><UsaYardPage /></section>
+          <section className="imports-module"><button className="secondary-button" onClick={openImportManagementsView}>← Volver a Gestiones de Importación</button><UsaYardPage onCustoms={async id => {
+              const {data,error}=await supabase.from("customs_cases").select("*").eq("id",id).single();
+              if(error)throw error;
+              openCustomsView();
+              await openCustomsDetail(data);
+            }} /></section>
         ) : activeView === "imports" ? (
           <section className="imports-module">
             <header className="topbar imports-topbar">

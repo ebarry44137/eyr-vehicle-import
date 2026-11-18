@@ -47,11 +47,24 @@ Deno.serve(async(req)=>{
    if(error)throw error;
    return reply({success:true,admin:!!adminOrg,collaborator,organization_id:org,yards:adminOrg?(yards||[]):(yards||[]).filter((y:any)=>yardIds.includes(y.id))});
   }
+  if(action==='archive_reception'){
+   if(!adminOrg)return reply({success:false,error:'Solo la administración puede archivar recepciones'},403);
+   const r=await receipt(body.reception_id);
+   const {error}=await db.from('usa_yard_receptions').update({archived_at:new Date().toISOString(),archived_by:user.id,archive_reason:'MANUAL'})
+     .eq('id',r.id).eq('organization_id',adminOrg).is('archived_at',null);
+   if(error)throw error;
+   return reply({success:true});
+  }
   if(action==='list'){
-   let query=db.from('usa_yard_receptions').select('*').eq('organization_id',org).order('created_at',{ascending:false}).limit(250);
+   const page=Number(body.page??0);
+   if(!Number.isSafeInteger(page)||page<0||page>100000)throw Error('Página inválida');
+   const size=body.page===undefined?250:50;
+   let query=db.from('usa_yard_receptions').select('*',{count:'exact'}).eq('organization_id',org)
+     .order('created_at',{ascending:false}).order('id',{ascending:false}).range(page*size,(page+1)*size-1);
+   query=body.history===true?query.not('archived_at','is',null):query.is('archived_at',null);
    if(!adminOrg){if(!yardIds.length)return reply({success:true,rows:[],admin:false});query=query.in('yard_id',yardIds);}
-   const {data,error}=await query;
-   if(error)throw error;return reply({success:true,rows:data||[],admin:!!adminOrg});
+   const {data,error,count}=await query;
+   if(error)throw error;return reply({success:true,rows:data||[],total:count||0,admin:!!adminOrg});
   }
   if(action==='search_vin'){
    const code=vin(body.vin);if(code.length<5)throw Error('VIN inválido');

@@ -1,7 +1,8 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {supabase} from '../../supabaseClient';
 import './usa-yard.css';
 import UsaYardGallery from './UsaYardGallery.jsx';
+import YardImport from './YardImport';
 import TrackingAdminPanel from '../vehicle-tracking/TrackingAdminPanel.jsx';
 
 function PendingPhotoPreview({file,onRemove,disabled}){
@@ -14,7 +15,7 @@ function PendingPhotoPreview({file,onRemove,disabled}){
  </div>;
 }
 
-export default function UsaYardPage({standalone=false}){
+export default function UsaYardPage({standalone=false,onCustoms}){
  const [session,setSession]=useState(null),[authReady,setAuthReady]=useState(false),[email,setEmail]=useState(''),[password,setPassword]=useState('');
  const [access,setAccess]=useState(null),[rows,setRows]=useState([]),[current,setCurrent]=useState(null),[photos,setPhotos]=useState([]),[matches,setMatches]=useState([]),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  const [pendingPhotos,setPendingPhotos]=useState([]),[uploadProgress,setUploadProgress]=useState('');
@@ -22,8 +23,26 @@ export default function UsaYardPage({standalone=false}){
  async function api(body){const {data:{session:s}}=await supabase.auth.getSession();if(!s?.access_token)throw Error('Iniciá sesión');const {data,error}=await supabase.functions.invoke('usa-yard-manager',{body,headers:{'x-portal-access-token':s.access_token}});if(error){let msg=error.message;try{const j=await error.context?.clone()?.json();msg=j?.error||msg;}catch{}throw Error(msg);}if(!data?.success)throw Error(data?.error||'Error de operación');return data;}
  useEffect(()=>{let alive=true;supabase.auth.getSession().then(({data})=>{if(alive){setSession(data.session);setAuthReady(true);}});const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>{if(alive)setSession(s)});return()=>{alive=false;subscription.unsubscribe()};},[]);
  useEffect(()=>{if(!session?.user?.id){setAccess(null);return;}let live=true;api({action:'access'}).then(d=>{if(live)setAccess(d)}).catch(e=>{if(live){setAccess({denied:true});setMessage(e.message)}});return()=>{live=false};},[session?.user?.id]);
- async function load(){try{const d=await api({action:'list'});setRows(d.rows)}catch(e){setMessage(e.message)}}
- useEffect(()=>{if(access?.success)load()},[access?.success]);
+ const [history,setHistory]=useState(false),[page,setPage]=useState(0),[total,setTotal]=useState(0);
+ const generation=useRef(0);
+ async function load(){
+  const version=++generation.current;
+  try{
+   const d=await api({action:'list',history,page});
+   if(version!==generation.current)return;
+   if(page>0&&!d.rows.length){setPage(page-1);return;}
+   setRows(d.rows);setTotal(d.total??d.rows.length);
+   setCurrent(old=>old?(d.rows.find(r=>r.id===old.id)||null):null);
+  }catch(e){if(version===generation.current)setMessage(e.message);}
+ }
+ useEffect(()=>{if(access?.success)load();return()=>{generation.current++;};},[access?.success,history,page]);
+ function switchList(value){generation.current++;setHistory(value);setPage(0);setCurrent(null);setRows([]);setPhotos([]);setTotal(0);}
+ async function archive(r){
+  if(!window.confirm('¿Pasar el VIN '+r.vin+' al historial? Podrás seguir consultando sus fotografías.'))return;
+  setBusy(true);
+  try{await api({action:'archive_reception',reception_id:r.id});await load();setMessage('Recepción trasladada al historial.');}
+  catch(e){setMessage(e.message);}finally{setBusy(false);}
+ }
  async function search(){setBusy(true);setMessage('');try{const d=await api({action:'search_vin',vin:form.vin});setMatches(d.matches);if(!d.matches.length)setMessage('No existe una gestión para ese VIN. Podés registrar la recepción nueva.')}catch(e){setMessage(e.message)}finally{setBusy(false)}}
  function addPending(e){
   const incoming=Array.from(e.target.files||[]);e.target.value='';
@@ -48,7 +67,7 @@ export default function UsaYardPage({standalone=false}){
  {!authReady?<p>Validando sesión...</p>:!session?(standalone?<form className="eyr-usa-panel eyr-usa-login" onSubmit={login}><h2>Ingreso Colaborador USA</h2><input type="email" placeholder="Correo" required value={email} onChange={e=>setEmail(e.target.value)}/><input type="password" placeholder="Contraseña" required value={password} onChange={e=>setPassword(e.target.value)}/><button disabled={busy}>Ingresar</button></form>:<p>Iniciá sesión en E&R.</p>):!access?<p>Verificando autorización USA...</p>:access.denied?<div className="eyr-usa-panel">Tu cuenta no tiene autorización para Recepción USA.</div>:<>
  <div className="eyr-usa-stats"><div><strong>{(access.yards||[]).length}</strong><span>Yardas autorizadas</span></div><div><strong>{rows.length}</strong><span>Recepciones visibles</span></div><div><strong>{rows.filter(r=>r.status==='LINKED').length}</strong><span>Vinculadas</span></div></div>
  <div className="eyr-usa-layout"><section className="eyr-usa-panel"><h2>🚗 Registrar recepción</h2><form onSubmit={save} className="eyr-usa-form"><label>VIN<input required maxLength={17} value={form.vin} onChange={e=>setForm({...form,vin:e.target.value.toUpperCase()})}/></label><button type="button" onClick={search} disabled={busy||form.vin.length<5}>Buscar VIN en gestiones</button>{matches.length>0&&<label>Vincular gestión existente<select value={form.import_management_id} onChange={e=>setForm({...form,import_management_id:e.target.value})}><option value="">Registrar sin vincular</option>{matches.map(m=><option key={m.id} value={m.id}>{m.management_code} · {m.vin}</option>)}</select></label>}<label>Yarda asignada<select required value={form.yard_id} onChange={e=>setForm({...form,yard_id:e.target.value})}><option value="">Seleccionar yarda</option>{(access.yards||[]).map(y=><option key={y.id} value={y.id}>{y.name}{y.city?' · '+y.city:''}</option>)}</select></label><label>Marca<input value={form.vehicle_make} onChange={e=>setForm({...form,vehicle_make:e.target.value})}/></label><label>Modelo<input value={form.vehicle_model} onChange={e=>setForm({...form,vehicle_model:e.target.value})}/></label><label>Año<input type="number" min="1900" max="2100" value={form.model_year} onChange={e=>setForm({...form,model_year:e.target.value})}/></label><label>Condición<input value={form.vehicle_condition} onChange={e=>setForm({...form,vehicle_condition:e.target.value})} placeholder="Ej. Golpe frontal, arranca"/></label><label>Observaciones<textarea rows="3" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label><div className="eyr-usa-pending"><strong>📸 Evidencia fotográfica</strong><p>Seleccioná las fotos ahora. Se subirán automáticamente después de guardar la recepción.</p><label className="eyr-usa-upload">📷 Seleccionar fotografías o abrir cámara<input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy} onChange={addPending}/></label>{pendingPhotos.length>0&&<div className="eyr-usa-pending-grid">{pendingPhotos.map((f,i)=><PendingPhotoPreview key={`${f.name}-${f.size}-${f.lastModified}-${i}`} file={f} disabled={busy} onRemove={()=>setPendingPhotos(old=>old.filter((_,j)=>j!==i))}/>)}</div>}<small>{pendingPhotos.length} fotografía(s) seleccionada(s) · JPG, PNG o WEBP · máximo 25 MB por archivo</small></div><button disabled={busy}>{busy?'Procesando...':'Guardar recepción y fotografías'}</button>{uploadProgress&&<p role="status">{uploadProgress}</p>}</form></section>
- <section className="eyr-usa-panel"><div className="eyr-usa-between"><h2>📋 Recepciones</h2><button onClick={load}>Actualizar</button></div><div className="eyr-usa-scroll">{rows.map(r=><button key={r.id} className={'eyr-usa-row '+(current?.id===r.id?'selected':'')} onClick={()=>choose(r)}><strong>{r.vin}</strong><span>{r.yard_name} · {r.status==='LINKED'?'Vinculada':'Pendiente'}</span><small>{new Date(r.received_at).toLocaleDateString('es-GT')}</small></button>)}{rows.length===0&&<p>Sin recepciones todavía.</p>}</div></section></div>
- {current&&<section className="eyr-usa-panel"><div className="eyr-usa-between"><div><h2>📸 Fotografías · {current.vin}</h2><p>{current.yard_name} · {current.status}</p></div>{access.admin&&!current.import_management_id&&<button onClick={link} disabled={busy}>Vincular gestión</button>}</div><label className="eyr-usa-upload">Agregar fotografías (JPG, PNG, WEBP)<input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy} onChange={upload}/></label><TrackingAdminPanel key={`yard-${current.id}`} sourceType="RECEPTION" sourceId={current.id} yardOnly />{access.admin&&<TrackingAdminPanel key={`photos-${current.id}`} sourceType="RECEPTION" sourceId={current.id} photos={photos} photosOnly />}<UsaYardGallery files={photos} vin={current.vin} getViewUrl={async file=>{const d=await api({action:"view_url",file_id:file.id});return d.url;}}/></section>}</>}
+ <section className="eyr-usa-panel"><div className="eyr-usa-between"><h2>📋 Recepciones</h2><button onClick={load}>Actualizar</button></div><div className="yard-history-tabs" aria-label="Lista de recepciones">{[[false,'Activas'],[true,'Historial']].map(([value,label])=><button type="button" key={label} aria-pressed={history===value} disabled={busy} onClick={()=>{if(history!==value)switchList(value)}}>{label}</button>)}</div><div className="eyr-usa-scroll">{rows.map(r=><button key={r.id} className={'eyr-usa-row '+(current?.id===r.id?'selected':'')} onClick={()=>choose(r)}><strong>{r.vin}</strong><span>{r.yard_name} · {history?(r.archive_reason==='CUSTOMS_HANDOFF'?'Traslado a Control Aduanal':'Archivada manualmente'):(r.status==='LINKED'?'Vinculada':'Pendiente')}</span><small>{new Date(r.received_at).toLocaleDateString('es-GT')}</small></button>)}{rows.length===0&&<p>{history?'Sin recepciones en el historial.':'Sin recepciones activas.'}</p>}</div>{total>50&&<div className="yard-history-tabs"><button disabled={busy||page===0} onClick={()=>setPage(page-1)}>Anterior</button><span>{page+1} / {Math.ceil(total/50)}</span><button disabled={busy||(page+1)*50>=total} onClick={()=>setPage(page+1)}>Siguiente</button></div>}</section></div>
+ {current&&<section className="eyr-usa-panel"><div className="eyr-usa-between"><div><h2>📸 Fotografías · {current.vin}</h2><p>{current.yard_name} · {current.status}</p></div>{access.admin&&!history&&<button type="button" disabled={busy} onClick={()=>archive(current)}>Pasar a historial</button>}{access.admin&&!current.import_management_id&&<button onClick={link} disabled={busy}>Vincular gestión</button>}</div>{!standalone&&access.admin&&onCustoms&&<YardImport key={current.id} vehicle={current} onCustoms={onCustoms} onSaved={load}/>}<label className="eyr-usa-upload">Agregar fotografías (JPG, PNG, WEBP)<input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy} onChange={upload}/></label><TrackingAdminPanel key={`yard-${current.id}`} sourceType="RECEPTION" sourceId={current.id} yardOnly />{access.admin&&<TrackingAdminPanel key={`photos-${current.id}`} sourceType="RECEPTION" sourceId={current.id} photos={photos} photosOnly />}<UsaYardGallery files={photos} vin={current.vin} getViewUrl={async file=>{const d=await api({action:"view_url",file_id:file.id});return d.url;}}/></section>}</>}
  {message&&<p className="eyr-usa-message" role="status">{message}</p>}</main>;
 }

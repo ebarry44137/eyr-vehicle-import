@@ -33,31 +33,23 @@ export default function YardImport({vehicle,onCustoms,onSaved}) {
   const contact=data?.contact || {};
   const who=vaciado?recipient:'sender';
   const phone=contact[who+'_phone']?.replace(/[^0-9]/g,'') || '';
+  const stageLabel=stages.find(([code])=>code===data?.stage)?.[1];
   const message=data && noticeText(data.stage,contact[who+'_name'],vehicle);
   const canNotify=!dirty && !busy && contact.revision && /^[1-9]\d{7,14}$/.test(phone);
   async function openExisting(){
     try {setBusy(true);await onCustoms(data.case_id);}catch(e){setError(e.message);}finally{setBusy(false);}
   }
   return <section className="yard-import">
-    <h3>Avisos por WhatsApp</h3>
+
     {error && <p role="alert">{error} <button type="button" disabled={busy} onClick={()=>request('read')}>Actualizar ficha</button></p>}
     {info && <p role="status">{info}</p>}
     {!data && busy && <p role="status">Cargando avisos…</p>}
         {vaciado && <label>Enviar solicitud de depósito a<select value={recipient} onChange={e=>{setRecipient(e.target.value);setOpenedFor('');}}><option value="sender">Remitente de USA</option><option value="receiver" disabled={!contact.receiver_phone}>Destinatario en Guatemala</option></select></label>}
-    <div className="yard-notice-buttons">
-      {stages.map(([code,label])=>{
-        const person=code==='EMPTIED'?recipient:'sender';
-        const number=(contact[person+'_phone'] || '').replace(/[^0-9]/g,'');
-        const recorded=Boolean(data?.dates?.[code]);
-        const ready=recorded && !dirty && !busy && contact.revision && /^[1-9]\d{7,14}$/.test(number);
-        const title='WhatsApp · '+label;
-        if(ready){
-          const text=noticeText(code,contact[person+'_name'],vehicle);
-          return <a key={code} href={'https://wa.me/'+number+'?text='+encodeURIComponent(text)} target="_blank" rel="noopener noreferrer" onClick={()=>{if(code==='EMPTIED'){setOpenedFor(person);setOpen(true);}}}>{title}</a>;
-        }
-        return <button key={code} type="button" disabled={!recorded || busy} onClick={()=>{setOpen(true);setInfo('Guardá el nombre y el WhatsApp con código de país para abrir este aviso.');}}>{title}<small>{!data?'':recorded?'Guardar contacto':'Etapa pendiente'}</small></button>;
-      })}
-    </div>
+    {stageLabel && <div className="yard-notice-buttons">
+      {canNotify ? <a href={'https://wa.me/'+phone+'?text='+encodeURIComponent(message)} target="_blank" rel="noopener noreferrer"
+        onClick={()=>{if(vaciado){setOpenedFor(who);setOpen(true);}}}>WhatsApp · {stageLabel}</a>
+        : <button type="button" disabled={busy} onClick={()=>{setOpen(true);setInfo('Guardá el contacto con código de país para abrir este aviso.');}}>WhatsApp · {stageLabel}<small>Guardar contacto</small></button>}
+    </div>}
     <button type="button" aria-expanded={open} disabled={busy} onClick={()=>{setOpen(!open);if(!open && !data)request('read');}}>Gestión de importación</button>
     {open && <div className="yard-import-body">
       {data && <>
@@ -68,7 +60,7 @@ export default function YardImport({vehicle,onCustoms,onSaved}) {
             <button>Guardar contactos</button>
           </fieldset>
         </form>
-        <h3>Estado del vehículo · {stages.find(([code])=>code===data.stage)?.[1]}</h3>
+        <h3>Estado del vehículo · {stageLabel}</h3>
         {next && <div className="yard-import-actions"><label>Fecha del avance<input type="date" value={date} min={data.dates[data.stage]} max={today()} onChange={e=>setDate(e.target.value)}/></label>
           <button disabled={busy || dirty || !contact.revision || !date} onClick={()=>request('advance',{stage:next[0],date})}>Registrar {next[1]}</button></div>}
         <details><summary>Ver mensaje de WhatsApp</summary><p className="yard-import-text">{message}</p></details>

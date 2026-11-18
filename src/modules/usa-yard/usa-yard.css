@@ -42,3 +42,6 @@
 .eyr-usa :is(input,select,textarea){min-width:0;max-width:100%}
 @media(max-width:850px){.eyr-usa .eyr-usa-layout{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:600px){.eyr-usa-head{flex-wrap:wrap;gap:14px}.eyr-usa-head>button{margin-left:auto}.eyr-usa-brand{min-width:0}.eyr-usa-brand p{font-size:12px}.eyr-usa-between{flex-wrap:wrap}.eyr-usa-between h2{overflow-wrap:anywhere;font-size:20px}}
+
+.yard-history-tabs { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:10px 0; }
+.yard-history-tabs button[aria-pressed="true"] { background:#133b67; color:white; }

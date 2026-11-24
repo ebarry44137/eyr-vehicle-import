@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import { supabase } from "./supabaseClient";
 import eyrSolutionsLogo from "./assets/eyr-solutions-logo.png";
 import CommercialLanding from "./modules/commercial-landing/CommercialLanding.jsx";
+import { CaseExpenses, StatementDialog } from "./modules/customs/CaseExpenses.jsx";
 import CopyCustomsPhotoLink from "./modules/customs/CopyCustomsPhotoLink.jsx";
 import TrackingAdminPanel from "./modules/vehicle-tracking/TrackingAdminPanel.jsx";
 import QuoteModeTabs from "./modules/public-quoter/QuoteModeTabs";
@@ -1237,6 +1238,8 @@ function App() {
   const [customsDecodeResult, setCustomsDecodeResult] = useState(null);
   const [customsSaving, setCustomsSaving] = useState(false);
   const [selectedCustomsCase, setSelectedCustomsCase] = useState(null);
+  const [expenseTab, setExpenseTab] = useState(false);
+  const [statementCase, setStatementCase] = useState(null);
   const [dispatchPhotoCase, setDispatchPhotoCase] = useState(null);
   const [customsDetail, setCustomsDetail] = useState(null);
   const [customsDetailSaving, setCustomsDetailSaving] = useState(false);
@@ -4337,6 +4340,7 @@ async function openCustomsDetail(item) {
 
       setSelectedCustomsCase(data);
       setCustomsDetail(data);
+      if (!previousCustomsDetail?.envelope_ready_at && data.envelope_ready_at) setStatementCase(data);
       setCustomsMessage("Expediente actualizado correctamente.");
       await loadCustomsCases(customsSearch);
     } catch (err) {
@@ -7472,6 +7476,11 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               </button>
             </header>
 
+            <nav className="ce-tabs" aria-label="Secciones de Control Aduanal">
+              <button aria-pressed={!expenseTab} onClick={()=>setExpenseTab(false)}>Expedientes</button>
+              <button aria-pressed={expenseTab} onClick={()=>setExpenseTab(true)}>Registro de Gastos</button>
+            </nav>
+            {expenseTab ? <CaseExpenses db={supabase} onStatement={setStatementCase}/> : <>
             <section className="customs-kpis">
               <article>
                 <span>Expedientes activos</span>
@@ -7781,6 +7790,7 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
                               onClick={() => setDispatchPhotoCase(item)}>
                               Enlace público
                             </button>
+                            <button type="button" className="prospect-open-button" onClick={()=>setStatementCase(item)}>Estado de cuenta</button>
                             <CopyCustomsPhotoLink
                               caseId={item.id}
                               portalClientId={item.office_portal_client_id}
@@ -7795,6 +7805,8 @@ Quisiera coordinar con ustedes los siguientes pasos para iniciar la gestión de 
               </div>
             </section>
 
+            </>}
+            {statementCase && <StatementDialog key={statementCase.id} db={supabase} record={statementCase} canClassify={canUseTenantFinance} onClose={()=>setStatementCase(null)}/>}
             {dispatchPhotoCase && (
               <DispatchPhotoDialog supabase={supabase} customsCase={dispatchPhotoCase}
                 onClose={() => setDispatchPhotoCase(null)} />

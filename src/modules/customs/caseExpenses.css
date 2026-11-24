@@ -1,0 +1,15 @@
+.ce-tabs,.ce-card header,.ce-dialog>header,.ce-dialog footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ce-tabs{margin:16px 0}.ce-tabs button,.ce-card button,.ce-dialog button{cursor:pointer;border:1px solid #ccd8e2;border-radius:9px;padding:9px 15px;background:white;color:#163653;font-weight:700}
+.ce-tabs [aria-pressed=true],.ce-card .primary-button,.ce-dialog .primary-button{background:#d5a638;color:#102841}
+.ce-card,.ce-dialog{color:#163653;background:white;border:1px solid #dbe3ec;border-radius:16px;padding:clamp(14px,3vw,32px)}
+.ce-card fieldset{border:0;padding:0;margin:0;min-width:0}.ce-card label{display:grid;gap:6px;font-weight:650}
+.ce-card input,.ce-card select{border:1px solid #bac9d7;border-radius:8px;min-height:42px;padding:8px;width:100%;box-sizing:border-box;background:white;color:#14334f}
+.ce-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin:16px 0}.ce-card header{justify-content:space-between;margin-top:18px}
+.ce-results{max-height:250px;overflow:auto}.ce-results button{display:grid;text-align:left;width:100%;margin:4px 0}
+.ce-dialog{width:min(800px,94vw);max-height:90dvh;box-sizing:border-box;overflow:auto;margin:auto;padding:14px;background:#f0f4f8}
+.ce-dialog::backdrop{background:#0b1b31aa}.ce-dialog>header,.ce-dialog footer{justify-content:space-between;padding:8px}
+.ce-dialog footer{justify-content:flex-end;position:sticky;bottom:0;background:#f0f4f8}
+.ce-card [role=alert],.ce-dialog [role=alert]{color:#922b24}.ce-card [role=status]{color:#146348}
+.ce-receipt{display:block;max-width:100%;max-height:70vh}.ce-dialog .statement-paper{overflow-wrap:anywhere}
+@media(max-width:600px){.ce-dialog .statement-paper{padding:9px;font-size:12px}.ce-dialog .statement-paper header img{width:90px}.ce-dialog .statement-paper h2{font-size:18px}}
+.ce-dialog details{padding:12px}.ce-dialog details label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px}.ce-dialog details select{max-width:55%}

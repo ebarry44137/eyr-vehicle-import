@@ -29,6 +29,8 @@ export default function CustomsCaseFinance({
   compact = false,
   onChanged,
 }) {
+  const [baseCharge, setBaseCharge] = useState("");
+  const [loadedCharge, setLoadedCharge] = useState(null);
   const [finance, setFinance] = useState(null);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,8 @@ export default function CustomsCaseFinance({
 
       if (paymentError) throw paymentError;
 
+      setBaseCharge(financeRow ? (number(financeRow.client_charge_gtq) - number(financeRow.reimbursable_gtq)).toFixed(2) : "");
+      setLoadedCharge(financeRow?.client_charge_gtq ?? null);
       setFinance(
         financeRow || {
           customs_case_id: caseId,
@@ -111,9 +115,10 @@ export default function CustomsCaseFinance({
     );
   }, [finance]);
 
-  const billed = number(finance?.client_charge_gtq);
+  const billed = Math.round((number(baseCharge) + number(finance?.reimbursable_gtq)) * 100) / 100;
   const pending = Math.max(0, billed - paid);
-  const grossProfit = billed - directCosts;
+  const reimbursements = number(finance?.reimbursable_gtq);
+  const grossProfit = billed - directCosts - reimbursements;
 
   function setLocation(value) {
     const location = LOCATIONS.find((item) => item.value === value);
@@ -134,7 +139,7 @@ export default function CustomsCaseFinance({
     try {
       const payload = {
         customs_case_id: caseId,
-        client_charge_gtq: number(finance.client_charge_gtq),
+        client_charge_gtq: billed,
         operation_location: finance.operation_location || null,
         corroboration_cost_gtq: number(finance.corroboration_cost_gtq),
         includes_duca: Boolean(finance.includes_duca),
@@ -158,14 +163,22 @@ export default function CustomsCaseFinance({
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error: saveError } = await supabase
-        .from("customs_case_finance")
-        .upsert(payload, { onConflict: "customs_case_id" })
-        .select()
-        .single();
-
+      // A concurrent disbursement changes the billed total. Never overwrite it
+      // with the older amount displayed when this form was opened.
+      let query;
+      if (finance.id) {
+        query = supabase.from("customs_case_finance").update(payload).eq("id", finance.id);
+        query = loadedCharge == null ? query.is("client_charge_gtq", null) : query.eq("client_charge_gtq", loadedCharge);
+      } else {
+        query = supabase.from("customs_case_finance").insert(payload);
+      }
+      const { data, error: saveError } = await query.select().maybeSingle();
       if (saveError) throw saveError;
-
+      if (!data) {
+        await load();
+        throw new Error("El cobro de esta gestión cambió. Revisá los valores actualizados antes de guardar.");
+      }
+      setLoadedCharge(data.client_charge_gtq);
       setFinance(data);
       setMessage("Información financiera guardada.");
       onChanged?.();
@@ -266,20 +279,15 @@ export default function CustomsCaseFinance({
 
       <div className="case-finance-grid">
         <label>
-          <span>Total cobrado al cliente (Q)</span>
+          <span>Cobro acordado antes de gastos adicionales (Q)</span>
           <input
             type="number"
             step="0.01"
             min="0"
-            value={finance.client_charge_gtq ?? ""}
-            onChange={(e) =>
-              setFinance((prev) => ({
-                ...prev,
-                client_charge_gtq: e.target.value,
-              }))
-            }
+            value={baseCharge}
+            onChange={(e) => setBaseCharge(e.target.value)}
           />
-          <small>Ingresá el total acordado con el cliente por la gestión.</small>
+          <small>Gastos adicionales por recuperar: Q {reimbursements.toFixed(2)}. Ya incluidos en el total.</small>
         </label>
 
         <label>

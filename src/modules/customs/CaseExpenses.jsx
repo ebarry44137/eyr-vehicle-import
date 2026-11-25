@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import html2pdf from "html2pdf.js";
+const StatementPages = React.lazy(() => import("./StatementPages"));
 import { caseStatement, currency } from "./caseStatement";
 import "./caseExpenses.css";
 
@@ -100,21 +100,9 @@ export function CaseExpenses({ db, onStatement }) {
     </section>;
 }
 
-const paperCss = `
-.statement-paper{background:white;color:#132e49;padding:28px;font:14px Arial,sans-serif;box-sizing:border-box}
-.statement-paper header{display:flex;gap:20px;align-items:center;justify-content:space-between;border-bottom:3px solid #c99c3c;padding-bottom:14px}
-.statement-paper header img{width:145px;max-height:80px;object-fit:contain}
-.statement-paper h2{font: bold 23px Georgia,serif;margin:6px 0}.statement-paper small{display:block}
-.statement-paper table{width:100%;border-collapse:collapse;margin:20px 0 12px;table-layout:fixed}
-.statement-paper th,.statement-paper td{padding:9px 5px;border-bottom:1px solid #dde4eb;text-align:right;overflow-wrap:anywhere}
-.statement-paper th:first-child,.statement-paper td:first-child{text-align:left;width:41%}
-.statement-paper th,.statement-paper .ce-balance{background:#102e4a;color:white}
-.statement-paper tr{break-inside:avoid}.statement-paper tfoot{background:#fff4d7;font-weight:bold}
-.statement-paper .ce-balance{display:flex;justify-content:space-between;gap:10px;padding:15px;font-weight:bold;font-size:19px}
-@page{size:letter;margin:12mm}@media print{body{margin:0}*{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-`;
 export function StatementDialog({db,record,onClose,canClassify}) {
-  const dialog=useRef(null), sheet=useRef(null);
+  const dialog=useRef(null);
+  const [documentOutput,setDocumentOutput]=useState(null);
   const [data,setData]=useState(null),[error,setError]=useState(""),[busy,setBusy]=useState(false);
   useEffect(()=>{dialog.current.showModal();},[]);
   useEffect(()=>{
@@ -123,53 +111,38 @@ export function StatementDialog({db,record,onClose,canClassify}) {
     return ()=>{active=false;};
   },[db,record.id]);
   const summary=data && caseStatement(record,data);
-  const money = cents=>currency(cents/100);
   async function output(download){
+    if(!documentOutput)return;
+    if(download){documentOutput.pdf.save("Estado-de-cuenta-"+record.case_code+".pdf");return;}
     setBusy(true);setError("");
     const frame=document.createElement("iframe");
     frame.title="Impresión del estado de cuenta";
-    frame.style.cssText="position:fixed;left:-12000px;top:0;width:740px;height:950px;border:0";
+    frame.style.cssText="position:fixed;left:-12000px;top:0;width:816px;height:1056px;border:0";
     document.body.appendChild(frame);
-    let keep=false;
     try{
       const doc=frame.contentDocument;
       doc.title="Estado de cuenta "+record.case_code;
-      const style=doc.createElement("style");style.textContent=paperCss;doc.head.append(style);
-      const node=sheet.current.cloneNode(true);doc.body.append(node);
-      await node.querySelector("img").decode();
-      if(download){
-        // html2canvas clones into the main document; include the paper styling there too.
-        await html2pdf().set({filename:"Estado-de-cuenta-"+record.case_code+".pdf",margin:10,
-          image:{type:"jpeg",quality:.96},html2canvas:{scale:2,backgroundColor:"#fff",windowWidth:850},
-          jsPDF:{unit:"mm",format:"letter"},pagebreak:{mode:["css","legacy"],avoid:["tr",".ce-balance"]}}).from(node).save();
-      } else {
-        frame.contentWindow.addEventListener("afterprint",()=>frame.remove(),{once:true});
-        frame.contentWindow.focus();frame.contentWindow.print();keep=true;
-        setTimeout(()=>frame.remove(),120000);
-      }
-    }catch(e){setError(e.message || "No se pudo preparar el documento.");}
-    finally{if(!keep)frame.remove();setBusy(false);}
+      const style=doc.createElement("style");
+      style.textContent="@page{size:letter;margin:0}html,body{margin:0}img{display:block;width:8.5in;height:11in;break-after:page}img:last-child{break-after:auto}";
+      doc.head.append(style);
+      await Promise.all(documentOutput.images.map(async src=>{
+        const img=doc.createElement("img");img.src=src;doc.body.append(img);await img.decode();
+      }));
+      frame.contentWindow.addEventListener("afterprint",()=>frame.remove(),{once:true});
+      frame.contentWindow.focus();frame.contentWindow.print();
+      setTimeout(()=>frame.remove(),120000);
+    }catch(e){frame.remove();setError(e.message);}finally{setBusy(false);}
   }
-  return <dialog className="ce-dialog" ref={dialog} onCancel={onClose} aria-label="Estado de cuenta"><style>{paperCss}</style>
+  return <dialog className="ce-dialog" ref={dialog} onCancel={onClose} aria-label="Estado de cuenta">
     <header><strong>Estado de cuenta</strong><button onClick={onClose} aria-label="Cerrar estado de cuenta">✕</button></header>
     {error && <p role="alert">{error}</p>}{!data && !error && <p>Cargando movimientos…</p>}
-    {summary && <><article className="statement-paper" ref={sheet}><header><img src="/branding/eyr-logo-horizontal.png" alt="EyR Solutions"/>
-      <div><h2>Estado de cuenta</h2>{record.case_code}<small>Emitido el {day(today())}</small></div></header>
-      <p><strong>{record.client_name}</strong><br/>{vehicle(record)}</p>
-      <table><thead><tr>{["Concepto","Cargo","Pagado","Pendiente"].map(s=><th key={s}>{s}</th>)}</tr></thead><tbody>
-      {summary.lines.map(r=><tr key={r.id}><td>{r.label}{r.date && <small>{day(r.date)}</small>}</td><td>{money(r.charge)}</td><td>{money(r.paid)}</td><td>{money(r.charge-r.paid)}</td></tr>)}
-      {summary.general>0 && <tr><td>Abonos generales sin asignar</td><td>—</td><td>{money(summary.general)}</td><td>−{money(summary.general)}</td></tr>}
-      </tbody><tfoot><tr><td>Total</td><td>{money(summary.charge)}</td><td>{money(summary.paid)}</td><td>{money(summary.balance)}</td></tr></tfoot></table>
-      <div className="ce-balance"><span>{summary.balance<0?"Saldo a favor":"Saldo pendiente"}</span>{money(Math.abs(summary.balance))}</div>
-      {Number(record.crane_usd)>0 && <p>Grúa cotizada en USD (separada del total en quetzales): US$ {Number(record.crane_usd).toFixed(2)}</p>}
-      {data.payments.length>0 && <><h3>Abonos recibidos</h3>{data.payments.map(p=><div key={p.id}>{day(p.date)} · {summary.lines.find(r=>r.id===p.line)?.label || "Abono general"} · {currency(p.amount)}</div>)}</>}
-    </article>
+    {summary && <><React.Suspense fallback={<p>Preparando documento…</p>}><StatementPages record={record} data={data} date={today()} onReady={setDocumentOutput}/></React.Suspense>
     {canClassify && data.payments.length>0 && <details><summary>Asignar abonos a conceptos</summary>
       {data.payments.map(p=><label key={p.id}>{day(p.date)} · {currency(p.amount)} <select value={p.line || ""} disabled={busy} onChange={async e=>{
         const line=e.target.value;setBusy(true);setError("");
         try{await rpc(db,"customs_classify_payment",{p_case:record.id,p_payment:p.id,p_line:line||null});
           setData(await rpc(db,"customs_statement",{p_case:record.id}));}catch(err){setError(err.message);}finally{setBusy(false);}
       }}><option value="">Abono general</option>{summary.lines.filter(r=>r.charge>0 && !data.expenses.some(d=>d.id===r.id && d.source==="DIRECT")).map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></label>)}</details>}
-    <footer><button disabled={busy} onClick={()=>output(false)}>Imprimir</button><button className="primary-button" disabled={busy} onClick={()=>output(true)}>{busy?"Preparando…":"Descargar PDF"}</button></footer></>}
+    <footer><button disabled={busy||!documentOutput} onClick={()=>output(false)}>Imprimir</button><button className="primary-button" disabled={busy||!documentOutput} onClick={()=>output(true)}>{busy?"Preparando…":"Descargar PDF"}</button></footer></>}
   </dialog>;
 }

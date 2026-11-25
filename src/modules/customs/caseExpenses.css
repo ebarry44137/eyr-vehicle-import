@@ -13,3 +13,4 @@
 .ce-receipt{display:block;max-width:100%;max-height:70vh}.ce-dialog .statement-paper{overflow-wrap:anywhere}
 @media(max-width:600px){.ce-dialog .statement-paper{padding:9px;font-size:12px}.ce-dialog .statement-paper header img{width:90px}.ce-dialog .statement-paper h2{font-size:18px}}
 .ce-dialog details{padding:12px}.ce-dialog details label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px}.ce-dialog details select{max-width:55%}
+.ce-pages{display:grid;gap:12px}.ce-pages img{display:block;width:100%;height:auto;background:white;box-shadow:0 2px 10px #102e4a22}

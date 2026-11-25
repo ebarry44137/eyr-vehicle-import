@@ -22,7 +22,8 @@ export function statementPdf(record, data, stationery, date) {
   }
   function page() {
     if (y) doc.addPage();
-    doc.addImage(stationery, "PNG", 0, 0, 612, 792, "eyr-letterhead", "FAST");
+    // Bleed the one-pixel frame of the source artwork beyond the Letter page.
+    doc.addImage(stationery, "PNG", -1.5, -1.5, 615, 795, "eyr-letterhead", "FAST");
     text("Estado de cuenta", left, 162, 27, navy, true);
     text(record.case_code, left, 181, 11, slate, true);
     text("Emitido el " + formatDate(date), right, 181, 10, slate, false, "right");

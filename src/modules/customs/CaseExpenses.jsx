@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 const StatementPages = React.lazy(() => import("./StatementPages"));
-import { caseStatement, currency } from "./caseStatement";
+import { caseStatement, currency, statementFilename } from "./caseStatement";
 import "./caseExpenses.css";
 
 const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guatemala" }).format(new Date());
@@ -128,7 +128,7 @@ export function StatementDialog({db,record,onClose,canClassify}) {
   const summary=data && caseStatement(record,data);
   async function output(download){
     if(!documentOutput)return;
-    if(download){documentOutput.pdf.save("Estado-de-cuenta-"+record.case_code+".pdf");return;}
+    if(download){documentOutput.pdf.save(statementFilename(record));return;}
     setBusy(true);setError("");
     const frame=document.createElement("iframe");
     frame.title="Impresión del estado de cuenta";

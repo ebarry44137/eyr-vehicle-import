@@ -1,3 +1,16 @@
+export function statementFilename(record) {
+  function clean(value) {
+    return String(value ?? "").normalize("NFC")
+      .replace(/[<>:"/\\|?*\u0000-\u001f]/g, " ")
+      .replace(/\s+/g, " ").trim().replace(/[. ]+$/g, "");
+  }
+  const client = clean(record.client_name).slice(0, 100).trim();
+  const vin = clean(record.vin).slice(0, 40).toUpperCase();
+  const parts = ["Estado de cuenta", client, vin];
+  if (!client || !vin) parts.push(clean(record.case_code));
+  return parts.filter(Boolean).join(" - ") + ".pdf";
+}
+
 export const currency = value => new Intl.NumberFormat("es-GT", { style: "currency", currency: "GTQ" }).format(value);
 const cents = value => Math.round(Number(value || 0) * 100);
 

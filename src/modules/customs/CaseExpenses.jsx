@@ -110,6 +110,21 @@ export function StatementDialog({db,record,onClose,canClassify}) {
     rpc(db,"customs_statement",{p_case:record.id}).then(x=>{if(active)setData(x);}).catch(e=>{if(active)setError(e.message);});
     return ()=>{active=false;};
   },[db,record.id]);
+  const [reversing,setReversing]=useState(null);
+  const [reason,setReason]=useState("");
+  const [notice,setNotice]=useState("");
+  async function reversePayment(event){
+    event.preventDefault();
+    if(!reversing || busy || !reason.trim())return;
+    setBusy(true);setError("");setNotice("");
+    try{
+      const updated=await rpc(db,"reverse_customs_client_payment",{
+        p_case:record.id,p_payment:reversing.id,p_amount:reversing.amount,p_reason:reason.trim()
+      });
+      setDocumentOutput(null);setData(updated);setReversing(null);setReason("");
+      setNotice("Abono revertido. El estado de cuenta está actualizado.");
+    }catch(err){setError(err.message);}finally{setBusy(false);}
+  }
   const summary=data && caseStatement(record,data);
   async function output(download){
     if(!documentOutput)return;
@@ -137,12 +152,19 @@ export function StatementDialog({db,record,onClose,canClassify}) {
     <header><strong>Estado de cuenta</strong><button onClick={onClose} aria-label="Cerrar estado de cuenta">✕</button></header>
     {error && <p role="alert">{error}</p>}{!data && !error && <p>Cargando movimientos…</p>}
     {summary && <><React.Suspense fallback={<p>Preparando documento…</p>}><StatementPages record={record} data={data} date={today()} onReady={setDocumentOutput}/></React.Suspense>
-    {canClassify && data.payments.length>0 && <details><summary>Asignar abonos a conceptos</summary>
-      {data.payments.map(p=><label key={p.id}>{day(p.date)} · {currency(p.amount)} <select value={p.line || ""} disabled={busy} onChange={async e=>{
+    {canClassify && data.payments.length>0 && <details><summary>Administrar abonos del cliente</summary>
+      {data.payments.map(p=><div key={p.id}><label>{day(p.date)} · {currency(p.amount)} <select value={p.line || ""} disabled={busy} onChange={async e=>{
         const line=e.target.value;setBusy(true);setError("");
         try{await rpc(db,"customs_classify_payment",{p_case:record.id,p_payment:p.id,p_line:line||null});
           setData(await rpc(db,"customs_statement",{p_case:record.id}));}catch(err){setError(err.message);}finally{setBusy(false);}
-      }}><option value="">Abono general</option>{summary.lines.filter(r=>r.charge>0 && !data.expenses.some(d=>d.id===r.id && d.source==="DIRECT")).map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></label>)}</details>}
+      }}><option value="">Abono general</option>{summary.lines.filter(r=>r.charge>0 && !data.expenses.some(d=>d.id===r.id && d.source==="DIRECT")).map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></label>
+        <button type="button" disabled={busy} onClick={()=>{setReversing(p);setReason("");setNotice("");}}>Revertir abono</button></div>)}
+      {reversing && <form onSubmit={reversePayment}><h3>Revertir {currency(reversing.amount)} del {day(reversing.date)}</h3>
+        <p>Se descontará este importe de los pagos recibidos de {record.client_name}. Los cargos de la gestión se conservan.</p>
+        <label>Motivo<input required maxLength={500} value={reason} onChange={e=>setReason(e.target.value)}/></label>
+        <button type="button" disabled={busy} onClick={()=>setReversing(null)}>Cancelar</button>
+        <button disabled={busy||!reason.trim()}>Confirmar reversión</button></form>}
+      </details>}{notice && <p role="status">{notice}</p>}
     <footer><button disabled={busy||!documentOutput} onClick={()=>output(false)}>Imprimir</button><button className="primary-button" disabled={busy||!documentOutput} onClick={()=>output(true)}>{busy?"Preparando…":"Descargar PDF"}</button></footer></>}
   </dialog>;
 }

@@ -153,11 +153,7 @@ export function StatementDialog({db,record,onClose,canClassify}) {
     {error && <p role="alert">{error}</p>}{!data && !error && <p>Cargando movimientos…</p>}
     {summary && <><React.Suspense fallback={<p>Preparando documento…</p>}><StatementPages record={record} data={data} date={today()} onReady={setDocumentOutput}/></React.Suspense>
     {canClassify && data.payments.length>0 && <details><summary>Administrar abonos del cliente</summary>
-      {data.payments.map(p=><div key={p.id}><label>{day(p.date)} · {currency(p.amount)} <select value={p.line || ""} disabled={busy} onChange={async e=>{
-        const line=e.target.value;setBusy(true);setError("");
-        try{await rpc(db,"customs_classify_payment",{p_case:record.id,p_payment:p.id,p_line:line||null});
-          setData(await rpc(db,"customs_statement",{p_case:record.id}));}catch(err){setError(err.message);}finally{setBusy(false);}
-      }}><option value="">Abono general</option>{summary.lines.filter(r=>r.charge>0 && !data.expenses.some(d=>d.id===r.id && d.source==="DIRECT")).map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></label>
+      {data.payments.map(p=><div key={p.id}><span>{day(p.date)} · {currency(p.amount)} </span>
         <button type="button" disabled={busy} onClick={()=>{setReversing(p);setReason("");setNotice("");}}>Revertir abono</button></div>)}
       {reversing && <form onSubmit={reversePayment}><h3>Revertir {currency(reversing.amount)} del {day(reversing.date)}</h3>
         <p>Se descontará este importe de los pagos recibidos de {record.client_name}. Los cargos de la gestión se conservan.</p>

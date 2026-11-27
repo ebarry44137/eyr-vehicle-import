@@ -70,7 +70,7 @@ export function statementPdf(record, data, stationery, date) {
   if(record.vin)paragraph("VIN   "+record.vin,10,15,slate);
   y+=9;space(48);headings();
   summary.lines.forEach((r,i)=>row(r.label,[money(r.charge),money(r.paid),money(r.charge-r.paid)],i,r.date && formatDate(r.date)));
-  if(summary.general)row("Abonos generales sin asignar",["—",money(summary.general),money(-summary.general)],summary.lines.length);
+  if(summary.credit)row("Excedente a favor del cliente",["—",money(summary.credit),money(-summary.credit)],summary.lines.length);
   space(72);box(left,y,right-left,23,"#FDF1D9");text("Total",left+9,y+15,10,navy,true);
   [summary.charge,summary.paid,summary.balance].forEach((v,j)=>text(money(v),[386,476,565][j],y+15,10,navy,true,"right"));
   y+=30;box(left,y,right-left,35,navy);box(left,y,4,35,gold);
@@ -79,7 +79,12 @@ export function statementPdf(record, data, stationery, date) {
   if(Number(record.crane_usd)>0) paragraph("Grúa cotizada por separado en USD: US$ "+Number(record.crane_usd).toFixed(2),10,14,slate);
   if(data.payments.length){
     space(44);paragraph("Abonos recibidos",12,18,navy,true);
-    for(const p of data.payments)paragraph(formatDate(p.date)+"   ·   "+(summary.lines.find(r=>r.id===p.line)?.label || "Abono general")+"   ·   "+currency(p.amount),10,14,ink);
+    for (const receipt of summary.receipts) {
+      for (const part of receipt.allocations) {
+        paragraph(formatDate(receipt.date)+"   ·   "+part.label+"   ·   "+money(part.amount),10,14,ink);
+      }
+      if (receipt.credit) paragraph(formatDate(receipt.date)+"   ·   Saldo a favor   ·   "+money(receipt.credit),10,14,ink);
+    }
   }
   const pages=doc.getNumberOfPages();
   for(let n=1;n<=pages;n++){doc.setPage(n);text(n+" / "+pages,right,651,8,slate,false,"right");}
